@@ -38,4 +38,5 @@ h1 { margin:0 0 2px; font-size:17px; line-height:1.12; font-weight:500; letter-s
 .powered-by img { width:14px; height:14px; object-fit:contain; opacity:.75; }
 @media (max-width:360px) { .share-shell { padding-inline:14px; } .share-grid { gap:6px; } }
 .tile-spinner { display:inline-block; width:22px; height:22px; border-radius:50%; border:2.5px solid rgba(145,132,217,.25); border-top-color:var(--accent); animation:tile-spin .7s linear infinite; }
+.text-action-spinner { display:inline-block; width:13px; height:13px; border-radius:50%; border:2px solid rgba(145,132,217,.25); border-top-color:var(--accent); animation:tile-spin .7s linear infinite; }
 @keyframes tile-spin { to { transform:rotate(360deg); } }

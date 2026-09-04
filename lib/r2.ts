@@ -1,25 +1,19 @@
-// Server-only R2 client -- same as pic-vision-cloud-console's lib/r2.ts,
-// duplicated here (not imported across the repo boundary) since this is
-// a genuinely separate deployable app (different domain, different
-// audience -- public venue-goers, not authenticated venue owners).
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+// Reel videos are served from a Cloudflare-fronted custom domain bound to
+// the R2 bucket (ADR-075), not a presigned URL: this page's own security
+// boundary is already "know the reelId" (the reels table's public RLS
+// policy), so a presigned URL added expiry/signing complexity without
+// protecting anything the page itself doesn't already gate -- and, being
+// uniquely signed per request, defeated both browser and edge caching on
+// a page whose whole point is getting reshared and reopened repeatedly.
+// The R2 object key is minted from the reel's own uuid by
+// cloud_pipeline/run_cloud_job.py (`reels/<id>.mp4`), so it's exactly as
+// unguessable as the reelId this page is already gated on.
+//
+// Only one bucket is bound to this domain right now -- `bucket` is kept
+// in the signature so callers don't need to change if that stops being
+// true, but isn't used to build the URL yet.
+const CDN_DOMAIN = 'cdn.picvisionai.com'
 
-function r2Client() {
-  const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID
-  if (!accountId) throw new Error('CLOUDFLARE_R2_ACCOUNT_ID not set')
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
-    },
-  })
-}
-
-export async function presignedReelUrl(bucket: string, key: string, expiresIn = 3600) {
-  const client = r2Client()
-  const command = new GetObjectCommand({ Bucket: bucket, Key: key })
-  return getSignedUrl(client, command, { expiresIn })
+export function reelVideoUrl(_bucket: string, key: string) {
+  return `https://${CDN_DOMAIN}/${key}`
 }
