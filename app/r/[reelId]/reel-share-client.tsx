@@ -20,18 +20,27 @@ import { useState } from 'react'
 //
 // What this page does instead for Instagram/TikTok: attach the actual
 // video as a file to the OS's native share sheet (Web Share API,
-// `navigator.share` with `files`), which surfaces "Save Video"/"Save to
-// Photos" as one of the share-sheet's own options -- then, best-effort,
-// try to open the app right after so the user lands on its create
-// screen and picks the just-saved video from their gallery. One extra
-// tap versus the ideal, everything else automatic. This needs the video
-// bytes to actually be fetchable cross-origin (R2 bucket CORS, set
-// 2026-09-04) since attaching a File means fetching it first, not just
-// linking to it.
+// `navigator.share` with `files`). Verified on a real device (iOS,
+// 2026-09-04): tapping Instagram *inside* the OS share sheet hands the
+// file directly to Instagram's own registered share extension, which
+// shows Instagram's own Reel/Post/Story/Message picker -- native
+// Instagram UI, not built here, and something this page has no
+// influence over past the tap. That's a direct handoff, not the
+// save-then-reopen-the-app detour originally expected, so there's no
+// separate "now open the app" step needed afterward -- removed
+// 2026-09-04 once the real device test showed the direct handoff
+// already works. This needs the video bytes to actually be fetchable
+// cross-origin (R2 bucket CORS, set 2026-09-04) since attaching a File
+// means fetching it first, not just linking to it.
+//
+// The share sheet's own preview (filename/title) is real and
+// controllable; the thumbnail *image* it renders is not -- that's the
+// OS deciding how to represent the file, this page has no API to hand
+// it a custom preview image.
 
 const socials = [
-  { label: 'Instagram', icon: '◎', kind: 'app' as const, appScheme: 'instagram://' },
-  { label: 'TikTok', icon: '♪', kind: 'app' as const, appScheme: 'tiktok://' },
+  { label: 'Instagram', icon: '◎', kind: 'app' as const },
+  { label: 'TikTok', icon: '♪', kind: 'app' as const },
   { label: 'Facebook', icon: 'f', kind: 'link' as const, hrefFor: (url: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
   { label: 'X', icon: '𝕏', kind: 'link' as const, hrefFor: (url: string) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}` },
 ]
@@ -70,39 +79,35 @@ export default function ReelShareClient({
     }
   }
 
-  async function shareToApp(label: string, appScheme: string) {
+  async function shareToApp(label: string) {
     setAppShareState((s) => ({ ...s, [label]: 'working' }))
     try {
       const res = await fetch(videoUrl)
       const blob = await res.blob()
-      const file = new File([blob], 'highlight.mp4', { type: blob.type || 'video/mp4' })
+      // Real, controllable share-sheet metadata -- venue name in both the
+      // filename and title, not the generic "highlight.mp4"/"My pickleball
+      // highlight" the mockup had. The thumbnail *image* iOS/Android render
+      // next to this is the OS's own call, not something this API exposes
+      // a way to set.
+      const fileName = `${venueName.replace(/[^a-zA-Z0-9 -]/g, '').trim() || 'PicVision'} Highlight.mp4`
+      const file = new File([blob], fileName, { type: blob.type || 'video/mp4' })
 
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
       if (nav.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'My pickleball highlight' })
+        await navigator.share({ files: [file], title: `${venueName} — Pickleball Highlight` })
       } else if (navigator.share) {
         // This browser's Web Share API doesn't support file attachments
         // (older/desktop browsers) -- fall back to sharing the link only.
-        await navigator.share({ url: shareUrl, title: 'My pickleball highlight' })
+        await navigator.share({ url: shareUrl, title: `${venueName} — Pickleball Highlight` })
       } else {
         // No Web Share API at all -- just download, no share sheet exists here.
         window.location.href = videoUrl
-        setAppShareState((s) => ({ ...s, [label]: 'idle' }))
-        return
       }
     } catch {
-      // Share sheet cancelled, or the fetch failed -- either way, don't
-      // force-open the app on top of an error the user didn't ask for.
-      setAppShareState((s) => ({ ...s, [label]: 'idle' }))
-      return
+      // Share sheet cancelled, or the fetch failed -- either way just
+      // reset, nothing else to do.
     }
     setAppShareState((s) => ({ ...s, [label]: 'idle' }))
-    // Best-effort: no reliable signal from the OS for "user picked Save,
-    // not Cancel" -- this fires regardless. May also be blocked by the
-    // browser if it decides too much async time passed since the actual
-    // tap to still count as the same user gesture; not detectable from
-    // JS either. Real-device testing item, not assumed to always work.
-    window.location.href = appScheme
   }
 
   return (
@@ -127,11 +132,15 @@ export default function ReelShareClient({
                   key={item.label}
                   type="button"
                   className="share-tile share-tile-strong"
-                  onClick={() => shareToApp(item.label, item.appScheme)}
+                  onClick={() => shareToApp(item.label)}
                   disabled={appShareState[item.label] === 'working'}
                 >
-                  <strong aria-hidden="true">{item.icon}</strong>
-                  <span>{appShareState[item.label] === 'working' ? 'Saving…' : item.label}</span>
+                  {appShareState[item.label] === 'working' ? (
+                    <span className="tile-spinner" aria-hidden="true" />
+                  ) : (
+                    <strong aria-hidden="true">{item.icon}</strong>
+                  )}
+                  <span>{item.label}</span>
                 </button>
               ) : (
                 <a key={item.label} className="share-tile share-tile-strong" href={item.hrefFor(shareUrl)} target="_blank" rel="noreferrer">
