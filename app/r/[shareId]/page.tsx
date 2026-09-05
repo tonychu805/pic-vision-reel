@@ -20,7 +20,7 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
 
   const { data: reels } = await supabase
     .from('reels')
-    .select('id, kind, r2_bucket, r2_key_ranked, venue_name, camera_label, duration_sec, rally_count, created_at')
+    .select('id, kind, r2_bucket, r2_key_ranked, brand_name, camera_label, duration_sec, rally_count, created_at')
     .eq('share_id', shareId)
     .order('created_at', { ascending: true })
 
@@ -57,7 +57,7 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
       <ReelShareClient
         shareId={shareId}
         slides={slides}
-        venueName={first.venue_name ?? 'Your venue'}
+        venueName={first.brand_name ?? 'Your venue'}
         cameraLabel={first.camera_label}
         createdAt={first.created_at}
       />
