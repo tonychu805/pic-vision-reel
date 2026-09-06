@@ -20,6 +20,8 @@ type ShareReel = {
   r2_bucket: string
   r2_key_ranked: string
   brand_name: string | null
+  brand_logo_key: string | null
+  brand_logo_ink: 'light' | 'dark' | null
   camera_label: string | null
   duration_sec: number | null
   rally_count: number | null
@@ -68,6 +70,8 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
         shareId={shareId}
         slides={slides}
         venueName={first.brand_name ?? 'Your venue'}
+        logoKey={first.brand_logo_key}
+        logoInk={first.brand_logo_ink}
         cameraLabel={first.camera_label}
         createdAt={first.created_at}
       />

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { brandLogoUrl } from '@/lib/brandLogo'
 
 // Two different sharing mechanisms live on this page, because the two
 // platforms actually support two different things (verified against
@@ -83,12 +84,16 @@ export default function ReelShareClient({
   shareId,
   slides,
   venueName,
+  logoKey,
+  logoInk,
   cameraLabel,
   createdAt,
 }: {
   shareId: string
   slides: Slide[]
   venueName: string
+  logoKey: string | null
+  logoInk: 'light' | 'dark' | null
   cameraLabel: string | null
   createdAt: string
 }) {
@@ -256,7 +261,13 @@ export default function ReelShareClient({
     <main className="share-page">
       <div className="share-shell">
         <header className="venue-header">
-          <div className="venue-mark" aria-hidden="true">{venueName.charAt(0).toUpperCase()}</div>
+          {logoKey ? (
+            <div className={`venue-plate${logoInk === 'light' ? ' venue-plate--light' : ''}`}>
+              <img src={brandLogoUrl(logoKey)} alt={venueName} />
+            </div>
+          ) : (
+            <div className="venue-mark" aria-hidden="true">{venueName.charAt(0).toUpperCase()}</div>
+          )}
           <span>{venueName}</span>
         </header>
 
