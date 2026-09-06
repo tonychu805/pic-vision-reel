@@ -3,28 +3,38 @@ import { supabasePublic } from '@/lib/supabase'
 import { reelVideoUrl } from '@/lib/r2'
 import ReelShareClient from './reel-share-client'
 
-// Public, no auth -- reels' "anyone with the id can read" RLS policy
-// (2026-09-04) is the whole access boundary, unchanged by ADR-076's
-// share_id column (still just USING (true), gated only by knowing a
-// value to query on). A wrong/deleted shareId just 404s here, same as
-// any not-found row.
+// Public, no auth -- knowing the share_id is the whole access boundary.
+// get_reels_by_share_id() (see lib/supabase.ts) is the only read path the
+// anon key has; a wrong/deleted/malformed shareId just 404s here.
 //
-// One page per SESSION now, not per reel (ADR-076, operator: "one
-// session id, one share page") -- share_id groups up to two reel rows
-// (full + burst-moments), ordered oldest-first so "full" (reported
-// first by cloud_pipeline/run_desktop_job.py's _report_reels loop) is
-// always the first carousel slide when both exist.
+// One page per SESSION, not per reel (ADR-076, operator: "one session id,
+// one share page") -- share_id groups up to two reel rows (full +
+// burst-moments); the function orders them oldest-first so "full"
+// (reported first by cloud_pipeline/run_desktop_job.py's _report_reels
+// loop) is always the first carousel slide when both exist.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+type ShareReel = {
+  id: string
+  kind: string
+  r2_bucket: string
+  r2_key_ranked: string
+  brand_name: string | null
+  camera_label: string | null
+  duration_sec: number | null
+  rally_count: number | null
+  created_at: string
+}
+
 export default async function ReelSharePage({ params }: { params: Promise<{ shareId: string }> }) {
   const { shareId } = await params
+  if (!UUID_RE.test(shareId)) notFound()
+
   const supabase = supabasePublic()
+  const { data } = await supabase.rpc('get_reels_by_share_id', { p_share_id: shareId })
+  const reels = (data ?? []) as ShareReel[]
 
-  const { data: reels } = await supabase
-    .from('reels')
-    .select('id, kind, r2_bucket, r2_key_ranked, brand_name, camera_label, duration_sec, rally_count, created_at')
-    .eq('share_id', shareId)
-    .order('created_at', { ascending: true })
-
-  if (!reels || reels.length === 0) notFound()
+  if (reels.length === 0) notFound()
 
   const slides = reels.map((r) => ({
     id: r.id,
