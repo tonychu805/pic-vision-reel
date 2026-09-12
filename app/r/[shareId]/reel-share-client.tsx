@@ -118,6 +118,7 @@ export default function ReelShareClient({
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const slideRefs = useRef<(HTMLDivElement | null)[]>([])
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
   const ratiosRef = useRef<Record<number, number>>({})
 
   const dateStr = useMemo(() => new Date(createdAt).toISOString().slice(0, 10), [createdAt])
@@ -188,6 +189,31 @@ export default function ReelShareClient({
     slideRefs.current.forEach((el) => el && observer.observe(el))
     return () => observer.disconnect()
   }, [slides.length])
+
+  // Autoplay whichever slide is active -- the very first one on open, and
+  // whichever one scrolls into view after that (activeIndex, tracked by
+  // the observer above, covers both). Every other slide is paused rather
+  // than left running: a scroll-snap carousel only ever shows one at a
+  // time, so a background one still playing would be wasted decode work
+  // and, worse, a second audio track. Muted is what makes the initial
+  // autoplay reliable at all -- every mainstream browser (this page's own
+  // iOS Safari audience very much included) blocks unmuted autoplay
+  // outright; the native `controls` bar still lets someone unmute by hand.
+  // .play() is a Promise that rejects if the browser declines anyway (a
+  // user interaction requirement this muted/playsInline combo is meant to
+  // satisfy, but not guaranteed on every browser) -- caught and ignored,
+  // since a video that simply sits on its poster frame until tapped is a
+  // fine fallback, not an error.
+  useEffect(() => {
+    videoRefs.current.forEach((video, i) => {
+      if (!video) return
+      if (i === activeIndex) {
+        video.play().catch(() => {})
+      } else {
+        video.pause()
+      }
+    })
+  }, [activeIndex])
 
   const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL}/r/${shareId}`
 
@@ -301,11 +327,17 @@ export default function ReelShareClient({
                     element streaming the full file in the background
                     would compete for bandwidth with the Blob prefetch
                     above, which is the one that actually needs to finish
-                    fast for sharing. */}
+                    fast for sharing. muted is required for the autoplay
+                    effect above to have any chance of working at all --
+                    see its own comment. */}
                 <video
+                  ref={(el) => {
+                    videoRefs.current[i] = el
+                  }}
                   src={slide.videoUrl}
                   controls
                   playsInline
+                  muted
                   preload="metadata"
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
