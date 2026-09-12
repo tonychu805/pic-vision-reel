@@ -8,15 +8,17 @@ import ReelShareClient from './reel-share-client'
 // anon key has; a wrong/deleted/malformed shareId just 404s here.
 //
 // One page per SESSION, not per reel (ADR-076, operator: "one session id,
-// one share page") -- share_id groups up to two reel rows (full +
-// burst-moments); the function orders them oldest-first so "full"
-// (reported first by cloud_pipeline/run_desktop_job.py's _report_reels
-// loop) is always the first carousel slide when both exist.
+// one share page") -- share_id groups up to 12 reel rows now (up to 10
+// individual top-ranked rally clips + burst-moments + full, 2026-09-12).
+// The function's own ORDER BY (not this page) is what fixes the order:
+// rally clips by rally_rank (i.e. by score, best first), then burst, then
+// full -- encoded in the DB rather than left to upload/report order.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 type ShareReel = {
   id: string
   kind: string
+  rally_rank: number | null
   r2_bucket: string
   r2_key_ranked: string
   brand_name: string | null
@@ -40,7 +42,8 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
 
   const slides = reels.map((r) => ({
     id: r.id,
-    kind: r.kind as 'full' | 'burst',
+    kind: r.kind as 'full' | 'burst' | 'rally',
+    rallyRank: r.rally_rank,
     videoUrl: reelVideoUrl(r.r2_bucket, r.r2_key_ranked),
     durationSec: r.duration_sec,
     rallyCount: r.rally_count,

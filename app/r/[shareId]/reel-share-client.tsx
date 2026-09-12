@@ -28,17 +28,23 @@ import { brandLogoUrl } from '@/lib/brandLogo'
 // Instagram UI, not built here, and something this page has no
 // influence over past the tap.
 //
-// ADR-076 (2026-09-04): a session can now produce two reels -- "full"
-// (whole rally) and "burst" (just each rally's peak-intensity moment,
-// "quick hits") -- sharing one page via share_id, shown as a horizontal
-// scroll-snap carousel. Every slide's video is prefetched as a Blob
-// eagerly on mount (not lazily per-slide) for the same reason the
+// ADR-076 (2026-09-04): a session can now produce multiple reels -- "full"
+// (whole rally, now a shorter clip), "burst" (just each rally's
+// peak-intensity moment, "quick hits"), and, since 2026-09-12, up to 10
+// individual "rally" clips (the same top-ranked rallies "full" is built
+// from, delivered as separate un-concatenated files instead of one reel,
+// ordered by rally_rank -- best score first). All share one page via
+// share_id, shown as a horizontal scroll-snap carousel; the DB's own
+// ORDER BY (get_reels_by_share_id) is what puts rally clips first, burst
+// second, full last -- this component just renders whatever order the
+// slides prop already arrives in. Every slide's video is prefetched as a
+// Blob eagerly on mount (not lazily per-slide) for the same reason the
 // original single-video version of this page prefetches at all: Safari
 // requires navigator.share() to run inside the same user-gesture window
 // as the tap, with nothing awaited first -- a lazy fetch kicked off only
 // once a slide becomes active would very often still be mid-flight by
-// the time someone taps a share tile for it. At most two short clips, so
-// prefetching both is cheap enough to just always do.
+// the time someone taps a share tile for it. At most 12 short clips, so
+// prefetching all of them is still cheap enough to just always do.
 //
 // The IG/TikTok/Download tiles act on whichever slide is currently
 // centered in the carousel (an IntersectionObserver drives activeIndex)
@@ -50,7 +56,8 @@ import { brandLogoUrl } from '@/lib/brandLogo'
 
 type Slide = {
   id: string
-  kind: 'full' | 'burst'
+  kind: 'full' | 'burst' | 'rally'
+  rallyRank: number | null
   videoUrl: string
   durationSec: number | null
   rallyCount: number | null
@@ -74,10 +81,16 @@ const messengers = [
   { label: 'Messages', icon: '▰', hrefFor: (url: string) => `sms:?body=${encodeURIComponent(url)}` },
 ]
 
-const KIND_LABEL: Record<Slide['kind'], string> = { full: 'Full reel', burst: 'Quick hits' }
-
 function sanitize(part: string) {
   return part.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+}
+
+// 'rally' slides need their own rank in the label ("Rally 3"), so this is
+// a function rather than the static Record the two fixed kinds used to be
+// enough for.
+function kindLabel(slide: Slide): string {
+  if (slide.kind === 'rally') return `Rally ${slide.rallyRank ?? ''}`.trim()
+  return slide.kind === 'burst' ? 'Quick hits' : 'Full reel'
 }
 
 export default function ReelShareClient({
@@ -110,7 +123,7 @@ export default function ReelShareClient({
   const dateStr = useMemo(() => new Date(createdAt).toISOString().slice(0, 10), [createdAt])
 
   function fileNameFor(slide: Slide) {
-    const suffix = slide.kind === 'burst' ? '_quick_hits' : ''
+    const suffix = slide.kind === 'burst' ? '_quick_hits' : slide.kind === 'rally' ? `_rally_${slide.rallyRank}` : ''
     return `${sanitize(cameraLabel || 'Highlight')}_${sanitize(venueName)}_${dateStr}${suffix}.mp4`
   }
 
@@ -282,7 +295,7 @@ export default function ReelShareClient({
                   slideRefs.current[i] = el
                 }}
               >
-                {slides.length > 1 && <span className="slide-badge">{KIND_LABEL[slide.kind]}</span>}
+                {slides.length > 1 && <span className="slide-badge">{kindLabel(slide)}</span>}
                 {/* preload="metadata" on every slide but the first, and
                     "metadata" (not the default) even on the first -- this
                     element streaming the full file in the background
@@ -310,7 +323,7 @@ export default function ReelShareClient({
 
         <section className="repost-section">
           <h1>Repost it</h1>
-          <p>{slides.length > 1 ? `Put the ${KIND_LABEL[slides[activeIndex].kind].toLowerCase()} on your feed.` : 'Put the clip on your feed.'}</p>
+          <p>{slides.length > 1 ? `Put the ${kindLabel(slides[activeIndex]).toLowerCase()} on your feed.` : 'Put the clip on your feed.'}</p>
           <div className="share-grid">
             {socials.map((item) =>
               item.kind === 'app' ? (
