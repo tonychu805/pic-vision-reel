@@ -1,7 +1,14 @@
 'use client'
 
+import Script from 'next/script'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { brandLogoUrl } from '@/lib/brandLogo'
+
+// Feedback form (Tally, form ODRRQR) for the player actually watching
+// their highlight -- not the venue operator's console. Tally's own script
+// turns any element with `data-tally-open` into a popup trigger; nothing
+// else to wire up.
+const TALLY_FORM_ID = 'ODRRQR'
 
 // Two different sharing mechanisms live on this page, because the two
 // platforms actually support two different things (verified against
@@ -429,6 +436,17 @@ export default function ReelShareClient({
           <span>picvision AI</span>
         </footer>
       </div>
+
+      <Script src="https://tally.so/widgets/embed.js" strategy="lazyOnload" />
+      <button
+        type="button"
+        className="feedback-fab"
+        data-tally-open={TALLY_FORM_ID}
+        data-tally-emoji-text="👋"
+        data-tally-emoji-animation="wave"
+      >
+        Feedback
+      </button>
     </main>
   )
 }

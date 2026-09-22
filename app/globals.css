@@ -54,3 +54,5 @@ h1 { margin:0 0 2px; font-size:17px; line-height:1.12; font-weight:500; letter-s
 .tile-spinner { display:inline-block; width:22px; height:22px; border-radius:50%; border:2.5px solid rgba(145,132,217,.25); border-top-color:var(--accent); animation:tile-spin .7s linear infinite; }
 .text-action-spinner { display:inline-block; width:13px; height:13px; border-radius:50%; border:2px solid rgba(145,132,217,.25); border-top-color:var(--accent); animation:tile-spin .7s linear infinite; }
 @keyframes tile-spin { to { transform:rotate(360deg); } }
+.feedback-fab { position:fixed; right:16px; bottom:16px; z-index:20; padding:10px 16px; border:1px solid var(--divider); border-radius:999px; background:var(--surface); color:var(--text); font-size:12.5px; font-weight:500; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.45); }
+.feedback-fab:hover { border-color:rgba(145,132,217,.6); }
