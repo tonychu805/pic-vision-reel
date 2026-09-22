@@ -437,7 +437,14 @@ export default function ReelShareClient({
         </footer>
       </div>
 
-      <Script src="https://tally.so/widgets/embed.js" strategy="lazyOnload" />
+      {/* afterInteractive, not lazyOnload: Tally binds one click listener on
+          `document` when this script runs, so what matters is whether it
+          has finished loading by the time someone taps Feedback -- and
+          lazyOnload doesn't even inject the tag until every resource on the
+          page has fetched, which on this page includes every slide's full
+          video blob (prefetched eagerly on mount, see the header comment).
+          A tap that lands before that finishes did nothing, silently. */}
+      <Script src="https://tally.so/widgets/embed.js" strategy="afterInteractive" />
       <button
         type="button"
         className="feedback-fab"
