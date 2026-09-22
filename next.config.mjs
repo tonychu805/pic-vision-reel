@@ -31,16 +31,27 @@
 // Supabase client only runs in the server component (app/r/[shareId]/
 // page.tsx), never in the 'use client' one -- the browser never talks to
 // it directly, so it isn't in the allow-list.
+//
+// tally.so (2026-09-22, the reel-share-client.tsx feedback button): this
+// CSP is exactly why that button did nothing when tapped -- the browser
+// silently blocked both the embed script (script-src) and the popup it
+// opens, which is a real cross-origin <iframe> to tally.so, not an inline
+// widget (frame-src, previously absent here and so falling back to
+// default-src 'self'). Checked against tally.so's own widgets/embed.js:
+// no fetch()/XHR calls in it at all, so connect-src needs nothing added --
+// the form itself submits from inside the framed document, under tally.so's
+// own CSP, not this page's.
 const isDev = process.env.NODE_ENV === 'development'
 
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''};
+    script-src 'self' 'unsafe-inline' https://tally.so${isDev ? " 'unsafe-eval'" : ''};
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https://cdn.picvisionai.com;
     media-src 'self' https://cdn.picvisionai.com;
     connect-src 'self' https://cdn.picvisionai.com;
     font-src 'self' https://fonts.gstatic.com;
+    frame-src https://tally.so;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
