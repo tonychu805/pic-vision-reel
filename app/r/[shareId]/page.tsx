@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { supabasePublic } from '@/lib/supabase'
 import { reelVideoUrl } from '@/lib/r2'
 import ReelShareClient from './reel-share-client'
+import { mergeParts } from '@/lib/mergeParts'
 
 // Public, no auth -- knowing the share_id is the whole access boundary.
 // get_reels_by_share_id() (see lib/supabase.ts) is the only read path the
@@ -28,6 +29,7 @@ type ShareReel = {
   duration_sec: number | null
   rally_count: number | null
   created_at: string
+  part_index: number | null
 }
 
 export default async function ReelSharePage({ params }: { params: Promise<{ shareId: string }> }) {
@@ -36,7 +38,8 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
 
   const supabase = supabasePublic()
   const { data } = await supabase.rpc('get_reels_by_share_id', { p_share_id: shareId })
-  const reels = (data ?? []) as ShareReel[]
+  // A session sent in parts shows as one familiar set of reels (lib/mergeParts.ts).
+  const reels = mergeParts((data ?? []) as ShareReel[])
 
   if (reels.length === 0) notFound()
 
