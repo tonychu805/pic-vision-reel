@@ -19,3 +19,8 @@ export function slotLabel(g: CalendarGame, timeZone: string): string {
   const fmt = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { timeZone, hour: '2-digit', minute: '2-digit' })
   return g.ends_at ? `${fmt(g.started_at)}–${fmt(g.ends_at)}` : fmt(g.started_at)
 }
+
+/** Today's date in the venue's time, e.g. "Thu 24 Sep". */
+export function dateLabel(now: Date, timeZone: string): string {
+  return now.toLocaleDateString('en-GB', { timeZone, weekday: 'short', day: 'numeric', month: 'short' })
+}

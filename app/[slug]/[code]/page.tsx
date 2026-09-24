@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { supabasePublic } from '@/lib/supabase'
 import { brandLogoUrl, type LogoInk } from '@/lib/brandLogo'
-import { byCourt, slotLabel, type CalendarGame } from '@/lib/calendar'
+import { byCourt, dateLabel, slotLabel, type CalendarGame } from '@/lib/calendar'
 
 // A venue's public game calendar, opened by QR code at the venue: today's
 // games on the courts the venue chose, each linking to its reels page.
@@ -51,7 +51,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
         </header>
 
         <div>
-          <div className="eyebrow">Today&apos;s games</div>
+          <div className="eyebrow">Today&apos;s games · {dateLabel(new Date(), cal.timezone)}</div>
           {courts.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>No games recorded yet today.</p>}
           {courts.map((c) => (
             <section key={c.court} className="calendar-court">
