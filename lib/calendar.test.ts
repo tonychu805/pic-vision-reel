@@ -20,3 +20,7 @@ test("the date is the venue's date, not the server's", () => {
   assert.equal(dateLabel(new Date('2026-09-24T17:30:00Z'), 'Asia/Taipei'), 'Fri 25 Sept')
   assert.equal(dateLabel(new Date('2026-09-24T10:00:00Z'), 'Asia/Taipei'), 'Thu 24 Sept')
 })
+
+test('the date in Chinese', () => {
+  assert.equal(dateLabel(new Date('2026-09-24T10:00:00Z'), 'Asia/Taipei', 'zh-TW'), '9月24日 週四')
+})

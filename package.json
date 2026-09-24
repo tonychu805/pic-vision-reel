@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsc lib/mergeParts.ts lib/mergeParts.test.ts lib/calendar.ts lib/calendar.test.ts --outDir .test-build --module commonjs --target es2022 --moduleResolution node --esModuleInterop --skipLibCheck && node --test .test-build/mergeParts.test.js .test-build/calendar.test.js"
+    "test": "tsc lib/mergeParts.ts lib/mergeParts.test.ts lib/calendar.ts lib/calendar.test.ts lib/i18n.ts lib/i18n.test.ts --outDir .test-build --module commonjs --target es2022 --moduleResolution node --esModuleInterop --skipLibCheck && node --test .test-build/mergeParts.test.js .test-build/calendar.test.js .test-build/i18n.test.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1125.0",

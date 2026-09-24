@@ -3,6 +3,8 @@
 import Script from 'next/script'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { brandLogoUrl } from '@/lib/brandLogo'
+import { t, type Lang } from '@/lib/i18n'
+import LangSwitch from '@/components/lang-switch'
 
 // Feedback form (Tally, form ODRRQR) for the player actually watching
 // their highlight -- not the venue operator's console. Tally's own script
@@ -72,7 +74,7 @@ const messengers = [
   { label: 'WhatsApp', icon: '◔', hrefFor: (url: string) => `https://wa.me/?text=${encodeURIComponent(url)}` },
   { label: 'LINE', icon: '•••', hrefFor: (url: string) => `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}` },
   { label: 'Messenger', icon: '⌁', hrefFor: (url: string) => `fb-messenger://share?link=${encodeURIComponent(url)}` },
-  { label: 'Messages', icon: '▰', hrefFor: (url: string) => `sms:?body=${encodeURIComponent(url)}` },
+  { label: 'Messages', labelKey: 'messages' as const, icon: '▰', hrefFor: (url: string) => `sms:?body=${encodeURIComponent(url)}` },
 ]
 
 function sanitize(part: string) {
@@ -82,9 +84,9 @@ function sanitize(part: string) {
 // 'rally' slides need their own rank in the label ("Rally 3"), so this is
 // a function rather than the static Record the two fixed kinds used to be
 // enough for.
-function kindLabel(slide: Slide): string {
-  if (slide.kind === 'rally') return `Rally ${slide.rallyRank ?? ''}`.trim()
-  return slide.kind === 'burst' ? 'Quick hits' : 'Full reel'
+function kindLabel(slide: Slide, lang: Lang): string {
+  if (slide.kind === 'rally') return t(lang, 'rally', { n: slide.rallyRank ?? '' }).trim()
+  return t(lang, slide.kind === 'burst' ? 'quickHits' : 'fullReel')
 }
 
 export default function ReelShareClient({
@@ -95,6 +97,7 @@ export default function ReelShareClient({
   logoInk,
   cameraLabel,
   createdAt,
+  lang,
 }: {
   shareId: string
   slides: Slide[]
@@ -103,6 +106,7 @@ export default function ReelShareClient({
   logoInk: 'light' | 'dark' | null
   cameraLabel: string | null
   createdAt: string
+  lang: Lang
 }) {
   const [copied, setCopied] = useState(false)
   const [appShareState, setAppShareState] = useState<Record<string, 'idle' | 'working'>>({})
@@ -239,7 +243,7 @@ export default function ReelShareClient({
 
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
       if (nav.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: `${venueName} — Pickleball Highlight` })
+        await navigator.share({ files: [file], title: t(lang, 'shareTitleOne', { venue: venueName }) })
       } else if (linkFallback) {
         // Opened straight off the tap (nothing awaited first when the video
         // was prefetched), so it isn't treated as a pop-up.
@@ -247,7 +251,7 @@ export default function ReelShareClient({
       } else if (navigator.share) {
         // This browser's Web Share API doesn't support file attachments
         // (older/desktop browsers) -- fall back to sharing the link only.
-        await navigator.share({ url: shareUrl, title: `${venueName} — Pickleball Highlight` })
+        await navigator.share({ url: shareUrl, title: t(lang, 'shareTitleOne', { venue: venueName }) })
       } else {
         // No Web Share API at all -- just download, no share sheet exists here.
         window.location.href = slide.videoUrl
@@ -271,7 +275,7 @@ export default function ReelShareClient({
       })
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
       if (nav.canShare?.({ files })) {
-        await navigator.share({ files, title: `${venueName} — Pickleball Highlights` })
+        await navigator.share({ files, title: t(lang, 'shareTitleMany', { venue: venueName }) })
       } else {
         // Multi-file share not supported here -- fall back to a plain
         // sequential download per file. A second navigator.share() call
@@ -309,9 +313,10 @@ export default function ReelShareClient({
             <div className="venue-mark" aria-hidden="true">{venueName.charAt(0).toUpperCase()}</div>
           )}
           <span>{venueName}</span>
+          <LangSwitch lang={lang} />
         </header>
 
-        <section className="video-carousel-wrap" aria-label="Video preview">
+        <section className="video-carousel-wrap" aria-label={t(lang, 'videoPreview')}>
           <div className="video-carousel" ref={scrollRef}>
             {slides.map((slide, i) => (
               <div
@@ -322,7 +327,7 @@ export default function ReelShareClient({
                   slideRefs.current[i] = el
                 }}
               >
-                {slides.length > 1 && <span className="slide-badge">{kindLabel(slide)}</span>}
+                {slides.length > 1 && <span className="slide-badge">{kindLabel(slide, lang)}</span>}
                 {/* preload="metadata" on every slide but the first, and
                     "metadata" (not the default) even on the first -- this
                     element streaming the full file in the background
@@ -346,7 +351,7 @@ export default function ReelShareClient({
             ))}
           </div>
           {slides.length > 1 && (
-            <div className="carousel-dots" role="tablist" aria-label="Reel selector">
+            <div className="carousel-dots" role="tablist" aria-label={t(lang, 'reelSelector')}>
               {slides.map((_, i) => (
                 <span key={i} className={`dot${i === activeIndex ? ' dot-active' : ''}`} aria-hidden="true" />
               ))}
@@ -355,8 +360,8 @@ export default function ReelShareClient({
         </section>
 
         <section className="repost-section">
-          <h1>Repost it</h1>
-          <p>{slides.length > 1 ? `Put the ${kindLabel(slides[activeIndex]).toLowerCase()} on your feed.` : 'Put the clip on your feed.'}</p>
+          <h1>{t(lang, 'repostIt')}</h1>
+          <p>{slides.length > 1 ? t(lang, 'putKindOnFeed', { kind: lang === 'en' ? kindLabel(slides[activeIndex], lang).toLowerCase() : kindLabel(slides[activeIndex], lang) }) : t(lang, 'putClipOnFeed')}</p>
           <div className="share-grid">
             {socials.map((item) => (
               <ShareTile key={item.label} label={item.label} icon={item.icon} strong
@@ -367,10 +372,10 @@ export default function ReelShareClient({
         </section>
 
         <section>
-          <div className="eyebrow">Send the video to</div>
+          <div className="eyebrow">{t(lang, 'sendVideoTo')}</div>
           <div className="share-grid">
             {messengers.map((item) => (
-              <ShareTile key={item.label} label={item.label} icon={item.icon}
+              <ShareTile key={item.label} label={'labelKey' in item && item.labelKey ? t(lang, item.labelKey) : item.label} icon={item.icon}
                 busy={appShareState[item.label] === 'working' || !ready[activeIndex]}
                 onClick={() => shareToApp(item.label, activeIndex, item.hrefFor(shareUrl))} />
             ))}
@@ -389,10 +394,10 @@ export default function ReelShareClient({
             ) : (
               <span aria-hidden="true">↓</span>
             )}{' '}
-            Download
+            {t(lang, 'download')}
           </button>
           <button className="text-action" type="button" onClick={copyLink}>
-            <span aria-hidden="true">{copied ? '✓' : '↗'}</span> {copied ? 'Link copied' : 'Copy link'}
+            <span aria-hidden="true">{copied ? '✓' : '↗'}</span> {copied ? t(lang, 'linkCopied') : t(lang, 'copyLink')}
           </button>
           {slides.length > 1 && (
             <button className="text-action" type="button" onClick={downloadAll} disabled={!allReady}>
@@ -401,13 +406,13 @@ export default function ReelShareClient({
               ) : (
                 <span aria-hidden="true">⇊</span>
               )}{' '}
-              Download all
+              {t(lang, 'downloadAll')}
             </button>
           )}
         </div>
 
         <footer className="powered-by">
-          <span>Powered by</span>
+          <span>{t(lang, 'poweredBy')}</span>
           <img src="/pic-vision-logo-white.png" alt="" />
           <span>picvision AI</span>
         </footer>
@@ -428,7 +433,7 @@ export default function ReelShareClient({
         data-tally-emoji-text="👋"
         data-tally-emoji-animation="wave"
       >
-        Feedback
+        {t(lang, 'feedback')}
       </button>
     </main>
   )

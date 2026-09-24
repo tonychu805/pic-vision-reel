@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { supabasePublic } from '@/lib/supabase'
 import { brandLogoUrl, type LogoInk } from '@/lib/brandLogo'
 import { byCourt, dateLabel, slotLabel, type CalendarGame } from '@/lib/calendar'
+import { t } from '@/lib/i18n'
+import { currentLang } from '@/lib/lang-server'
+import LangSwitch from '@/components/lang-switch'
 
 // A venue's public game calendar, opened by QR code at the venue: today's
 // games on the courts the venue chose, each linking to its reels page.
@@ -9,7 +12,9 @@ import { byCourt, dateLabel, slotLabel, type CalendarGame } from '@/lib/calendar
 // migration 20260924050000): nothing unless the venue switched it on today,
 // the code is right, and only the chosen cameras. Never cached, never indexed.
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: "Today's games", robots: { index: false, follow: false } }
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: t(await currentLang(), 'todaysGames'), robots: { index: false, follow: false } }
+}
 
 type Calendar = { brand_name: string; logo_key: string | null; logo_ink: LogoInk | null; timezone: string; games: CalendarGame[] }
 
@@ -22,6 +27,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
     ? await supabasePublic().rpc('get_public_calendar', { p_slug: slug, p_code: code })
     : { data: null }
   const cal = data as Calendar | null
+  const lang = await currentLang()
 
   if (!cal) {
     // Same answer for a wrong code, a switched-off calendar and an unknown
@@ -29,7 +35,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
     return (
       <main className="share-page">
         <div className="share-shell" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 80 }}>
-          <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>This calendar isn&apos;t available right now.</p>
+          <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>{t(lang, 'calendarUnavailable')}</p>
         </div>
       </main>
     )
@@ -48,23 +54,24 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
             <div className="venue-mark" aria-hidden="true">{cal.brand_name.charAt(0).toUpperCase()}</div>
           )}
           <span>{cal.brand_name}</span>
+          <LangSwitch lang={lang} />
         </header>
 
         <div>
-          <div className="eyebrow">Today&apos;s games · {dateLabel(new Date(), cal.timezone)}</div>
-          {courts.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>No games recorded yet today.</p>}
+          <div className="eyebrow">{t(lang, 'todaysGames')} · {dateLabel(new Date(), cal.timezone, lang)}</div>
+          {courts.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'noGamesYet')}</p>}
           {courts.map((c) => (
             <section key={c.court} className="calendar-court">
               <h2>{c.court}</h2>
               {c.games.map((g) => g.share_id ? (
                 <a key={g.started_at} className="calendar-slot" href={`/r/${g.share_id}`}>
                   <span>{slotLabel(g, cal.timezone)}</span>
-                  <span className="calendar-slot-go">Watch →</span>
+                  <span className="calendar-slot-go">{t(lang, 'watch')}</span>
                 </a>
               ) : (
                 <div key={g.started_at} className="calendar-slot calendar-slot--pending">
                   <span>{slotLabel(g, cal.timezone)}</span>
-                  <span>Reels on the way</span>
+                  <span>{t(lang, 'reelsOnTheWay')}</span>
                 </div>
               ))}
             </section>

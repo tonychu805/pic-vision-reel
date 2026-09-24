@@ -3,6 +3,7 @@ import { supabasePublic } from '@/lib/supabase'
 import { reelVideoUrl } from '@/lib/r2'
 import ReelShareClient from './reel-share-client'
 import { mergeParts } from '@/lib/mergeParts'
+import { currentLang } from '@/lib/lang-server'
 
 // Public, no auth -- knowing the share_id is the whole access boundary.
 // get_reels_by_share_id() (see lib/supabase.ts) is the only read path the
@@ -80,6 +81,7 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
         logoInk={first.brand_logo_ink}
         cameraLabel={first.camera_label}
         createdAt={first.created_at}
+        lang={await currentLang()}
       />
     </>
   )

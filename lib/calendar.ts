@@ -20,7 +20,13 @@ export function slotLabel(g: CalendarGame, timeZone: string): string {
   return g.ends_at ? `${fmt(g.started_at)}–${fmt(g.ends_at)}` : fmt(g.started_at)
 }
 
-/** Today's date in the venue's time, e.g. "Thu 24 Sep". */
-export function dateLabel(now: Date, timeZone: string): string {
+/** Today's date in the venue's time: "Thu 24 Sept", or "9月24日 週四" in Chinese. */
+export function dateLabel(now: Date, timeZone: string, lang: 'en' | 'zh-TW' = 'en'): string {
+  if (lang === 'zh-TW') {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone, month: 'numeric', day: 'numeric' }).formatToParts(now)
+    const part = (type: string) => parts.find((p) => p.type === type)?.value
+    const wd = now.toLocaleDateString('zh-TW', { timeZone, weekday: 'short' })
+    return `${part('month')}月${part('day')}日 ${wd}`
+  }
   return now.toLocaleDateString('en-GB', { timeZone, weekday: 'short', day: 'numeric', month: 'short' })
 }

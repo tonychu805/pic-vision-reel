@@ -65,3 +65,9 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .calendar-slot-go { color:var(--accent); font-size:13px; }
 .calendar-slot--pending { color:var(--muted); }
 .calendar-slot--pending span:last-child { font-size:12.5px; }
+
+/* EN / 中文 switch (components/lang-switch.tsx) */
+.venue-header { position:relative; }
+.lang-switch { margin-left:auto; display:flex; gap:2px; padding:2px; border:1px solid var(--divider); border-radius:999px; }
+.lang-switch button { padding:3px 9px; border:0; border-radius:999px; background:transparent; color:var(--muted); font-size:11.5px; cursor:pointer; }
+.lang-switch button.active { background:var(--accent-soft); color:#e7e5fe; }
