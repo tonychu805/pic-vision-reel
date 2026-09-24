@@ -10,30 +10,22 @@ import { brandLogoUrl } from '@/lib/brandLogo'
 // else to wire up.
 const TALLY_FORM_ID = 'ODRRQR'
 
-// Two different sharing mechanisms live on this page, because the two
-// platforms actually support two different things (verified against
-// Meta's own developer docs before building this, 2026-09-04 -- see
-// DECISIONS.md/progress notes):
+// How sharing works on this page (revised 2026-09-24, operator: sharing the
+// page link instead of the footage wasn't what players wanted).
 //
-// 1. Facebook/X/WhatsApp/LINE/SMS have real, documented web share-intent
-//    URLs that carry a link (and for some, text) -- a plain <a> works.
-// 2. Instagram/TikTok have NO web-triggerable "here's a video, load it"
-//    mechanism. Instagram's real one (`instagram-reels://share` /
-//    `instagram-stories://share`) passes content via native UIPasteboard
-//    keys (`com.instagram.sharedSticker.*`) that only compiled native
-//    app code can write -- confirmed directly from Meta's own developer
-//    docs, not assumed. A browser cannot do this, on any platform, full
-//    stop -- there is no purely-web equivalent of "tap once, video is
-//    already loaded in their Reels composer."
+// Every tile shares the VIDEO itself: it attaches the current clip as a file
+// to the phone's own share panel (Web Share API, `navigator.share` with
+// `files`), and the player picks the app there. That is the only way a web
+// page can hand a video to another app: no platform offers a web link that
+// arrives with a video already loaded. Verified for Instagram on a real
+// device (iOS, 2026-09-04): its share extension shows Instagram's own
+// Reel/Post/Story picker; what Facebook, X, WhatsApp, LINE, Messenger and
+// Messages show after that tap is theirs, not something this page controls.
 //
-// What this page does instead for Instagram/TikTok: attach the actual
-// video as a file to the OS's native share sheet (Web Share API,
-// `navigator.share` with `files`). Verified on a real device (iOS,
-// 2026-09-04): tapping Instagram *inside* the OS share sheet hands the
-// file directly to Instagram's own registered share extension, which
-// shows Instagram's own Reel/Post/Story/Message picker -- native
-// Instagram UI, not built here, and something this page has no
-// influence over past the tap.
+// A browser that can't attach files (most desktop browsers) falls back to
+// the tile's old link-sharing address where it has one (Facebook sharer, X
+// intent, WhatsApp, LINE, Messenger, SMS), so those still share the page
+// link there. Threads was removed: it didn't take the video.
 //
 // ADR-076 (2026-09-04): a session can now produce multiple reels -- "full"
 // (whole rally, now a shorter clip), "burst" (just each rally's
@@ -53,10 +45,9 @@ const TALLY_FORM_ID = 'ODRRQR'
 // the time someone taps a share tile for it. At most 12 short clips, so
 // prefetching all of them is still cheap enough to just always do.
 //
-// The IG/TikTok/Download tiles act on whichever slide is currently
-// centered in the carousel (an IntersectionObserver drives activeIndex)
-// -- Facebook/X/Threads/WhatsApp/etc and Copy link are unaffected by the
-// active slide, since they all just carry this one page's URL, not a
+// Every share tile and Download act on whichever slide is currently
+// centered in the carousel (an IntersectionObserver drives activeIndex);
+// only Copy link is unaffected, since it carries this page's URL, not a
 // specific video. Download all (new) shares every slide's video at once
 // via a multi-file navigator.share(), falling back to sequential plain
 // downloads if the browser doesn't support a multi-file share.
@@ -71,14 +62,10 @@ type Slide = {
 }
 
 const socials = [
-  { label: 'Instagram', icon: '◎', kind: 'app' as const },
-  { label: 'TikTok', icon: '♪', kind: 'app' as const },
-  { label: 'Facebook', icon: 'f', kind: 'link' as const, hrefFor: (url: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
-  { label: 'X', icon: '𝕏', kind: 'link' as const, hrefFor: (url: string) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}` },
-  // Threads (Meta) ships a real documented web share intent, unlike
-  // Instagram -- it just pre-fills a text post with the link, no
-  // file attachment, so this is a plain link tile like Facebook/X.
-  { label: 'Threads', icon: '@', kind: 'link' as const, hrefFor: (url: string) => `https://www.threads.net/intent/post?text=${encodeURIComponent(url)}` },
+  { label: 'Instagram', icon: '◎' },
+  { label: 'TikTok', icon: '♪' },
+  { label: 'Facebook', icon: 'f', hrefFor: (url: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+  { label: 'X', icon: '𝕏', hrefFor: (url: string) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}` },
 ]
 
 const messengers = [
@@ -233,7 +220,10 @@ export default function ReelShareClient({
     }
   }
 
-  async function shareToApp(label: string, index: number) {
+  // linkFallback: where a browser that can't attach files should go instead
+  // (the app's own link-sharing address); without one it shares or opens
+  // the link another way, as before.
+  async function shareToApp(label: string, index: number, linkFallback?: string) {
     if (appShareState[label] === 'working' || !ready[index]) return
     setAppShareState((s) => ({ ...s, [label]: 'working' }))
     try {
@@ -250,6 +240,10 @@ export default function ReelShareClient({
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
       if (nav.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: `${venueName} — Pickleball Highlight` })
+      } else if (linkFallback) {
+        // Opened straight off the tap (nothing awaited first when the video
+        // was prefetched), so it isn't treated as a pop-up.
+        window.open(linkFallback, '_blank', 'noopener,noreferrer')
       } else if (navigator.share) {
         // This browser's Web Share API doesn't support file attachments
         // (older/desktop browsers) -- fall back to sharing the link only.
@@ -364,39 +358,21 @@ export default function ReelShareClient({
           <h1>Repost it</h1>
           <p>{slides.length > 1 ? `Put the ${kindLabel(slides[activeIndex]).toLowerCase()} on your feed.` : 'Put the clip on your feed.'}</p>
           <div className="share-grid">
-            {socials.map((item) =>
-              item.kind === 'app' ? (
-                <button
-                  key={item.label}
-                  type="button"
-                  className="share-tile share-tile-strong"
-                  onClick={() => shareToApp(item.label, activeIndex)}
-                >
-                  {appShareState[item.label] === 'working' || !ready[activeIndex] ? (
-                    <span className="tile-spinner" aria-hidden="true" />
-                  ) : (
-                    <strong aria-hidden="true">{item.icon}</strong>
-                  )}
-                  <span>{item.label}</span>
-                </button>
-              ) : (
-                <a key={item.label} className="share-tile share-tile-strong" href={item.hrefFor(shareUrl)} target="_blank" rel="noreferrer">
-                  <strong aria-hidden="true">{item.icon}</strong>
-                  <span>{item.label}</span>
-                </a>
-              ),
-            )}
+            {socials.map((item) => (
+              <ShareTile key={item.label} label={item.label} icon={item.icon} strong
+                busy={appShareState[item.label] === 'working' || !ready[activeIndex]}
+                onClick={() => shareToApp(item.label, activeIndex, 'hrefFor' in item && item.hrefFor ? item.hrefFor(shareUrl) : undefined)} />
+            ))}
           </div>
         </section>
 
         <section>
-          <div className="eyebrow">Send to</div>
+          <div className="eyebrow">Send the video to</div>
           <div className="share-grid">
             {messengers.map((item) => (
-              <a className="share-tile" href={item.hrefFor(shareUrl)} target="_blank" rel="noreferrer" key={item.label}>
-                <strong aria-hidden="true">{item.icon}</strong>
-                <span>{item.label}</span>
-              </a>
+              <ShareTile key={item.label} label={item.label} icon={item.icon}
+                busy={appShareState[item.label] === 'working' || !ready[activeIndex]}
+                onClick={() => shareToApp(item.label, activeIndex, item.hrefFor(shareUrl))} />
             ))}
           </div>
         </section>
@@ -455,5 +431,14 @@ export default function ReelShareClient({
         Feedback
       </button>
     </main>
+  )
+}
+
+function ShareTile({ label, icon, strong, busy, onClick }: { label: string; icon: string; strong?: boolean; busy: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className={`share-tile${strong ? ' share-tile-strong' : ''}`} onClick={onClick}>
+      {busy ? <span className="tile-spinner" aria-hidden="true" /> : <strong aria-hidden="true">{icon}</strong>}
+      <span>{label}</span>
+    </button>
   )
 }
