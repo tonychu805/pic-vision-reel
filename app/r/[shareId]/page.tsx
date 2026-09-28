@@ -59,14 +59,10 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
   // component so this hint hits <head> before any client JS has even
   // downloaded, not just before the client's useEffect runs -- covers the
   // first (most likely to be watched/shared first) slide specifically.
-  // The client component itself prefetches EVERY slide's video blob
-  // eagerly on mount, not just the first / not lazily per-slide -- at
-  // most 2 short clips, so the bandwidth cost is small, and it keeps
-  // every share/download tile (including "download all") able to call
-  // navigator.share() synchronously off the tap with nothing to await --
-  // a lazy per-slide fetch would reintroduce the exact bug the original
-  // single-video version of this page already hit and fixed (an awaited
-  // fetch mid-gesture silently misses Safari's activation window).
+  // The client component then fetches the on-screen slide and the next one
+  // as Blobs (lib/loadWindow.ts), so share tiles can call navigator.share()
+  // synchronously off the tap -- an awaited fetch mid-gesture silently
+  // misses Safari's activation window.
   const cdnOrigin = new URL(slides[0].videoUrl).origin
 
   return (

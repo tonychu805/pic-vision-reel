@@ -3,6 +3,7 @@
 import Script from 'next/script'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { brandLogoUrl } from '@/lib/brandLogo'
+import { slidesToLoad } from '@/lib/loadWindow'
 import { t, type Lang } from '@/lib/i18n'
 import LangSwitch from '@/components/lang-switch'
 
@@ -38,21 +39,23 @@ const TALLY_FORM_ID = 'ODRRQR'
 // share_id, shown as a horizontal scroll-snap carousel; the DB's own
 // ORDER BY (get_reels_by_share_id) is what puts rally clips first, burst
 // second, full last -- this component just renders whatever order the
-// slides prop already arrives in. Every slide's video is prefetched as a
-// Blob eagerly on mount (not lazily per-slide) for the same reason the
-// original single-video version of this page prefetches at all: Safari
-// requires navigator.share() to run inside the same user-gesture window
-// as the tap, with nothing awaited first -- a lazy fetch kicked off only
-// once a slide becomes active would very often still be mid-flight by
-// the time someone taps a share tile for it. At most 12 short clips, so
-// prefetching all of them is still cheap enough to just always do.
+// slides prop already arrives in. Videos are prefetched as Blobs because
+// Safari requires navigator.share() to run inside the same user-gesture
+// window as the tap, with nothing awaited first. Only the slide on screen
+// and the next one are fetched (lib/loadWindow.ts, 2026-09-28): fetching
+// all ~12 on open cost about 56 MB on the 9/25 field test. Fetching one
+// slide ahead means the slide someone swipes to is usually already loaded;
+// if not, its tiles show a spinner until it is.
 //
 // Every share tile and Download act on whichever slide is currently
 // centered in the carousel (an IntersectionObserver drives activeIndex);
 // only Copy link is unaffected, since it carries this page's URL, not a
-// specific video. Download all (new) shares every slide's video at once
-// via a multi-file navigator.share(), falling back to sequential plain
-// downloads if the browser doesn't support a multi-file share.
+// specific video. Download all shares every slide's video at once via a
+// multi-file navigator.share(), falling back to sequential plain downloads
+// if the browser doesn't support a multi-file share. Because the slides
+// aren't all loaded up front, it takes two taps: the first fetches whatever
+// is missing, the second ("Ready: tap to save all") shares them inside
+// Safari's tap window.
 
 type Slide = {
   id: string
@@ -126,37 +129,45 @@ export default function ReelShareClient({
     return `${sanitize(cameraLabel || 'Highlight')}_${sanitize(venueName)}_${dateStr}${suffix}.mp4`
   }
 
-  // Prefetch every slide's video as a Blob on mount -- see header comment
-  // for why this is eager/all rather than lazy/per-slide.
-  useEffect(() => {
-    let cancelled = false
-    slides.forEach((slide, i) => {
-      fetch(slide.videoUrl, i === 0 ? ({ priority: 'high' } as RequestInit) : undefined)
-        .then((res) => res.blob())
-        .then((blob) => {
-          if (cancelled) return
-          setBlobs((prev) => {
-            const next = [...prev]
-            next[i] = blob
-            return next
-          })
-        })
-        .catch(() => {})
-        .finally(() => {
-          if (cancelled) return
-          setReady((prev) => {
-            const next = [...prev]
-            next[i] = true
-            return next
-          })
-        })
-    })
-    return () => {
-      cancelled = true
-    }
-    // slides is a stable server-passed prop for the life of this page.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Fetch one slide's video as a Blob, once. Blobs are kept for the life of
+  // the page, so swiping back never re-downloads.
+  const requestedRef = useRef<Set<number>>(new Set())
+  const mountedRef = useRef(true)
+  useEffect(() => () => {
+    mountedRef.current = false
   }, [])
+
+  function load(i: number) {
+    if (requestedRef.current.has(i)) return
+    requestedRef.current.add(i)
+    const slide = slides[i]
+    fetch(slide.videoUrl, i === activeIndex ? ({ priority: 'high' } as RequestInit) : undefined)
+      .then((res) => res.blob())
+      .then((blob) => {
+        if (!mountedRef.current) return
+        setBlobs((prev) => {
+          const next = [...prev]
+          next[i] = blob
+          return next
+        })
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!mountedRef.current) return
+        setReady((prev) => {
+          const next = [...prev]
+          next[i] = true
+          return next
+        })
+      })
+  }
+
+  // The slide on screen and the next one -- see the header comment.
+  useEffect(() => {
+    slidesToLoad(activeIndex, slides.length).forEach(load)
+    // load() only reads refs and the stable slides prop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex])
 
   // Tracks which slide is most visible inside the scroll container --
   // accumulates ratios across observer callbacks (a batch only reports
@@ -263,9 +274,19 @@ export default function ReelShareClient({
     setAppShareState((s) => ({ ...s, [label]: 'idle' }))
   }
 
+  // First tap: fetch every slide not loaded yet. The share itself has to wait
+  // for a second tap, since Safari only opens the share panel straight off a
+  // tap with nothing awaited first.
+  const [wantAll, setWantAll] = useState(false)
+
   async function downloadAll() {
     const label = 'Download all'
-    if (appShareState[label] === 'working' || slides.some((_, i) => !ready[i])) return
+    if (slides.some((_, i) => !ready[i])) {
+      setWantAll(true)
+      slides.forEach((_, i) => load(i))
+      return
+    }
+    if (appShareState[label] === 'working') return
     setAppShareState((s) => ({ ...s, [label]: 'working' }))
     try {
       const files = slides.map((slide, i) => {
@@ -400,13 +421,13 @@ export default function ReelShareClient({
             <span aria-hidden="true">{copied ? '✓' : '↗'}</span> {copied ? t(lang, 'linkCopied') : t(lang, 'copyLink')}
           </button>
           {slides.length > 1 && (
-            <button className="text-action" type="button" onClick={downloadAll} disabled={!allReady}>
-              {appShareState['Download all'] === 'working' || !allReady ? (
+            <button className="text-action" type="button" onClick={downloadAll} disabled={wantAll && !allReady}>
+              {appShareState['Download all'] === 'working' || (wantAll && !allReady) ? (
                 <span className="text-action-spinner" aria-hidden="true" />
               ) : (
                 <span aria-hidden="true">⇊</span>
               )}{' '}
-              {t(lang, 'downloadAll')}
+              {t(lang, wantAll && allReady ? 'downloadAllReady' : 'downloadAll')}
             </button>
           )}
         </div>

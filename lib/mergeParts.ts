@@ -4,8 +4,8 @@
 //   - rally clips: every part's best first -- each part's #1, then each
 //     part's #2, ... -- up to MAX_RALLIES, renumbered 1..n in that order;
 //   - then the newest part's quick hits and full reel.
-// That keeps the carousel at today's size (~12 short clips), which matters:
-// the page prefetches every slide it shows (see reel-share-client.tsx).
+// That keeps the carousel at today's size (~12 short clips), which keeps
+// "Download all" to a sensible size (see reel-share-client.tsx).
 //
 // A share with no parts, or a single part, is returned untouched.
 
