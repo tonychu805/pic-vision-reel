@@ -31,6 +31,7 @@ type ShareReel = {
   rally_count: number | null
   created_at: string
   part_index: number | null
+  score: number | string | null
 }
 
 export default async function ReelSharePage({ params }: { params: Promise<{ shareId: string }> }) {
