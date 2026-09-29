@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { supabasePublic } from '@/lib/supabase'
-import { reelVideoUrl } from '@/lib/r2'
+import { fetchVideoAddresses, videosEndpoint } from '@/lib/videoAddresses'
 import ReelShareClient from './reel-share-client'
 import { mergeParts } from '@/lib/mergeParts'
 import { currentLang } from '@/lib/lang-server'
@@ -45,14 +45,22 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
 
   if (reels.length === 0) notFound()
 
-  const slides = reels.map((r) => ({
-    id: r.id,
-    kind: r.kind as 'full' | 'burst' | 'rally',
-    rallyRank: r.rally_rank,
-    videoUrl: reelVideoUrl(r.r2_bucket, r.r2_key_ranked),
-    durationSec: r.duration_sec,
-    rallyCount: r.rally_count,
-  }))
+  // Signed, 1-hour video addresses from the console (lib/videoAddresses.ts).
+  // null = the share is unknown, removed or past its 30 days.
+  const addresses = await fetchVideoAddresses(shareId)
+  if (!addresses) notFound()
+
+  const slides = reels
+    .filter((r) => addresses.videos[r.id])
+    .map((r) => ({
+      id: r.id,
+      kind: r.kind as 'full' | 'burst' | 'rally',
+      rallyRank: r.rally_rank,
+      videoUrl: addresses.videos[r.id],
+      durationSec: r.duration_sec,
+      rallyCount: r.rally_count,
+    }))
+  if (slides.length === 0) notFound()
 
   const first = reels[0]
 
@@ -73,6 +81,8 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
       <ReelShareClient
         shareId={shareId}
         slides={slides}
+        addressesExpireAt={addresses.expiresAt}
+        videosEndpoint={videosEndpoint(shareId)}
         venueName={first.brand_name ?? 'Your venue'}
         logoKey={first.brand_logo_key}
         logoInk={first.brand_logo_ink}

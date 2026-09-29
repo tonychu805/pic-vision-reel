@@ -2,6 +2,7 @@
 
 import Script from 'next/script'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
 import { brandLogoUrl } from '@/lib/brandLogo'
 import { slidesToLoad } from '@/lib/loadWindow'
 import { t, type Lang } from '@/lib/i18n'
@@ -95,6 +96,8 @@ function kindLabel(slide: Slide, lang: Lang): string {
 export default function ReelShareClient({
   shareId,
   slides,
+  addressesExpireAt,
+  videosEndpoint,
   venueName,
   logoKey,
   logoInk,
@@ -104,6 +107,8 @@ export default function ReelShareClient({
 }: {
   shareId: string
   slides: Slide[]
+  addressesExpireAt: string
+  videosEndpoint: string
   venueName: string
   logoKey: string | null
   logoInk: 'light' | 'dark' | null
@@ -124,6 +129,50 @@ export default function ReelShareClient({
 
   const dateStr = useMemo(() => new Date(createdAt).toISOString().slice(0, 10), [createdAt])
 
+  // Signed video addresses last an hour (ADR-142). They're refreshed on a
+  // timer before they run out, and checked again before every load, so a
+  // page left open keeps working. A ref, not state, for the addresses
+  // themselves: load() and the download fallback read them synchronously.
+  const addressesRef = useRef<{ expiresAt: string; byId: Record<string, string> }>({
+    expiresAt: addressesExpireAt,
+    byId: Object.fromEntries(slides.map((sl) => [sl.id, sl.videoUrl])),
+  })
+  // What each <video> element streams from. Refreshed with the rest, except
+  // for a video that is playing right then: swapping its source would
+  // restart it, and its current address has at least REFRESH_BEFORE_MS left.
+  const [srcById, setSrcById] = useState<Record<string, string>>(() => addressesRef.current.byId)
+  async function refreshAddresses() {
+    try {
+      const res = await fetch(videosEndpoint, { cache: 'no-store' })
+      if (!res.ok) return
+      const body = (await res.json()) as { expiresAt: string; videos: Record<string, string> }
+      addressesRef.current = { expiresAt: body.expiresAt, byId: { ...addressesRef.current.byId, ...body.videos } }
+      setSrcById((prev) => {
+        const next = { ...prev }
+        slides.forEach((sl, i) => {
+          const el = videoRefs.current[i]
+          if (el && !el.paused) return
+          if (body.videos[sl.id]) next[sl.id] = body.videos[sl.id]
+        })
+        return next
+      })
+    } catch {
+      // Offline for a moment: the next check tries again.
+    }
+  }
+  async function videoUrlFor(slide: Slide): Promise<string> {
+    if (needsRefresh(addressesRef.current.expiresAt)) await refreshAddresses()
+    return addressesRef.current.byId[slide.id] ?? slide.videoUrl
+  }
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (needsRefresh(addressesRef.current.expiresAt, Date.now() + REFRESH_BEFORE_MS)) refreshAddresses()
+    }, 60_000)
+    return () => clearInterval(id)
+    // refreshAddresses only reads refs and the stable endpoint prop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function fileNameFor(slide: Slide) {
     const suffix = slide.kind === 'burst' ? '_quick_hits' : slide.kind === 'rally' ? `_rally_${slide.rallyRank}` : ''
     return `${sanitize(cameraLabel || 'Highlight')}_${sanitize(venueName)}_${dateStr}${suffix}.mp4`
@@ -141,8 +190,12 @@ export default function ReelShareClient({
     if (requestedRef.current.has(i)) return
     requestedRef.current.add(i)
     const slide = slides[i]
-    fetch(slide.videoUrl, i === activeIndex ? ({ priority: 'high' } as RequestInit) : undefined)
-      .then((res) => res.blob())
+    videoUrlFor(slide)
+      .then((url) => fetch(url, i === activeIndex ? ({ priority: 'high' } as RequestInit) : undefined))
+      .then((res) => {
+        if (!res.ok) throw new Error(String(res.status))
+        return res.blob()
+      })
       .then((blob) => {
         if (!mountedRef.current) return
         setBlobs((prev) => {
@@ -249,7 +302,7 @@ export default function ReelShareClient({
       // no `await` in between, which is what keeps it inside Safari's
       // user-gesture window. Only if the prefetch itself failed (rare)
       // do we fall back to fetching fresh here.
-      const blob: Blob = blobs[index] ? blobs[index]! : await fetch(slide.videoUrl).then((res) => res.blob())
+      const blob: Blob = blobs[index] ? blobs[index]! : await videoUrlFor(slide).then((url) => fetch(url)).then((res) => res.blob())
       const file = new File([blob], fileNameFor(slide), { type: blob.type || 'video/mp4' })
 
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
@@ -265,7 +318,7 @@ export default function ReelShareClient({
         await navigator.share({ url: shareUrl, title: t(lang, 'shareTitleOne', { venue: venueName }) })
       } else {
         // No Web Share API at all -- just download, no share sheet exists here.
-        window.location.href = slide.videoUrl
+        window.location.href = addressesRef.current.byId[slide.id] ?? slide.videoUrl
       }
     } catch {
       // Share sheet cancelled, or the fetch failed -- either way just
@@ -361,7 +414,7 @@ export default function ReelShareClient({
                   ref={(el) => {
                     videoRefs.current[i] = el
                   }}
-                  src={slide.videoUrl}
+                  src={srcById[slide.id] ?? slide.videoUrl}
                   controls
                   playsInline
                   muted
