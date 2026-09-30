@@ -14,16 +14,19 @@ import SignInButtons from './sign-in-buttons'
 import EmailAuthForm from './email-auth-form'
 
 export default function SignupConsentGate({ lang, next }: { lang: Lang; next: string }) {
-  const [filmingBox, setFilmingBox] = useState(false)
-  const [retentionBox, setRetentionBox] = useState(false)
+  // Filming consent + the retention policy used to be two checkboxes;
+  // merged 2026-09-30 since they were always required together (never
+  // independently optional) -- splitting them added a click without
+  // adding any real choice.
+  const [essentialBox, setEssentialBox] = useState(false)
   // Optional, never part of consentGiven/gating -- a player can sign up
   // and check in without ever touching this box.
   const [trainingBox, setTrainingBox] = useState(false)
   // Bumped on every blocked attempt; used as a React `key` below so the
-  // shaking box(es) remount and restart the animation even if the
+  // shaking box remounts and restarts the animation even if the
   // previous shake hasn't finished playing.
   const [shakeToken, setShakeToken] = useState(0)
-  const consentGiven = filmingBox && retentionBox
+  const consentGiven = essentialBox
 
   function handleBlocked() {
     setShakeToken((k) => k + 1)
@@ -44,19 +47,11 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
         </p>
         <label style={{ display: 'flex', gap: 8, fontSize: 12.5, alignItems: 'center' }}>
           <input
-            key={`filming-${shakeToken}`}
-            type="checkbox" checked={filmingBox} onChange={(e) => setFilmingBox(e.target.checked)}
-            className={!filmingBox && shakeToken > 0 ? 'consent-box--needed' : ''}
+            key={`essential-${shakeToken}`}
+            type="checkbox" checked={essentialBox} onChange={(e) => setEssentialBox(e.target.checked)}
+            className={!essentialBox && shakeToken > 0 ? 'consent-box--needed' : ''}
           />
-          {t(lang, 'consentFilming')}
-        </label>
-        <label style={{ display: 'flex', gap: 8, fontSize: 12.5, alignItems: 'center' }}>
-          <input
-            key={`retention-${shakeToken}`}
-            type="checkbox" checked={retentionBox} onChange={(e) => setRetentionBox(e.target.checked)}
-            className={!retentionBox && shakeToken > 0 ? 'consent-box--needed' : ''}
-          />
-          {t(lang, 'consentRetention')}
+          {t(lang, 'consentEssential')}
         </label>
         <label style={{ display: 'flex', gap: 8, fontSize: 12.5, alignItems: 'center' }}>
           <input type="checkbox" checked={trainingBox} onChange={(e) => setTrainingBox(e.target.checked)} />

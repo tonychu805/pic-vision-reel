@@ -7,8 +7,11 @@ import { recordConsent, setTrainingConsent } from '@/app/[slug]/[code]/actions'
 
 export default function ConsentForm({ lang, next }: { lang: Lang; next: string }) {
   const router = useRouter()
-  const [filmingBox, setFilmingBox] = useState(false)
-  const [retentionBox, setRetentionBox] = useState(false)
+  // Filming consent + the retention policy used to be two checkboxes;
+  // merged 2026-09-30 -- always required together, never independently
+  // optional. record_player_consent still takes two separate booleans;
+  // both get this same value.
+  const [essentialBox, setEssentialBox] = useState(false)
   const [trainingBox, setTrainingBox] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -16,7 +19,7 @@ export default function ConsentForm({ lang, next }: { lang: Lang; next: string }
   async function submit() {
     setBusy(true)
     setError(null)
-    const { error } = await recordConsent(filmingBox, retentionBox)
+    const { error } = await recordConsent(essentialBox, essentialBox)
     if (error) {
       setBusy(false)
       setError(t(lang, 'genericError'))
@@ -38,12 +41,8 @@ export default function ConsentForm({ lang, next }: { lang: Lang; next: string }
         {t(lang, 'consentSuffix')}
       </p>
       <label style={{ display: 'flex', gap: 8, fontSize: 13.5 }}>
-        <input type="checkbox" checked={filmingBox} onChange={(e) => setFilmingBox(e.target.checked)} />
-        {t(lang, 'consentFilming')}
-      </label>
-      <label style={{ display: 'flex', gap: 8, fontSize: 13.5 }}>
-        <input type="checkbox" checked={retentionBox} onChange={(e) => setRetentionBox(e.target.checked)} />
-        {t(lang, 'consentRetention')}
+        <input type="checkbox" checked={essentialBox} onChange={(e) => setEssentialBox(e.target.checked)} />
+        {t(lang, 'consentEssential')}
       </label>
       <label style={{ display: 'flex', gap: 8, fontSize: 13.5 }}>
         <input type="checkbox" checked={trainingBox} onChange={(e) => setTrainingBox(e.target.checked)} />
@@ -52,7 +51,7 @@ export default function ConsentForm({ lang, next }: { lang: Lang; next: string }
       <button
         className="calendar-slot"
         style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
-        disabled={!filmingBox || !retentionBox || busy}
+        disabled={!essentialBox || busy}
         onClick={submit}
       >
         {t(lang, 'consentSubmit')}

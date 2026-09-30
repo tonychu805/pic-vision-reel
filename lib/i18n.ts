@@ -72,8 +72,12 @@ const en = {
   consentMiddle: 'and',
   consentPrivacyLink: 'Privacy policy',
   consentSuffix: ', and that you are 18 or older, or that a parent or legal guardian has agreed to your use of this service.',
-  consentFilming: 'I consent to being filmed while I play.',
-  consentRetention: 'I accept the recording retention policy.',
+  // Filming consent and the retention policy were two separate checkboxes
+  // until 2026-09-30 -- merged into one since they were always required
+  // together (never independently optional), so splitting them added a
+  // click without adding any real choice. record_player_consent still
+  // takes two separate booleans; the UI just sends the same value to both.
+  consentEssential: 'I consent to being filmed while I play and accept the recording retention policy.',
   consentTraining: '(Optional) I agree that footage of me may be used to help train or improve PicVision’s AI models.',
   consentSubmit: 'Continue',
   checkInNoneFree: 'Every court is recording right now.',
@@ -154,8 +158,7 @@ const zhTW: Record<StringKey, string> = {
   consentMiddle: '與',
   consentPrivacyLink: '隱私權政策',
   consentSuffix: '，並確認您已年滿 18 歲或已取得法定代理人同意使用本服務。',
-  consentFilming: '我同意在場上被錄影。',
-  consentRetention: '我接受錄影保存政策。',
+  consentEssential: '我同意在場上被錄影，並接受錄影保存政策。',
   consentTraining: '（非必要）我同意我的影像可被用於協助訓練或改善 PicVision 的 AI 模型。',
   consentSubmit: '繼續',
   checkInNoneFree: '目前所有球場都在錄影中。',
