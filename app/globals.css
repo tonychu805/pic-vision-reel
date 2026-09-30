@@ -3,12 +3,37 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-:root { --bg:#161826; --surface:#232532; --text:#e9e9ed; --muted:#9698a5; --accent:#9184d9; --accent-soft:#2b2741; --divider:rgba(233,233,237,.16); }
+:root { --bg:#161826; --surface:#232532; --text:#e9e9ed; --muted:#9698a5; --accent:#9184d9; --accent-soft:#2b2741; --divider:rgba(233,233,237,.16); --error:#c0392b; }
+/* A checkbox a signup button tried to proceed without ticking (see
+   components/signup-consent-gate.tsx): border flashes red and the box
+   shakes once. Re-triggerable -- the component remounts this element
+   (changing its key) on every blocked attempt, which restarts the
+   animation from scratch even if a previous one hasn't finished. */
+@keyframes consent-shake {
+  0%, 100% { transform:translateX(0); }
+  20%, 60% { transform:translateX(-4px); }
+  40%, 80% { transform:translateX(4px); }
+}
+/* Applied directly to the <input type="checkbox"> itself (operator
+   request 2026-09-30: no extra wrapper box around it) -- outline rather
+   than border, since outline draws outside the element's own box without
+   touching its native rendering, which is more consistently supported
+   across browsers for a checkbox than styling `border` on the input
+   itself would be. */
+.consent-box--needed { outline:2px solid var(--error); outline-offset:0; animation:consent-shake .4s ease-in-out; }
 * { box-sizing:border-box; }
 html, body { min-height:100%; }
 body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; font-size:15px; line-height:1.55; }
 a { color:inherit; }
-button { font:inherit; }
+/* appearance:none resets Safari/WebKit's native button chrome, which can
+   otherwise override or conflict with a custom flex layout applied via a
+   class (found 2026-09-30: a <button class="calendar-slot"> with
+   justify-content:space-between rendered its two child spans jammed
+   together with no gap on a real iPhone Safari, while Chromium -- and
+   even a DOM-injected probe with the exact same markup/CSS on the same
+   page -- rendered it correctly; this is a known Safari button+flexbox
+   quirk Chromium doesn't reproduce, not a CSS logic bug). */
+button { font:inherit; appearance:none; -webkit-appearance:none; }
 .share-page { min-height:100vh; display:flex; justify-content:center; background:var(--bg); }
 .share-shell { width:100%; max-width:430px; display:flex; flex-direction:column; gap:16.8px; padding:18px 18px 28px; }
 .venue-header { display:flex; align-items:center; gap:11px; }
@@ -24,6 +49,29 @@ button { font:inherit; }
 .venue-plate { display:grid; place-items:center; flex:none; padding:8px; border-radius:8px; background:#fff; box-shadow:inset 0 0 0 1px rgba(0,0,0,.10); }
 .venue-plate--light { background:#1b1c26; box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); }
 .venue-plate img { height:28px; width:auto; max-width:168px; object-fit:contain; display:block; }
+/* Bigger, rounder version of venue-plate/venue-mark for /login and
+   /signup's main logo -- an app-icon-style rounded tile, not a small logo
+   floating inside a bigger plate: the image fills the whole square
+   (object-fit:cover) and overflow:hidden on the container is what
+   actually makes the corners read as rounded, since an edge-to-edge image
+   with square corners of its own would otherwise sit on top of and hide
+   the parent's border-radius. */
+/* -webkit-transform: translateZ(0) forces its own compositing layer --
+   without it, Safari's overflow:hidden + border-radius sometimes fails to
+   clip a child image cleanly (a sliver of its square corner shows through,
+   worst at the top edge). border-radius on the img itself is a second,
+   redundant safety net for the same Safari quirk. Confirmed necessary on
+   a real iPhone (Safari) 2026-09-29 -- Chromium clipped correctly without
+   either fix, so don't remove them just because a Chromium screenshot
+   looks fine. No box-shadow ring here (unlike .venue-plate, the small
+   header badge this was scaled up from): on a real iPhone the 1px inset
+   ring read as a visible grey outline round the top edge at this size,
+   not a subtle contained-object cue -- dropped rather than chased with
+   more compositing hacks. */
+.auth-venue-plate { display:grid; place-items:center; flex:none; width:88px; height:88px; border-radius:22px; overflow:hidden; background:#fff; -webkit-transform:translateZ(0); transform:translateZ(0); }
+.auth-venue-plate--light { background:#1b1c26; }
+.auth-venue-plate img { width:100%; height:100%; object-fit:cover; display:block; border-radius:22px; }
+.auth-venue-mark { width:88px; height:88px; display:grid; place-items:center; flex:none; border:1px solid var(--divider); border-radius:22px; color:#e7e5fe; font-size:32px; font-weight:500; }
 .video-carousel-wrap { display:flex; flex-direction:column; gap:10px; }
 .video-carousel { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; border-radius:14px; box-shadow:0 0 0 1px var(--divider),0 18px 44px rgba(0,0,0,.55); }
 .video-carousel::-webkit-scrollbar { display:none; }
