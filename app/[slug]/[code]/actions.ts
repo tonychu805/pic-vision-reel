@@ -58,3 +58,16 @@ export async function endCheckIn(scheduleSessionId: string) {
   const { error } = await supabase.rpc('player_end_check_in', { p_schedule_session_id: scheduleSessionId })
   return { error: error?.message ?? null }
 }
+
+// Extends or shortens an already-running check-in to a new future end
+// time. Unlike endCheckIn, this has to reach the venue machine for real
+// (player_update_check_in_end queues update_recording_end) -- won't take
+// effect on a real camera until that desktop release ships.
+export async function updateCheckInEnd(scheduleSessionId: string, newEndsAtISO: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('player_update_check_in_end', {
+    p_schedule_session_id: scheduleSessionId,
+    p_new_ends_at: newEndsAtISO,
+  })
+  return { error: error?.message ?? null }
+}

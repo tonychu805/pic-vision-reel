@@ -16,7 +16,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
-import { checkIn, joinCheckIn, endCheckIn } from './actions'
+import { checkIn, joinCheckIn, endCheckIn, updateCheckInEnd } from './actions'
 
 export type CheckInOption = {
   camera_row_id: string
@@ -126,6 +126,22 @@ export default function CheckinPanel({
     router.refresh()
   }
 
+  // Unlike doEnd, this has to reach the venue machine for real -- the
+  // desktop side only takes effect once that release ships, so a player
+  // using this today sees the database and console reflect the new time,
+  // but the real camera keeps the old stop time until then.
+  async function doUpdateEnd(sessionId: string, cameraRowId: string) {
+    const { hour, period } = endTimeFor(cameraRowId)
+    const endsAtISO = endTimeToISO(hour, period)
+    if (!endsAtISO) { setError(t(lang, 'pickEndTimeError')); return }
+    setBusy(sessionId)
+    setError(null)
+    const { error } = await updateCheckInEnd(sessionId, endsAtISO)
+    setBusy(null)
+    if (error) { showError(error); return }
+    router.refresh()
+  }
+
   async function signOut() {
     await createClient().auth.signOut()
     // A full reload, not a router refresh: the server component that
@@ -187,17 +203,48 @@ export default function CheckinPanel({
           )
         }
         if (o.busy_session_id && o.is_owner) {
+          const { hour, period } = endTimeFor(o.camera_row_id)
           return (
-            <button
-              key={o.camera_row_id}
-              className="calendar-slot"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-              disabled={busy === o.busy_session_id}
-              onClick={() => doEnd(o.busy_session_id!)}
-            >
+            <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
               <span>{o.camera_label}</span>
-              <span className="calendar-slot-go">{t(lang, 'checkInEnd')}</span>
-            </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                {t(lang, 'checkInExtendLabel')}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <select
+                    value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
+                    style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+                  >
+                    <option value="" disabled>--</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
+                    style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                  <button
+                    className="calendar-slot"
+                    style={{ boxSizing: 'border-box', justifyContent: 'center' }}
+                    disabled={busy === o.busy_session_id}
+                    onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}
+                  >
+                    {t(lang, 'checkInExtendSubmit')}
+                  </button>
+                </div>
+              </div>
+              <button
+                className="calendar-slot"
+                style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
+                disabled={busy === o.busy_session_id}
+                onClick={() => doEnd(o.busy_session_id!)}
+              >
+                {t(lang, 'checkInEnd')}
+              </button>
+            </div>
           )
         }
         if (o.busy_session_id && o.already_joined) {
