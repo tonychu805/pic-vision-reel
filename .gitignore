@@ -19,3 +19,6 @@ node_modules
 .netlify
 
 .test-build/
+
+# Demo footage for the vertical-share prototype (real players; never commit)
+public/demo-vertical/
