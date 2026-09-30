@@ -112,6 +112,11 @@ const en = {
   checkYourEmail: 'Check your email to confirm your account before signing in.',
   invalidEmail: 'Enter a valid email address.',
   completeSignUp: 'Complete sign up',
+  accountIconLabel: 'Account',
+  accountTitle: 'Account',
+  backLabel: 'Back',
+  saveButton: 'Save',
+  savedMessage: 'Saved.',
 }
 
 export type StringKey = keyof typeof en
@@ -193,6 +198,11 @@ const zhTW: Record<StringKey, string> = {
   checkYourEmail: '請到信箱點擊確認連結後再登入。',
   invalidEmail: '請輸入正確的 email 格式。',
   completeSignUp: '完成註冊',
+  accountIconLabel: '帳號',
+  accountTitle: '帳號',
+  backLabel: '返回',
+  saveButton: '儲存',
+  savedMessage: '已儲存。',
 }
 
 const STRINGS: Record<Lang, Record<StringKey, string>> = { en, 'zh-TW': zhTW }

@@ -7,6 +7,7 @@ import { byCourt, dateLabel, slotLabel, type CalendarGame } from '@/lib/calendar
 import { t } from '@/lib/i18n'
 import { currentLang } from '@/lib/lang-server'
 import LangSwitch from '@/components/lang-switch'
+import AccountIcon from '@/components/account-icon'
 import CheckinPanel, { type CheckInOption } from './checkin-panel'
 
 // A venue's public game calendar, opened by QR code at the venue: today's
@@ -90,7 +91,10 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
             <div className="venue-mark" aria-hidden="true">{cal.brand_name.charAt(0).toUpperCase()}</div>
           )}
           <span>{cal.brand_name}</span>
-          <LangSwitch lang={lang} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <AccountIcon lang={lang} />
+            <LangSwitch lang={lang} />
+          </div>
         </header>
 
         <CheckinPanel lang={lang} slug={slug} code={code} options={checkInOptions} />
