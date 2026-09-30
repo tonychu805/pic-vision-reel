@@ -50,8 +50,21 @@ export default function CheckinPanel({
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [endHour, setEndHour] = useState('')
-  const [endPeriod, setEndPeriod] = useState<'AM' | 'PM'>('PM')
+  // Keyed by camera_row_id -- each court can be booked to a different end
+  // time (operator found the shared, single picker wrong: a real group
+  // might have one court until 3pm and another until 4pm). No shared
+  // state means picking a time for one court never affects another.
+  const [endTimes, setEndTimes] = useState<Record<string, { hour: string; period: 'AM' | 'PM' }>>({})
+
+  function endTimeFor(cameraRowId: string) {
+    return endTimes[cameraRowId] ?? { hour: '', period: 'PM' as const }
+  }
+  function setEndHourFor(cameraRowId: string, hour: string) {
+    setEndTimes((prev) => ({ ...prev, [cameraRowId]: { ...endTimeFor(cameraRowId), hour } }))
+  }
+  function setEndPeriodFor(cameraRowId: string, period: 'AM' | 'PM') {
+    setEndTimes((prev) => ({ ...prev, [cameraRowId]: { ...endTimeFor(cameraRowId), period } }))
+  }
 
   function showError(code: string) {
     setError(t(lang, ERROR_KEYS[code] ?? 'genericError'))
@@ -80,7 +93,8 @@ export default function CheckinPanel({
   }
 
   async function doCheckIn(cameraRowId: string) {
-    const endsAtISO = endTimeToISO(endHour, endPeriod)
+    const { hour, period } = endTimeFor(cameraRowId)
+    const endsAtISO = endTimeToISO(hour, period)
     if (!endsAtISO) { setError(t(lang, 'pickEndTimeError')); return }
     setBusy(cameraRowId)
     setError(null)
@@ -134,42 +148,42 @@ export default function CheckinPanel({
     <section className="calendar-court">
       <h2>{t(lang, 'checkInTitle')}</h2>
       {!anyFree && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'checkInNoneFree')}</p>}
-      {anyFree && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, marginBottom: 8 }}>
-          {t(lang, 'checkInEndTimeLabel')}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <select
-              value={endHour} onChange={(e) => setEndHour(e.target.value)}
-              style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
-            >
-              <option value="" disabled>--</option>
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                <option key={h} value={h}>{h}</option>
-              ))}
-            </select>
-            <select
-              value={endPeriod} onChange={(e) => setEndPeriod(e.target.value as 'AM' | 'PM')}
-              style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
-            >
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </div>
-        </div>
-      )}
       {options.map((o) => {
         if (!o.is_busy) {
+          const { hour, period } = endTimeFor(o.camera_row_id)
           return (
-            <button
-              key={o.camera_row_id}
-              className="calendar-slot"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-              disabled={busy === o.camera_row_id}
-              onClick={() => doCheckIn(o.camera_row_id)}
-            >
+            <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
               <span>{o.camera_label}</span>
-              <span className="calendar-slot-go">{t(lang, 'checkInStart')}</span>
-            </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                {t(lang, 'checkInEndTimeLabel')}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <select
+                    value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
+                    style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+                  >
+                    <option value="" disabled>--</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
+                    style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
+              <button
+                className="calendar-slot"
+                style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
+                disabled={busy === o.camera_row_id}
+                onClick={() => doCheckIn(o.camera_row_id)}
+              >
+                {t(lang, 'checkInStart')}
+              </button>
+            </div>
           )
         }
         if (o.busy_session_id && o.is_owner) {
