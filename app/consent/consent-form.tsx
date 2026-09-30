@@ -25,12 +25,12 @@ export default function ConsentForm({ lang, next }: { lang: Lang; next: string }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>
-        {t(lang, 'consentIntro')}{' '}
+        {t(lang, 'consentPrefix')}{' '}
         <a href="https://picvisionai.com/venue-player-notice-template" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{t(lang, 'consentNoticeLink')}</a>
-        {' · '}
+        {' '}{t(lang, 'consentMiddle')}{' '}
         <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{t(lang, 'consentPrivacyLink')}</a>
+        {t(lang, 'consentSuffix')}
       </p>
-      <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>{t(lang, 'consentAgeStatement')}</p>
       <label style={{ display: 'flex', gap: 8, fontSize: 13.5 }}>
         <input type="checkbox" checked={filmingBox} onChange={(e) => setFilmingBox(e.target.checked)} />
         {t(lang, 'consentFilming')}

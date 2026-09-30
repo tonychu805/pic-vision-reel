@@ -33,12 +33,12 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
       <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={consentGiven} onBlocked={handleBlocked} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>
-          {t(lang, 'consentIntro')}{' '}
+          {t(lang, 'consentPrefix')}{' '}
           <a href="https://picvisionai.com/venue-player-notice-template" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{t(lang, 'consentNoticeLink')}</a>
-          {' · '}
+          {' '}{t(lang, 'consentMiddle')}{' '}
           <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{t(lang, 'consentPrivacyLink')}</a>
+          {t(lang, 'consentSuffix')}
         </p>
-        <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>{t(lang, 'consentAgeStatement')}</p>
         <label style={{ display: 'flex', gap: 8, fontSize: 12.5, alignItems: 'center' }}>
           <input
             key={`filming-${shakeToken}`}
