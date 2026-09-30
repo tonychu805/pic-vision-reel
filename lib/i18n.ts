@@ -2,7 +2,11 @@
 // The page follows the phone's language, and an EN / 中文 switch in the
 // header overrides it (remembered in a cookie). Any Chinese phone gets
 // Traditional Chinese: the venues are in Taiwan, and it reads fine to
-// Simplified readers too.
+// Simplified readers too. A phone whose language is neither (or sends no
+// Accept-Language at all -- e.g. some in-app browsers) also defaults to
+// Traditional Chinese rather than English, 2026-09-30: every venue and
+// player using this today is in Taiwan, so that's the safer default for
+// someone scanning a venue's QR code, not English.
 
 export type Lang = 'en' | 'zh-TW'
 export const LANGS: Lang[] = ['en', 'zh-TW']
@@ -23,7 +27,7 @@ export function pickLang(saved: string | null | undefined, acceptLanguage: strin
     if (tag.startsWith('zh')) return 'zh-TW'
     if (tag.startsWith('en')) return 'en'
   }
-  return 'en'
+  return 'zh-TW'
 }
 
 const en = {
