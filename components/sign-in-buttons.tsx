@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { t, type Lang } from '@/lib/i18n'
 
 export default function SignInButtons({
-  lang, next, mode = 'login', consentGiven = true, onBlocked,
+  lang, next, mode = 'login', consentGiven = true, trainingConsent = false, onBlocked,
 }: {
   lang: Lang
   next: string
@@ -21,6 +21,10 @@ export default function SignInButtons({
   // shake its checkboxes red rather than the button silently doing
   // nothing.
   consentGiven?: boolean
+  // The optional AI-training checkbox's current state, carried across the
+  // OAuth round-trip the same way consentGiven is -- there's no session
+  // to write it against until app/auth/callback/route.ts.
+  trainingConsent?: boolean
   onBlocked?: () => void
 }) {
   async function signIn(provider: 'custom:line' | 'google') {
@@ -48,7 +52,7 @@ export default function SignInButtons({
         // record consent against (auth.uid() doesn't exist until the
         // callback exchanges the code), so app/auth/callback/route.ts is
         // where it actually gets written, once one does.
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${mode === 'signup' ? '&consent=1' : ''}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${mode === 'signup' ? `&consent=1&training=${trainingConsent ? '1' : '0'}` : ''}`,
         // Confirmed via a captured network trace: the Dashboard's custom-
         // provider "Scopes" field is NOT applied to the outgoing LINE
         // authorize request -- it went out with scope= empty, and LINE's

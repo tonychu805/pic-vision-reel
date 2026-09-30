@@ -23,13 +23,13 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { t, type Lang } from '@/lib/i18n'
 import { ensurePlayerAfterEmailAuth } from '@/app/login/actions'
-import { recordConsent } from '@/app/[slug]/[code]/actions'
+import { recordConsent, setTrainingConsent } from '@/app/[slug]/[code]/actions'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const inputStyle = { padding: '10px 12px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }
 
 export default function EmailAuthForm({
-  lang, mode, next, consentGiven = true, onBlocked,
+  lang, mode, next, consentGiven = true, trainingConsent = false, onBlocked,
 }: {
   lang: Lang
   mode: 'login' | 'signup'
@@ -42,6 +42,11 @@ export default function EmailAuthForm({
   // onBlocked() instead of signing up, so the parent
   // (components/signup-consent-gate.tsx) can shake its checkboxes red.
   consentGiven?: boolean
+  // The optional AI-training checkbox's current state. Not part of the
+  // gate above -- recorded alongside consent when there's an immediate
+  // session; if signUp() defers to email confirmation instead, it's asked
+  // again on /consent's own fallback form once they actually log in.
+  trainingConsent?: boolean
   onBlocked?: () => void
 }) {
   const router = useRouter()
@@ -107,6 +112,7 @@ export default function EmailAuthForm({
         setError(consentError)
         return
       }
+      await setTrainingConsent(trainingConsent)
     }
 
     await ensurePlayerAfterEmailAuth()

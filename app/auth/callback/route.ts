@@ -38,6 +38,9 @@ export async function GET(request: Request) {
   // until this exact point, so this is where that earlier tick actually
   // gets written.
   const consentGiven = url.searchParams.get('consent') === '1'
+  // The optional training checkbox's actual state -- present (0 or 1)
+  // whenever consent is, absent for a plain /login (not applicable there).
+  const trainingParam = url.searchParams.get('training')
 
   if (code) {
     const supabase = await createClient()
@@ -52,6 +55,9 @@ export async function GET(request: Request) {
           p_ip_address: clientIp(h),
           p_user_agent: h.get('user-agent'),
         })
+      }
+      if (trainingParam !== null) {
+        await supabase.rpc('set_training_consent', { p_consented: trainingParam === '1' })
       }
       return NextResponse.redirect(`${origin}${next}`)
     }

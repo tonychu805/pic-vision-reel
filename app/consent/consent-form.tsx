@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { t, type Lang } from '@/lib/i18n'
-import { recordConsent } from '@/app/[slug]/[code]/actions'
+import { recordConsent, setTrainingConsent } from '@/app/[slug]/[code]/actions'
 
 export default function ConsentForm({ lang, next }: { lang: Lang; next: string }) {
   const router = useRouter()
   const [filmingBox, setFilmingBox] = useState(false)
   const [retentionBox, setRetentionBox] = useState(false)
+  const [trainingBox, setTrainingBox] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -16,8 +17,13 @@ export default function ConsentForm({ lang, next }: { lang: Lang; next: string }
     setBusy(true)
     setError(null)
     const { error } = await recordConsent(filmingBox, retentionBox)
+    if (error) {
+      setBusy(false)
+      setError(t(lang, 'genericError'))
+      return
+    }
+    await setTrainingConsent(trainingBox)
     setBusy(false)
-    if (error) { setError(t(lang, 'genericError')); return }
     router.push(next)
     router.refresh()
   }
@@ -38,6 +44,10 @@ export default function ConsentForm({ lang, next }: { lang: Lang; next: string }
       <label style={{ display: 'flex', gap: 8, fontSize: 13.5 }}>
         <input type="checkbox" checked={retentionBox} onChange={(e) => setRetentionBox(e.target.checked)} />
         {t(lang, 'consentRetention')}
+      </label>
+      <label style={{ display: 'flex', gap: 8, fontSize: 13.5 }}>
+        <input type="checkbox" checked={trainingBox} onChange={(e) => setTrainingBox(e.target.checked)} />
+        {t(lang, 'consentTraining')}
       </label>
       <button
         className="calendar-slot"

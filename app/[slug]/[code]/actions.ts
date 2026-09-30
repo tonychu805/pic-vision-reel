@@ -25,6 +25,16 @@ export async function recordConsent(filmingConsent: boolean, retentionPolicyAcce
   return { error: error?.message ?? null }
 }
 
+// Separate from recordConsent on purpose: training consent is optional and
+// never gates check-in, unlike filming/retention. Always called with the
+// checkbox's actual state (true or false), not skipped when unchecked --
+// an explicit "no" on record is more useful than no row existing at all.
+export async function setTrainingConsent(consented: boolean) {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('set_training_consent', { p_consented: consented })
+  return { error: error?.message ?? null }
+}
+
 export async function checkIn(slug: string, code: string, cameraRowId: string, endsAtISO: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
