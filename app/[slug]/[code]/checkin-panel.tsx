@@ -16,7 +16,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
-import { checkIn, joinCheckIn } from './actions'
+import { checkIn, joinCheckIn, endCheckIn } from './actions'
 
 export type CheckInOption = {
   camera_row_id: string
@@ -26,6 +26,7 @@ export type CheckInOption = {
   already_joined: boolean
   participant_count: number
   has_current_consent: boolean
+  is_owner: boolean
 }
 
 const ERROR_KEYS: Record<string, StringKey> = {
@@ -98,6 +99,19 @@ export default function CheckinPanel({
     router.refresh()
   }
 
+  // Frees the camera immediately (real stop command, not just a database
+  // flag) rather than leaving it falsely "busy" until whatever end time
+  // was originally picked -- only the player who checked in sees this,
+  // enforced by player_end_check_in itself.
+  async function doEnd(sessionId: string) {
+    setBusy(sessionId)
+    setError(null)
+    const { error } = await endCheckIn(sessionId)
+    setBusy(null)
+    if (error) { showError(error); return }
+    router.refresh()
+  }
+
   async function signOut() {
     await createClient().auth.signOut()
     // A full reload, not a router refresh: the server component that
@@ -155,6 +169,20 @@ export default function CheckinPanel({
             >
               <span>{o.camera_label}</span>
               <span className="calendar-slot-go">{t(lang, 'checkInStart')}</span>
+            </button>
+          )
+        }
+        if (o.busy_session_id && o.is_owner) {
+          return (
+            <button
+              key={o.camera_row_id}
+              className="calendar-slot"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+              disabled={busy === o.busy_session_id}
+              onClick={() => doEnd(o.busy_session_id!)}
+            >
+              <span>{o.camera_label}</span>
+              <span className="calendar-slot-go">{t(lang, 'checkInEnd')}</span>
             </button>
           )
         }

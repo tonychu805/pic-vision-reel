@@ -48,3 +48,13 @@ export async function joinCheckIn(scheduleSessionId: string) {
   const { error } = await supabase.rpc('player_join_check_in', { p_schedule_session_id: scheduleSessionId })
   return { error: error?.message ?? null }
 }
+
+// Only the player who originally checked in may end it early (enforced by
+// player_end_check_in itself, not just this action) -- frees the camera
+// immediately for the next check-in instead of leaving it falsely "busy"
+// until whatever end time was originally picked.
+export async function endCheckIn(scheduleSessionId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('player_end_check_in', { p_schedule_session_id: scheduleSessionId })
+  return { error: error?.message ?? null }
+}
