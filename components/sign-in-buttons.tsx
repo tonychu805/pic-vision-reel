@@ -3,6 +3,7 @@
 // LINE/Google sign-in, shared by the standalone /login page and anything
 // else that needs it. Moved out of app/[slug]/[code]/checkin-panel.tsx so
 // there is exactly one place that knows how to start a player OAuth flow.
+import { useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { t, type Lang } from '@/lib/i18n'
 
@@ -27,11 +28,25 @@ export default function SignInButtons({
   trainingConsent?: boolean
   onBlocked?: () => void
 }) {
+  // Guards against a second tap starting a second signInWithOAuth() call
+  // before the browser navigates away from the first -- found 2026-09-30:
+  // a real device's LINE attempts consistently showed two "Redirecting to
+  // external provider" log entries seconds apart on every failed login,
+  // one on the only successful one, each generating its own PKCE
+  // code_verifier and clobbering the browser's stored value for the
+  // other. The failure then shows up as our own /auth/callback route
+  // never even reaching Supabase's /token exchange (no code param), not
+  // as a token-exchange error -- consistent with the first flow's
+  // eventual redirect losing its matching verifier.
+  const submitting = useRef(false)
+
   async function signIn(provider: 'custom:line' | 'google') {
     if (mode === 'signup' && !consentGiven) {
       onBlocked?.()
       return
     }
+    if (submitting.current) return
+    submitting.current = true
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       // LINE isn't a built-in provider in @supabase/auth-js@2.114.0's
