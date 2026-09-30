@@ -12,7 +12,7 @@
 // already_joined, participant_count) is what actually drives what's shown
 // -- the database is the source of truth, not a client-side flag that
 // could drift from it.
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
@@ -27,7 +27,23 @@ export type CheckInOption = {
   participant_count: number
   has_current_consent: boolean
   is_owner: boolean
+  // null unless is_busy && source is a player check-in -- see
+  // get_check_in_options (pic-vision-cloud-console migration
+  // 20260930180000). Reflects the real agent_commands row the venue
+  // machine reports its own start_recording result onto, not a guess:
+  // "pending" means checked in but not yet confirmed by the camera
+  // (usually seconds, but the machine could be offline), "done" means
+  // it's actually recording, "error" means it tried and failed --
+  // recording_error then carries the real reason.
+  recording_status: 'pending' | 'done' | 'error' | null
+  recording_error: string | null
 }
+
+// How often to re-check while a check-in's camera hasn't confirmed yet,
+// and how long to keep trying before telling the player it's taking a
+// while instead of polling forever in silence.
+const RECORDING_POLL_MS = 2500
+const RECORDING_POLL_MAX_ATTEMPTS = 24 // ~60s
 
 const ERROR_KEYS: Record<string, StringKey> = {
   consent_required: 'consentRequiredError',
@@ -69,6 +85,26 @@ export default function CheckinPanel({
   function showError(code: string) {
     setError(t(lang, ERROR_KEYS[code] ?? 'genericError'))
   }
+
+  // Polls (via a real server refetch, not a client-only timer) while any
+  // check-in on this page is still waiting for its camera to confirm.
+  // Stops itself once nothing is pending, and gives up after
+  // RECORDING_POLL_MAX_ATTEMPTS so a genuinely stuck camera doesn't poll
+  // forever in silence -- pollAttempts is only ever used to decide
+  // whether to show "this is taking a while", not to change behavior.
+  const anyPending = options.some((o) => o.recording_status === 'pending')
+  const [pollAttempts, setPollAttempts] = useState(0)
+  const pollAttemptsRef = useRef(0)
+  useEffect(() => {
+    if (!anyPending) { pollAttemptsRef.current = 0; setPollAttempts(0); return }
+    if (pollAttemptsRef.current >= RECORDING_POLL_MAX_ATTEMPTS) return
+    const id = setTimeout(() => {
+      pollAttemptsRef.current += 1
+      setPollAttempts(pollAttemptsRef.current)
+      router.refresh()
+    }, RECORDING_POLL_MS)
+    return () => clearTimeout(id)
+  }, [anyPending, options, router])
 
   // Hour (1-12) + AM/PM only -- no minutes anywhere, not even transiently
   // in a picker UI. <input type="time"> was tried first (step=3600 to
@@ -150,6 +186,27 @@ export default function CheckinPanel({
     window.location.reload()
   }
 
+  function recordingStatusLine(o: CheckInOption) {
+    if (o.recording_status === 'done') {
+      return <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>✓ {t(lang, 'recordingConfirmed')}</p>
+    }
+    if (o.recording_status === 'error') {
+      return (
+        <p style={{ color: 'var(--error, #c0392b)', fontSize: 12.5, margin: 0 }}>
+          {t(lang, 'recordingFailed', { error: o.recording_error ?? t(lang, 'genericError') })}
+        </p>
+      )
+    }
+    if (o.recording_status === 'pending') {
+      return (
+        <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>
+          {pollAttempts >= RECORDING_POLL_MAX_ATTEMPTS ? t(lang, 'recordingTakingLonger') : t(lang, 'recordingConfirming')}
+        </p>
+      )
+    }
+    return null
+  }
+
   const signOutLink = (
     <button
       onClick={signOut}
@@ -207,6 +264,7 @@ export default function CheckinPanel({
           return (
             <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
               <span>{o.camera_label}</span>
+              {recordingStatusLine(o)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
                 {t(lang, 'checkInExtendLabel')}
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -249,9 +307,10 @@ export default function CheckinPanel({
         }
         if (o.busy_session_id && o.already_joined) {
           return (
-            <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending">
+            <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
               <span>{o.camera_label}</span>
               <span>{t(lang, 'checkInAlreadyJoined')}</span>
+              {recordingStatusLine(o)}
             </div>
           )
         }
