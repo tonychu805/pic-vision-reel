@@ -19,9 +19,6 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
   // independently optional) -- splitting them added a click without
   // adding any real choice.
   const [essentialBox, setEssentialBox] = useState(false)
-  // Optional, never part of consentGiven/gating -- a player can sign up
-  // and check in without ever touching this box.
-  const [trainingBox, setTrainingBox] = useState(false)
   // Bumped on every blocked attempt; used as a React `key` below so the
   // shaking box remounts and restarts the animation even if the
   // previous shake hasn't finished playing.
@@ -34,9 +31,9 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
 
   return (
     <>
-      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={consentGiven} trainingConsent={trainingBox} onBlocked={handleBlocked} />
+      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={consentGiven} onBlocked={handleBlocked} />
       <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12.5 }}>{t(lang, 'orDivider')}</p>
-      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={consentGiven} trainingConsent={trainingBox} onBlocked={handleBlocked} />
+      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={consentGiven} onBlocked={handleBlocked} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>
           {t(lang, 'consentPrefix')}{' '}
@@ -52,10 +49,6 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
             className={!essentialBox && shakeToken > 0 ? 'consent-box--needed' : ''}
           />
           {t(lang, 'consentEssential')}
-        </label>
-        <label style={{ display: 'flex', gap: 8, fontSize: 12.5, alignItems: 'center' }}>
-          <input type="checkbox" checked={trainingBox} onChange={(e) => setTrainingBox(e.target.checked)} />
-          {t(lang, 'consentTraining')}
         </label>
       </div>
     </>
