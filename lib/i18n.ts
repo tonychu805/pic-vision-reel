@@ -120,6 +120,13 @@ const en = {
   backLabel: 'Back',
   saveButton: 'Save',
   savedMessage: 'Saved.',
+  signedInWithLine: 'Signed in with LINE',
+  changeEmailButton: 'Change email',
+  newEmailLabel: 'New email',
+  emailChangePending: 'Check your new email for a link to confirm the change.',
+  changePasswordButton: 'Change password',
+  newPasswordLabel: 'New password',
+  passwordChanged: 'Password updated.',
 }
 
 export type StringKey = keyof typeof en
@@ -209,6 +216,13 @@ const zhTW: Record<StringKey, string> = {
   backLabel: '返回',
   saveButton: '儲存',
   savedMessage: '已儲存。',
+  signedInWithLine: '使用 LINE 登入',
+  changeEmailButton: '更改 Email',
+  newEmailLabel: '新的 Email',
+  emailChangePending: '請至新信箱點擊確認連結，完成變更。',
+  changePasswordButton: '更改密碼',
+  newPasswordLabel: '新密碼',
+  passwordChanged: '密碼已更新。',
 }
 
 const STRINGS: Record<Lang, Record<StringKey, string>> = { en, 'zh-TW': zhTW }
