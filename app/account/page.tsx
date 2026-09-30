@@ -15,14 +15,17 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AccountPage() {
   const lang = await currentLang()
   const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) {
+  // current_player_id(), not auth.getUser() -- getUser() is GoTrue-
+  // specific and returns nothing for an Auth0/LINE session, which has no
+  // auth.users row to look up. This one RPC works for both providers.
+  const { data: playerId } = await supabase.rpc('current_player_id')
+  if (!playerId) {
     redirect('/login?next=%2Faccount')
   }
 
   const [{ data: player }, { data: training }] = await Promise.all([
-    supabase.from('players').select('display_name').eq('id', userData.user.id).maybeSingle(),
-    supabase.from('player_training_consents').select('consented').eq('player_id', userData.user.id).maybeSingle(),
+    supabase.from('players').select('display_name').eq('id', playerId).maybeSingle(),
+    supabase.from('player_training_consents').select('consented').eq('player_id', playerId).maybeSingle(),
   ])
 
   return (

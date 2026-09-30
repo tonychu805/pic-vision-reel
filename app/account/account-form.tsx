@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabaseClient'
+import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang } from '@/lib/i18n'
 import { setTrainingConsent } from '@/app/[slug]/[code]/actions'
 import { updateDisplayName } from './actions'
@@ -34,7 +34,7 @@ export default function AccountForm({
   }
 
   async function signOut() {
-    await createClient().auth.signOut()
+    await signOutEverywhere()
     window.location.href = '/login'
   }
 

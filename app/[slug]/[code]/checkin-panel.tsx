@@ -14,7 +14,7 @@
 // could drift from it.
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabaseClient'
+import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import { checkIn, joinCheckIn, endCheckIn, updateCheckInEnd } from './actions'
 
@@ -143,7 +143,7 @@ export default function CheckinPanel({
   }
 
   async function signOut() {
-    await createClient().auth.signOut()
+    await signOutEverywhere()
     // A full reload, not a router refresh: the server component that
     // fetches `options` (page.tsx) needs to re-read the now-cleared
     // session cookie from scratch.

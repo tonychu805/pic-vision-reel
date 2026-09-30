@@ -40,7 +40,42 @@ export default function SignInButtons({
   // eventual redirect losing its matching verifier.
   const submitting = useRef(false)
 
-  async function signIn(provider: 'custom:line' | 'google') {
+  // LINE login moved off Supabase's own GoTrue onto Auth0 (2026-09-30,
+  // ADR pending) -- GoTrue's custom OIDC provider only ever worked for a
+  // LINE identity's first-ever link, then failed every repeat login
+  // (matches a known Supabase Auth upstream bug class, never root-caused
+  // on our side). Google keeps using signInWithOAuth() below, unaffected.
+  function signInWithLine() {
+    if (mode === 'signup' && !consentGiven) {
+      onBlocked?.()
+      return
+    }
+    if (submitting.current) return
+    submitting.current = true
+    // btoa(), not Buffer -- this runs in the browser. The payload is
+    // always plain ASCII (a path plus two single-digit flags), so the
+    // usual btoa() unicode caveat doesn't apply here.
+    const stateJson = JSON.stringify({
+      next,
+      ...(mode === 'signup' ? { consent: '1', training: trainingConsent ? '1' : '0' } : {}),
+    })
+    const state = btoa(stateJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const params = new URLSearchParams({
+      client_id: process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID!,
+      response_type: 'code',
+      // offline_access is what actually gets a refresh_token back --
+      // without it Auth0 only returns an id_token, and a LINE session
+      // would die the moment that token's own short expiry hit, same
+      // dead end this whole migration exists to fix.
+      scope: 'openid profile offline_access',
+      connection: 'line',
+      redirect_uri: `${window.location.origin}/auth/line-callback`,
+      state,
+    })
+    window.location.href = `https://${process.env.NEXT_PUBLIC_AUTH0_DOMAIN}/authorize?${params}`
+  }
+
+  async function signInWithGoogle() {
     if (mode === 'signup' && !consentGiven) {
       onBlocked?.()
       return
@@ -49,18 +84,7 @@ export default function SignInButtons({
     submitting.current = true
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
-      // LINE isn't a built-in provider in @supabase/auth-js@2.114.0's
-      // `Provider` union (confirmed by reading the installed package's
-      // type declarations directly) -- it's wired up as a custom OIDC
-      // provider (Supabase Dashboard: Authentication > Providers > New
-      // Provider > Manual configuration, identifier `custom:line`,
-      // pointed at LINE's authorize/token/userinfo endpoints directly
-      // rather than auto-discovery, to route around LINE's web-login ID
-      // tokens being HS256-signed while Supabase's OIDC verification only
-      // accepts ES256 -- confirmed working end-to-end 2026-09-29). The
-      // SDK's `Provider` type has no way to know about a project's custom
-      // provider ids, hence the cast.
-      provider: provider as Parameters<typeof supabase.auth.signInWithOAuth>[0]['provider'],
+      provider: 'google',
       options: {
         // &consent=1 carries the just-ticked checkboxes across the OAuth
         // redirect round-trip: there's no session yet at this point to
@@ -68,15 +92,6 @@ export default function SignInButtons({
         // callback exchanges the code), so app/auth/callback/route.ts is
         // where it actually gets written, once one does.
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${mode === 'signup' ? `&consent=1&training=${trainingConsent ? '1' : '0'}` : ''}`,
-        // Confirmed via a captured network trace: the Dashboard's custom-
-        // provider "Scopes" field is NOT applied to the outgoing LINE
-        // authorize request -- it went out with scope= empty, and LINE's
-        // API rejected that with error=INVALID_SCOPE. Scopes must be
-        // passed here explicitly, space-separated. No `email` scope: LINE
-        // gates that behind a separate approval the channel hasn't
-        // requested; "Allow users without email" is on to handle LINE
-        // accounts with none.
-        ...(provider === 'custom:line' ? { scopes: 'profile openid' } : {}),
       },
     })
   }
@@ -84,7 +99,7 @@ export default function SignInButtons({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <button
-        onClick={() => signIn('custom:line')}
+        onClick={signInWithLine}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           padding: '12px 16px', border: 'none', borderRadius: 8,
@@ -94,7 +109,7 @@ export default function SignInButtons({
         {t(lang, mode === 'signup' ? 'signUpWithLine' : 'signInWithLine')}
       </button>
       <button
-        onClick={() => signIn('google')}
+        onClick={signInWithGoogle}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           padding: '12px 16px', border: '1px solid var(--divider)', borderRadius: 8,

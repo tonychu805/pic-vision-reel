@@ -31,8 +31,9 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
   const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
 
   const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) {
+  // current_player_id(), not auth.getUser() -- see app/account/page.tsx.
+  const { data: playerId } = await supabase.rpc('current_player_id')
+  if (!playerId) {
     redirect(`/login?next=${encodeURIComponent(`/consent?next=${encodeURIComponent(safeNext)}`)}`)
   }
 

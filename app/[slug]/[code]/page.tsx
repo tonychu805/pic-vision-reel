@@ -40,8 +40,13 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
   // reveal anything (redirect() throws internally; must run in the
   // component body, not inside a conditional expression it can't escape).
   const authedSupabase = await createServerSupabase()
-  const { data: userData } = await authedSupabase.auth.getUser()
-  if (!userData.user) {
+  // current_player_id(), not auth.getUser() -- getUser() is GoTrue-
+  // specific and returns nothing for an Auth0/LINE session, which has no
+  // auth.users row to look up. This one RPC works for both providers
+  // (see lib/supabaseServer.ts, pic-vision-cloud-console migration
+  // 20260930130000).
+  const { data: playerId } = await authedSupabase.rpc('current_player_id')
+  if (!playerId) {
     redirect(`/login?next=${encodeURIComponent(`/${slug}/${code}`)}`)
   }
 
