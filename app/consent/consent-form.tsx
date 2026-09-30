@@ -26,9 +26,9 @@ export default function ConsentForm({ lang, next }: { lang: Lang; next: string }
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>
         {t(lang, 'consentIntro')}{' '}
-        <a href="https://picvisionai.com/venue-player-notice-template" target="_blank" rel="noreferrer">{t(lang, 'consentNoticeLink')}</a>
+        <a href="https://picvisionai.com/venue-player-notice-template" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{t(lang, 'consentNoticeLink')}</a>
         {' · '}
-        <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer">{t(lang, 'consentPrivacyLink')}</a>
+        <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{t(lang, 'consentPrivacyLink')}</a>
       </p>
       <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>{t(lang, 'consentAgeStatement')}</p>
       <label style={{ display: 'flex', gap: 8, fontSize: 13.5 }}>
