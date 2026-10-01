@@ -1,19 +1,12 @@
-// No index concept here -- every real page is per-reel (/r/[reelId]),
-// generated once a highlight finishes processing (ADR-074) and sent
-// directly to whoever's getting the clip. This root route only exists
-// because Next.js requires one; nothing links here for real.
-import { t } from '@/lib/i18n'
-import { currentLang } from '@/lib/lang-server'
+// Predates the self-serve login/check-in system (originally: no real
+// reason to land here, every real page is per-reel or per-venue-QR-code,
+// sent directly to whoever needs it). Now that a player might reasonably
+// type or bookmark the bare domain -- to sign in, check their account,
+// or because a venue's QR code happened to be deactivated when they
+// scanned it -- a dead-end hint page is the wrong answer; send them to
+// the one place that's actually useful without a specific link in hand.
+import { redirect } from 'next/navigation'
 
-export default async function Page() {
-  const lang = await currentLang()
-  return (
-    <main className="share-page">
-      <div className="share-shell" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 80 }}>
-        <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>
-          {t(lang, 'homeHint')}
-        </p>
-      </div>
-    </main>
-  )
+export default function Page() {
+  redirect('/login')
 }
