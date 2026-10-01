@@ -28,7 +28,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ConsentPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams
   const lang = await currentLang()
-  const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
+  // Falls back to /account, not '/' -- see app/login/page.tsx's own
+  // comment on this same default.
+  const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/account'
 
   const supabase = await createClient()
   // current_player_id(), not auth.getUser() -- see app/account/page.tsx.
