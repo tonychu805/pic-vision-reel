@@ -55,6 +55,18 @@ export type CheckInOption = {
   recent_ends_at: string | null
   recent_already_joined: boolean
   recent_participant_count: number
+  // A booking-system session's number and booker, so players can spot their
+  // own booking (console migration 20261004110000). The name arrives
+  // already masked ("A*****y") -- the full name never reaches this page.
+  booking_number?: string | null
+  booker_masked?: string | null
+  recent_booking_number?: string | null
+  recent_booker_masked?: string | null
+}
+
+/** "A*****y · #149166", or '' when the session didn't come from a booking system. */
+function bookingTag(number: string | null | undefined, masked: string | null | undefined): string {
+  return [masked, number && `#${number}`].filter(Boolean).join(' · ')
 }
 
 // How often to re-check while a check-in's camera hasn't confirmed yet,
@@ -242,10 +254,14 @@ export default function CheckinPanel({
   function claimRow(o: CheckInOption) {
     if (!o.recent_session_id || !o.recent_starts_at || !o.recent_ends_at) return null
     const times = { start: clockLabel(o.recent_starts_at, timeZone), end: clockLabel(o.recent_ends_at, timeZone) }
+    const tag = bookingTag(o.recent_booking_number, o.recent_booker_masked)
     if (o.recent_already_joined) {
       return (
         <div className="calendar-slot calendar-slot--pending">
-          <span>{o.camera_label}</span>
+          <span>
+            {o.camera_label}
+            {tag && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 12.5 }}>{tag}</span>}
+          </span>
           <span>{t(lang, 'checkInClaimedRecent', times)}</span>
         </div>
       )
@@ -258,7 +274,10 @@ export default function CheckinPanel({
         disabled={full || busy === o.recent_session_id}
         onClick={() => doJoin(o.recent_session_id!)}
       >
-        <span>{o.camera_label}</span>
+        <span>
+          {o.camera_label}
+          {tag && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 12.5 }}>{tag}</span>}
+        </span>
         <span className="calendar-slot-go">
           {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInClaimRecent', { ...times, count: o.recent_participant_count })}
         </span>
@@ -268,7 +287,8 @@ export default function CheckinPanel({
 
   function courtRow(o: CheckInOption) {
     const bookedUntil = o.session_source && o.session_source !== 'player_check_in' && o.session_ends_at
-      ? t(lang, 'checkInBookedUntil', { time: clockLabel(o.session_ends_at, timeZone) })
+      ? [bookingTag(o.booking_number, o.booker_masked), t(lang, 'checkInBookedUntil', { time: clockLabel(o.session_ends_at, timeZone) })]
+          .filter(Boolean).join(' · ')
       : null
     if (!o.is_busy) {
       const { hour, period } = endTimeFor(o.camera_row_id)
