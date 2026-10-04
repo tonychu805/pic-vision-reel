@@ -12,10 +12,11 @@
 // already_joined, participant_count) is what actually drives what's shown
 // -- the database is the source of truth, not a client-side flag that
 // could drift from it.
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
+import { clockLabel } from '@/lib/calendar'
 import { checkIn, joinCheckIn, endCheckIn, updateCheckInEnd } from './actions'
 
 export type CheckInOption = {
@@ -27,9 +28,9 @@ export type CheckInOption = {
   participant_count: number
   has_current_consent: boolean
   is_owner: boolean
-  // null unless is_busy && source is a player check-in -- see
-  // get_check_in_options (pic-vision-cloud-console migration
-  // 20260930180000). Reflects the real agent_commands row the venue
+  // null unless is_busy -- see get_check_in_options
+  // (pic-vision-cloud-console migrations 20260930180000, 20261004100000).
+  // Reflects the real agent_commands row the venue
   // machine reports its own start_recording result onto, not a guess:
   // "pending" means checked in but not yet confirmed by the camera
   // (usually seconds, but the machine could be offline), "done" means
@@ -37,6 +38,23 @@ export type CheckInOption = {
   // recording_error then carries the real reason.
   recording_status: 'pending' | 'done' | 'error' | null
   recording_error: string | null
+  // PIC-191 (console migration 20261004100000): busy_session_id now covers
+  // every source, not just player check-ins. A 'schedule' (venue) or
+  // 'calendar' (booking system) session has no host -- is_owner is always
+  // false for it -- so the only thing a player can do is join it.
+  session_source: 'player_check_in' | 'schedule' | 'calendar' | null
+  session_ends_at: string | null
+  // The camera's next booked session, so a new check-in can't run into it
+  // (player_check_in refuses with 'booked_soon').
+  next_session_starts_at: string | null
+  // A non-QR session that ended less than 30 minutes ago: still claimable,
+  // because with a pre-booked session nobody necessarily scanned during
+  // play. Reported even while the next session is already running.
+  recent_session_id: string | null
+  recent_starts_at: string | null
+  recent_ends_at: string | null
+  recent_already_joined: boolean
+  recent_participant_count: number
 }
 
 // How often to re-check while a check-in's camera hasn't confirmed yet,
@@ -53,14 +71,18 @@ const ERROR_KEYS: Record<string, StringKey> = {
   ends_at_too_far: 'endsAtTooFarError',
   session_not_active: 'sessionNotActiveError',
   session_full: 'sessionFullError',
+  booked_soon: 'bookedSoonError',
 }
 
 export default function CheckinPanel({
-  lang, slug, code, options,
+  lang, slug, code, timeZone, options,
 }: {
   lang: Lang
   slug: string
   code: string
+  // The venue's timezone, for booked-session times -- the same clock the
+  // games calendar below uses, so the two never disagree.
+  timeZone: string
   options: CheckInOption[]
 }) {
   const router = useRouter()
@@ -216,128 +238,175 @@ export default function CheckinPanel({
     </button>
   )
 
+  // "Get the reel from 19:00–20:00" for a booked session that just ended.
+  function claimRow(o: CheckInOption) {
+    if (!o.recent_session_id || !o.recent_starts_at || !o.recent_ends_at) return null
+    const times = { start: clockLabel(o.recent_starts_at, timeZone), end: clockLabel(o.recent_ends_at, timeZone) }
+    if (o.recent_already_joined) {
+      return (
+        <div className="calendar-slot calendar-slot--pending">
+          <span>{o.camera_label}</span>
+          <span>{t(lang, 'checkInClaimedRecent', times)}</span>
+        </div>
+      )
+    }
+    const full = o.recent_participant_count >= 10
+    return (
+      <button
+        className="calendar-slot"
+        style={{ width: '100%', boxSizing: 'border-box' }}
+        disabled={full || busy === o.recent_session_id}
+        onClick={() => doJoin(o.recent_session_id!)}
+      >
+        <span>{o.camera_label}</span>
+        <span className="calendar-slot-go">
+          {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInClaimRecent', { ...times, count: o.recent_participant_count })}
+        </span>
+      </button>
+    )
+  }
+
+  function courtRow(o: CheckInOption) {
+    const bookedUntil = o.session_source && o.session_source !== 'player_check_in' && o.session_ends_at
+      ? t(lang, 'checkInBookedUntil', { time: clockLabel(o.session_ends_at, timeZone) })
+      : null
+    if (!o.is_busy) {
+      const { hour, period } = endTimeFor(o.camera_row_id)
+      return (
+        <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+          <span>{o.camera_label}</span>
+          {o.next_session_starts_at && (
+            <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>
+              {t(lang, 'checkInBookedFrom', { time: clockLabel(o.next_session_starts_at, timeZone) })}
+            </p>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+            {t(lang, 'checkInEndTimeLabel')}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <select
+                value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
+                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+              >
+                <option value="" disabled>--</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+              <select
+                value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
+                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+          </div>
+          <button
+            className="calendar-slot"
+            style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
+            disabled={busy === o.camera_row_id}
+            onClick={() => doCheckIn(o.camera_row_id)}
+          >
+            {t(lang, 'checkInStart')}
+          </button>
+        </div>
+      )
+    }
+    if (o.busy_session_id && o.is_owner) {
+      const { hour, period } = endTimeFor(o.camera_row_id)
+      return (
+        <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+          <span>{o.camera_label}</span>
+          {recordingStatusLine(o)}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+            {t(lang, 'checkInExtendLabel')}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <select
+                value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
+                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+              >
+                <option value="" disabled>--</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+              <select
+                value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
+                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+              <button
+                className="calendar-slot"
+                style={{ boxSizing: 'border-box', justifyContent: 'center' }}
+                disabled={busy === o.busy_session_id}
+                onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}
+              >
+                {t(lang, 'checkInExtendSubmit')}
+              </button>
+            </div>
+          </div>
+          <button
+            className="calendar-slot"
+            style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
+            disabled={busy === o.busy_session_id}
+            onClick={() => doEnd(o.busy_session_id!)}
+          >
+            {t(lang, 'checkInEnd')}
+          </button>
+        </div>
+      )
+    }
+    if (o.busy_session_id && o.already_joined) {
+      return (
+        <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
+          <span>{o.camera_label}</span>
+          <span>{t(lang, 'checkInAlreadyJoined')}</span>
+          {bookedUntil && <span style={{ color: 'var(--muted)', fontSize: 12.5 }}>{bookedUntil}</span>}
+          {recordingStatusLine(o)}
+        </div>
+      )
+    }
+    if (o.busy_session_id && !o.already_joined) {
+      const full = o.participant_count >= 10
+      return (
+        <button
+          key={o.camera_row_id}
+          className="calendar-slot"
+          style={{ width: '100%', boxSizing: 'border-box' }}
+          disabled={full || busy === o.busy_session_id}
+          onClick={() => doJoin(o.busy_session_id!)}
+        >
+          <span>
+            {o.camera_label}
+            {bookedUntil && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 12.5 }}>{bookedUntil}</span>}
+          </span>
+          <span className="calendar-slot-go">
+            {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInJoin', { count: o.participant_count })}
+          </span>
+        </button>
+      )
+    }
+    return (
+      <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending">
+        <span>{o.camera_label}</span>
+        <span>{t(lang, 'checkInBusy')}</span>
+      </div>
+    )
+  }
+
   const anyFree = options.some((o) => !o.is_busy)
   return (
     <section className="calendar-court">
       <h2>{t(lang, 'checkInTitle')}</h2>
       {!anyFree && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'checkInNoneFree')}</p>}
-      {options.map((o) => {
-        if (!o.is_busy) {
-          const { hour, period } = endTimeFor(o.camera_row_id)
-          return (
-            <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
-              <span>{o.camera_label}</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                {t(lang, 'checkInEndTimeLabel')}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <select
-                    value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
-                    style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
-                  >
-                    <option value="" disabled>--</option>
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                      <option key={h} value={h}>{h}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
-                    style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
-                  >
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                  </select>
-                </div>
-              </div>
-              <button
-                className="calendar-slot"
-                style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
-                disabled={busy === o.camera_row_id}
-                onClick={() => doCheckIn(o.camera_row_id)}
-              >
-                {t(lang, 'checkInStart')}
-              </button>
-            </div>
-          )
-        }
-        if (o.busy_session_id && o.is_owner) {
-          const { hour, period } = endTimeFor(o.camera_row_id)
-          return (
-            <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
-              <span>{o.camera_label}</span>
-              {recordingStatusLine(o)}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                {t(lang, 'checkInExtendLabel')}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <select
-                    value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
-                    style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
-                  >
-                    <option value="" disabled>--</option>
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                      <option key={h} value={h}>{h}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
-                    style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
-                  >
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                  </select>
-                  <button
-                    className="calendar-slot"
-                    style={{ boxSizing: 'border-box', justifyContent: 'center' }}
-                    disabled={busy === o.busy_session_id}
-                    onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}
-                  >
-                    {t(lang, 'checkInExtendSubmit')}
-                  </button>
-                </div>
-              </div>
-              <button
-                className="calendar-slot"
-                style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
-                disabled={busy === o.busy_session_id}
-                onClick={() => doEnd(o.busy_session_id!)}
-              >
-                {t(lang, 'checkInEnd')}
-              </button>
-            </div>
-          )
-        }
-        if (o.busy_session_id && o.already_joined) {
-          return (
-            <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
-              <span>{o.camera_label}</span>
-              <span>{t(lang, 'checkInAlreadyJoined')}</span>
-              {recordingStatusLine(o)}
-            </div>
-          )
-        }
-        if (o.busy_session_id && !o.already_joined) {
-          const full = o.participant_count >= 10
-          return (
-            <button
-              key={o.camera_row_id}
-              className="calendar-slot"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-              disabled={full || busy === o.busy_session_id}
-              onClick={() => doJoin(o.busy_session_id!)}
-            >
-              <span>{o.camera_label}</span>
-              <span className="calendar-slot-go">
-                {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInJoin', { count: o.participant_count })}
-              </span>
-            </button>
-          )
-        }
-        return (
-          <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending">
-            <span>{o.camera_label}</span>
-            <span>{t(lang, 'checkInBusy')}</span>
-          </div>
-        )
-      })}
+      {options.map((o) => (
+        <Fragment key={o.camera_row_id}>
+          {claimRow(o)}
+          {courtRow(o)}
+        </Fragment>
+      ))}
       {error && <p style={{ color: 'var(--error, #c0392b)', fontSize: 12.5 }}>{error}</p>}
       {signOutLink}
     </section>
