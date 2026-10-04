@@ -14,10 +14,14 @@ export function byCourt(games: CalendarGame[]): CourtGames[] {
     .map(([court, list]) => ({ court, games: [...list].sort((x, y) => y.started_at.localeCompare(x.started_at)) }))
 }
 
+/** "14:00", in the venue's time -- not the phone's or the server's. */
+export function clockLabel(iso: string, timeZone: string): string {
+  return new Date(iso).toLocaleTimeString('en-GB', { timeZone, hour: '2-digit', minute: '2-digit' })
+}
+
 /** "14:00–15:00", or "14:03" for a game with no booked end, in the venue's time. */
 export function slotLabel(g: CalendarGame, timeZone: string): string {
-  const fmt = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { timeZone, hour: '2-digit', minute: '2-digit' })
-  return g.ends_at ? `${fmt(g.started_at)}–${fmt(g.ends_at)}` : fmt(g.started_at)
+  return g.ends_at ? `${clockLabel(g.started_at, timeZone)}–${clockLabel(g.ends_at, timeZone)}` : clockLabel(g.started_at, timeZone)
 }
 
 /** Today's date in the venue's time: "Thu 24 Sept", or "9月24日 週四" in Chinese. */

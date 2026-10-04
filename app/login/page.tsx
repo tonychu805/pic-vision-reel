@@ -23,8 +23,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { next, auth_error } = await searchParams
   const lang = await currentLang()
   // Only ever redirect within this app -- never follow an absolute or
-  // protocol-relative `next` value (open-redirect guard).
-  const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
+  // protocol-relative `next` value (open-redirect guard). Falls back to
+  // /account, not '/' -- '/' itself now redirects straight back to
+  // /login, which would otherwise bounce a successful sign-in with no
+  // venue context right back to the sign-in form, looking exactly like
+  // signing in silently failed (found 2026-09-30, right after / started
+  // redirecting to /login).
+  const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/account'
 
   return (
     <main className="share-page">

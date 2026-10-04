@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { byCourt, dateLabel, slotLabel } from './calendar'
+import { byCourt, clockLabel, dateLabel, slotLabel } from './calendar'
 
 test('games grouped by court in natural order, newest first', () => {
   const g = (court: string, started_at: string) => ({ court, started_at, ends_at: null, share_id: null })
@@ -13,6 +13,12 @@ test('slots in venue time', () => {
   const game = { court: 'C', started_at: '2026-09-26T06:00:00Z', ends_at: '2026-09-26T07:00:00Z', share_id: null }
   assert.equal(slotLabel(game, 'Asia/Taipei'), '14:00–15:00')
   assert.equal(slotLabel({ ...game, ends_at: null }, 'Asia/Taipei'), '14:00')
+})
+
+test('a single clock time in venue time', () => {
+  // 11:00 UTC is 19:00 in Taipei -- the booked-session labels on the
+  // check-in panel must not depend on the server's or phone's timezone.
+  assert.equal(clockLabel('2026-10-05T11:00:00Z', 'Asia/Taipei'), '19:00')
 })
 
 test("the date is the venue's date, not the server's", () => {
