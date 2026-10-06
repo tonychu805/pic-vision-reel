@@ -9,6 +9,7 @@ import { currentLang } from '@/lib/lang-server'
 import LangSwitch from '@/components/lang-switch'
 import AccountIcon from '@/components/account-icon'
 import CheckinPanel, { type CheckInOption } from './checkin-panel'
+import DemoAdminPanel from './demo-admin-panel'
 
 // A venue's public game calendar, opened by QR code at the venue: today's
 // games on the courts the venue chose, each linking to its reels page.
@@ -124,6 +125,8 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
             </section>
           ))}
         </div>
+
+        <DemoAdminPanel slug={slug} code={code} />
       </div>
     </main>
   )
