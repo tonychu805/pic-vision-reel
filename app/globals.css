@@ -105,7 +105,7 @@ h1 { margin:0 0 2px; font-size:17px; line-height:1.12; font-weight:500; letter-s
 .feedback-fab { position:fixed; right:16px; bottom:16px; z-index:20; padding:10px 16px; border:1px solid var(--divider); border-radius:999px; background:var(--surface); color:var(--text); font-size:12.5px; font-weight:500; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.45); }
 .feedback-fab:hover { border-color:rgba(145,132,217,.6); }
 
-/* Demo-admin mode (app/r/[shareId]/reel-share-client.tsx) -- deliberately
+/* Demo-admin mode (app/[slug]/[code]/demo-admin-panel.tsx) -- deliberately
    as quiet as .text-action, not meant to invite a player's attention. */
 .demo-admin { margin-top:10px; }
 .demo-admin-trigger { border:0; background:transparent; color:rgba(233,233,237,.3); font-size:11px; cursor:pointer; padding:4px 0; }
@@ -116,6 +116,14 @@ h1 { margin:0 0 2px; font-size:17px; line-height:1.12; font-weight:500; letter-s
 .demo-admin-list { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; width:100%; }
 .demo-admin-list a { color:var(--text); font-size:12.5px; text-decoration:none; opacity:.8; }
 .demo-admin-list a:hover { opacity:1; color:var(--accent); }
+
+/* Bottom tab bar (/<slug>/<code>) -- fixed, same max-width as .share-shell
+   so it stays aligned with the card on wide screens instead of spanning
+   the full viewport. calendar-tabs.tsx adds a spacer div of matching
+   height before this so fixed positioning never covers scrolled content. */
+.bottom-nav { position:fixed; left:50%; bottom:0; transform:translateX(-50%); width:100%; max-width:430px; display:flex; background:var(--surface); border-top:1px solid var(--divider); padding:7px 6px calc(7px + env(safe-area-inset-bottom)); z-index:30; }
+.bottom-nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:5px 0; color:var(--muted); text-decoration:none; background:transparent; border:0; font-size:11px; cursor:pointer; }
+.bottom-nav-item.active { color:var(--accent); }
 
 /* Public game calendar (/<slug>/<code>) */
 .calendar-court { margin-bottom:18px; }

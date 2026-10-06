@@ -10,6 +10,7 @@ import LangSwitch from '@/components/lang-switch'
 import AccountIcon from '@/components/account-icon'
 import CheckinPanel, { type CheckInOption } from './checkin-panel'
 import DemoAdminPanel from './demo-admin-panel'
+import CalendarTabs from './calendar-tabs'
 
 // A venue's public game calendar, opened by QR code at the venue: today's
 // games on the courts the venue chose, each linking to its reels page.
@@ -103,30 +104,33 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
           </div>
         </header>
 
-        <CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={checkInOptions} />
-
-        <div>
-          <div className="eyebrow">{t(lang, 'todaysGames')} · {dateLabel(new Date(), cal.timezone, lang)}</div>
-          {courts.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'noGamesYet')}</p>}
-          {courts.map((c) => (
-            <section key={c.court} className="calendar-court">
-              <h2>{c.court}</h2>
-              {c.games.map((g) => g.share_id ? (
-                <a key={g.started_at} className="calendar-slot" href={`/r/${g.share_id}`}>
-                  <span>{slotLabel(g, cal.timezone)}</span>
-                  <span className="calendar-slot-go">{t(lang, 'watch')}</span>
-                </a>
-              ) : (
-                <div key={g.started_at} className="calendar-slot calendar-slot--pending">
-                  <span>{slotLabel(g, cal.timezone)}</span>
-                  <span>{t(lang, 'reelsOnTheWay')}</span>
-                </div>
+        <CalendarTabs
+          lang={lang}
+          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={checkInOptions} />}
+          sessions={
+            <div>
+              <div className="eyebrow">{t(lang, 'todaysGames')} · {dateLabel(new Date(), cal.timezone, lang)}</div>
+              {courts.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'noGamesYet')}</p>}
+              {courts.map((c) => (
+                <section key={c.court} className="calendar-court">
+                  <h2>{c.court}</h2>
+                  {c.games.map((g) => g.share_id ? (
+                    <a key={g.started_at} className="calendar-slot" href={`/r/${g.share_id}`}>
+                      <span>{slotLabel(g, cal.timezone)}</span>
+                      <span className="calendar-slot-go">{t(lang, 'watch')}</span>
+                    </a>
+                  ) : (
+                    <div key={g.started_at} className="calendar-slot calendar-slot--pending">
+                      <span>{slotLabel(g, cal.timezone)}</span>
+                      <span>{t(lang, 'reelsOnTheWay')}</span>
+                    </div>
+                  ))}
+                </section>
               ))}
-            </section>
-          ))}
-        </div>
-
-        <DemoAdminPanel slug={slug} code={code} />
+              <DemoAdminPanel slug={slug} code={code} />
+            </div>
+          }
+        />
       </div>
     </main>
   )
