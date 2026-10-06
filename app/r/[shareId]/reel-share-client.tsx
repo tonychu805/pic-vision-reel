@@ -117,22 +117,6 @@ export default function ReelShareClient({
   const [blobs, setBlobs] = useState<(Blob | null)[]>(() => slides.map(() => null))
   const [ready, setReady] = useState<boolean[]>(() => slides.map(() => false))
 
-  // Demo-admin mode: a hidden date picker for jumping between candidate
-  // demo sessions from one bookmarked share link, instead of needing a
-  // different URL per candidate clip. Password-gated server-side
-  // (app/api/admin/login) -- nothing here trusts the client, this state is
-  // just UI, not the actual access check.
-  const [adminOpen, setAdminOpen] = useState(false)
-  const [adminAuthed, setAdminAuthed] = useState(false)
-  const [adminPassword, setAdminPassword] = useState('')
-  const [adminError, setAdminError] = useState(false)
-  const [adminBusy, setAdminBusy] = useState(false)
-  const [demoDate, setDemoDate] = useState('')
-  const [demoSessions, setDemoSessions] = useState<
-    { share_id: string; camera_label: string | null; created_at: string; reel_count: number }[] | null
-  >(null)
-  const [demoSessionsLoading, setDemoSessionsLoading] = useState(false)
-
   const scrollRef = useRef<HTMLDivElement>(null)
   const slideRefs = useRef<(HTMLDivElement | null)[]>([])
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
@@ -338,50 +322,6 @@ export default function ReelShareClient({
 
   const allReady = slides.every((_, i) => ready[i])
 
-  async function submitAdminPassword(e: React.FormEvent) {
-    e.preventDefault()
-    if (adminBusy) return
-    setAdminBusy(true)
-    setAdminError(false)
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: adminPassword }),
-      })
-      if (res.ok) {
-        setAdminAuthed(true)
-        setAdminPassword('')
-      } else {
-        setAdminError(true)
-      }
-    } catch {
-      setAdminError(true)
-    }
-    setAdminBusy(false)
-  }
-
-  async function loadDemoSessions(date: string) {
-    setDemoDate(date)
-    if (!date) {
-      setDemoSessions(null)
-      return
-    }
-    setDemoSessionsLoading(true)
-    try {
-      const res = await fetch(`/api/admin/sessions?shareId=${shareId}&date=${date}`)
-      if (res.ok) {
-        const data = await res.json() as { sessions: typeof demoSessions }
-        setDemoSessions(data.sessions ?? [])
-      } else {
-        setDemoSessions([])
-      }
-    } catch {
-      setDemoSessions([])
-    }
-    setDemoSessionsLoading(false)
-  }
-
   return (
     <main className="share-page">
       <div className="share-shell">
@@ -489,53 +429,6 @@ export default function ReelShareClient({
               )}{' '}
               {t(lang, wantAll && allReady ? 'downloadAllReady' : 'downloadAll')}
             </button>
-          )}
-        </div>
-
-        <div className="demo-admin">
-          {!adminOpen ? (
-            <button type="button" className="demo-admin-trigger" onClick={() => setAdminOpen(true)}>
-              Admin login
-            </button>
-          ) : !adminAuthed ? (
-            <form className="demo-admin-form" onSubmit={submitAdminPassword}>
-              <input
-                type="password"
-                className="demo-admin-input"
-                placeholder="Password"
-                autoFocus
-                value={adminPassword}
-                onChange={(e) => { setAdminPassword(e.target.value); setAdminError(false) }}
-              />
-              <button type="submit" className="demo-admin-trigger" disabled={adminBusy || !adminPassword}>
-                {adminBusy ? '…' : 'Go'}
-              </button>
-              {adminError && <span className="demo-admin-error">Wrong password</span>}
-            </form>
-          ) : (
-            <div className="demo-admin-picker">
-              <input
-                type="date"
-                className="demo-admin-input"
-                value={demoDate}
-                onChange={(e) => loadDemoSessions(e.target.value)}
-              />
-              {demoSessionsLoading && <span className="demo-admin-error">Loading…</span>}
-              {demoSessions && demoSessions.length === 0 && !demoSessionsLoading && (
-                <span className="demo-admin-error">No sessions that day</span>
-              )}
-              {demoSessions && demoSessions.length > 0 && (
-                <ul className="demo-admin-list">
-                  {demoSessions.map((s) => (
-                    <li key={s.share_id}>
-                      <a href={`/r/${s.share_id}`}>
-                        {s.camera_label ?? 'Camera'} · {new Date(s.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · {s.reel_count} clips
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           )}
         </div>
 
