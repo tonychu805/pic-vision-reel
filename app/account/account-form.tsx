@@ -7,7 +7,10 @@ import { t, type Lang } from '@/lib/i18n'
 import { setTrainingConsent } from '@/app/[slug]/[code]/actions'
 import { updateDisplayName, updateEmail, updatePassword } from './actions'
 
-const inputStyle = { padding: '10px 12px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }
+// fontSize 16, not 14 -- iOS Safari auto-zooms the page on focus for any
+// text input under 16px, and that zoom sticks around through later
+// navigation (confirmed on a real phone, 2026-10-06).
+const inputStyle = { padding: '10px 12px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }
 
 export default function AccountForm({
   lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword,

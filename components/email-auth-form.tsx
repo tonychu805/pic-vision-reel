@@ -26,7 +26,10 @@ import { ensurePlayerAfterEmailAuth } from '@/app/login/actions'
 import { recordConsent, setTrainingConsent } from '@/app/[slug]/[code]/actions'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const inputStyle = { padding: '10px 12px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }
+// fontSize 16, not 14 -- iOS Safari auto-zooms the page on focus for any
+// text input under 16px, and that zoom sticks around through later
+// navigation (confirmed on a real phone, 2026-10-06).
+const inputStyle = { padding: '10px 12px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }
 
 export default function EmailAuthForm({
   lang, mode, next, consentGiven = true, trainingConsent = false, onBlocked,

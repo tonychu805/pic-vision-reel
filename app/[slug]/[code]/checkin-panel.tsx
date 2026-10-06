@@ -305,7 +305,7 @@ export default function CheckinPanel({
             <div style={{ display: 'flex', gap: 8 }}>
               <select
                 value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
-                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }}
               >
                 <option value="" disabled>--</option>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
@@ -314,7 +314,7 @@ export default function CheckinPanel({
               </select>
               <select
                 value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
-                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }}
               >
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
@@ -343,7 +343,7 @@ export default function CheckinPanel({
             <div style={{ display: 'flex', gap: 8 }}>
               <select
                 value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
-                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }}
               >
                 <option value="" disabled>--</option>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
@@ -352,7 +352,7 @@ export default function CheckinPanel({
               </select>
               <select
                 value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
-                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 14 }}
+                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }}
               >
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>

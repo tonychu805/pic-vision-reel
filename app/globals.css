@@ -111,7 +111,9 @@ h1 { margin:0 0 2px; font-size:17px; line-height:1.12; font-weight:500; letter-s
 .demo-admin-trigger { border:0; background:transparent; color:rgba(233,233,237,.3); font-size:11px; cursor:pointer; padding:4px 0; }
 .demo-admin-trigger:hover { color:rgba(233,233,237,.55); }
 .demo-admin-form, .demo-admin-picker { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.demo-admin-input { background:var(--surface); border:1px solid var(--divider); border-radius:6px; color:var(--text); font-size:12.5px; padding:5px 8px; }
+/* font-size 16px, not 12.5px -- below 16px, iOS Safari auto-zooms the
+   page on focus and the zoom sticks through later navigation. */
+.demo-admin-input { background:var(--surface); border:1px solid var(--divider); border-radius:6px; color:var(--text); font-size:16px; padding:5px 8px; }
 .demo-admin-error { color:var(--muted); font-size:11px; }
 .demo-admin-list { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; width:100%; }
 .demo-admin-list a { color:var(--text); font-size:12.5px; text-decoration:none; opacity:.8; }
