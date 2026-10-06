@@ -1,14 +1,17 @@
 'use client'
 
-// Fixed bottom tab bar for the venue QR-code page: check-in and today's
-// games are both already rendered server-side by page.tsx (via
-// CalendarTabs, which just toggles their visibility client-side), while
-// Account is a real navigation to the existing /account page -- it has
-// its own data and isn't part of this page's server fetch.
-import Link from 'next/link'
+// Fixed bottom tab bar for the venue QR-code page: check-in, today's
+// games, and the account form are all already rendered server-side by
+// page.tsx (via CalendarTabs, which just toggles visibility client-side
+// between the three) -- this bar only switches which one shows, same as
+// any other tab bar. (The standalone /account page still exists
+// separately -- it's the fallback landing page for login/signup/consent
+// when there's no venue `next` to return to -- this tab just means a
+// visitor who got here via a venue's QR code never has to leave this
+// page to see it.)
 import { t, type Lang } from '@/lib/i18n'
 
-export type CalendarTab = 'checkin' | 'sessions'
+export type CalendarTab = 'checkin' | 'sessions' | 'account'
 
 export default function BottomNav({ lang, active, onSelect }: { lang: Lang; active: CalendarTab; onSelect: (tab: CalendarTab) => void }) {
   return (
@@ -26,13 +29,13 @@ export default function BottomNav({ lang, active, onSelect }: { lang: Lang; acti
         </svg>
         <span>{t(lang, 'navSessions')}</span>
       </button>
-      <Link href="/account" className="bottom-nav-item">
+      <button type="button" className={`bottom-nav-item${active === 'account' ? ' active' : ''}`} onClick={() => onSelect('account')}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="8" r="4" />
           <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" />
         </svg>
         <span>{t(lang, 'navAccount')}</span>
-      </Link>
+      </button>
     </nav>
   )
 }

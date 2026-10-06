@@ -7,7 +7,9 @@ import { byCourt, dateLabel, slotLabel, type CalendarGame } from '@/lib/calendar
 import { t } from '@/lib/i18n'
 import { currentLang } from '@/lib/lang-server'
 import LangSwitch from '@/components/lang-switch'
-import AccountIcon from '@/components/account-icon'
+import PoweredByFooter from '@/components/powered-by-footer'
+import { getAccountData } from '@/lib/accountData'
+import AccountForm from '@/app/account/account-form'
 import CheckinPanel, { type CheckInOption } from './checkin-panel'
 import DemoAdminPanel from './demo-admin-panel'
 import CalendarTabs from './calendar-tabs'
@@ -51,6 +53,10 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
   if (!playerId) {
     redirect(`/login?next=${encodeURIComponent(`/${slug}/${code}`)}`)
   }
+
+  // Same fetch the standalone /account page makes -- the 帳號 tab below
+  // is that page's content embedded here, not a separate feature.
+  const account = await getAccountData(authedSupabase, playerId)
 
   const { data } = validSlugCode
     ? await supabasePublic().rpc('get_public_calendar', { p_slug: slug, p_code: code })
@@ -99,7 +105,6 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
           )}
           <span>{cal.brand_name}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <AccountIcon lang={lang} />
             <LangSwitch lang={lang} />
           </div>
         </header>
@@ -128,6 +133,21 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
                 </section>
               ))}
               <DemoAdminPanel slug={slug} code={code} />
+            </div>
+          }
+          account={
+            <div>
+              <div className="eyebrow">{t(lang, 'accountTitle')}</div>
+              <AccountForm
+                lang={lang}
+                initialName={account.displayName}
+                initialTraining={account.trainingConsented}
+                isLineAccount={account.isLineAccount}
+                initialEmail={account.email}
+                hasPassword={account.hasPassword}
+                showBackLink={false}
+              />
+              <PoweredByFooter lang={lang} />
             </div>
           }
         />

@@ -13,7 +13,7 @@ import { updateDisplayName, updateEmail, updatePassword } from './actions'
 const inputStyle = { padding: '10px 12px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }
 
 export default function AccountForm({
-  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword,
+  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword, showBackLink = true,
 }: {
   lang: Lang
   initialName: string
@@ -21,6 +21,10 @@ export default function AccountForm({
   isLineAccount: boolean
   initialEmail: string | null
   hasPassword: boolean
+  // false on the calendar page's 帳號 tab (app/[slug]/[code]) -- there's a
+  // bottom nav to switch tabs with, so "← Back" would be a second, redundant
+  // way to leave. Still true (default) on the standalone /account page.
+  showBackLink?: boolean
 }) {
   const router = useRouter()
   const [name, setName] = useState(initialName)
@@ -132,12 +136,14 @@ export default function AccountForm({
       >
         {t(lang, 'signOut')}
       </button>
-      <button
-        onClick={() => router.back()}
-        style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer', textAlign: 'left' }}
-      >
-        ← {t(lang, 'backLabel')}
-      </button>
+      {showBackLink && (
+        <button
+          onClick={() => router.back()}
+          style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer', textAlign: 'left' }}
+        >
+          ← {t(lang, 'backLabel')}
+        </button>
+      )}
     </div>
   )
 }

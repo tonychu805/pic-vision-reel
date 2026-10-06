@@ -37,7 +37,11 @@ button { font:inherit; appearance:none; -webkit-appearance:none; }
 .share-page { min-height:100vh; display:flex; justify-content:center; background:var(--bg); }
 .share-shell { width:100%; max-width:430px; display:flex; flex-direction:column; gap:16.8px; padding:18px 18px 28px; }
 .venue-header { display:flex; align-items:center; gap:11px; }
-.venue-header>span { font-size:17px; font-weight:500; }
+/* min-width:0 is load-bearing, not decorative -- a flex item's default
+   min-width is its unwrapped content width, so without this a long venue
+   name (e.g. "Pickle Day Social Club") refuses to truncate and instead
+   squeezes the lang-switch pill next to it until its own text wraps. */
+.venue-header>span { font-size:17px; font-weight:500; min-width:0; flex:1 1 auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .venue-mark { width:44px; height:44px; display:grid; place-items:center; flex:none; border:1px solid var(--divider); border-radius:8px; color:#e7e5fe; font-size:18px; font-weight:500; }
 /* Uploaded logo: a plate with a fixed colour, not the page background. A
    transparent logo only reads on one kind of ground, and a venue uploads
@@ -138,6 +142,11 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 
 /* EN / 中文 switch (components/lang-switch.tsx) */
 .venue-header { position:relative; }
-.lang-switch { margin-left:auto; display:flex; gap:2px; padding:2px; border:1px solid var(--divider); border-radius:999px; }
-.lang-switch button { padding:3px 9px; border:0; border-radius:999px; background:transparent; color:var(--muted); font-size:11.5px; cursor:pointer; }
+.lang-switch { margin-left:auto; flex:none; display:flex; gap:2px; padding:2px; border:1px solid var(--divider); border-radius:999px; }
+/* white-space:nowrap is load-bearing -- without it, under space pressure
+   from a long venue name, the browser treats "中文" as breakable between
+   its two characters and wraps it onto two lines instead of just shrinking
+   the pill. font-size 13px (not 11.5px) because CJK glyphs read smaller
+   than Latin ones at the same size and looked undersized next to "EN". */
+.lang-switch button { padding:4px 10px; border:0; border-radius:999px; background:transparent; color:var(--muted); font-size:13px; white-space:nowrap; cursor:pointer; }
 .lang-switch button.active { background:var(--accent-soft); color:#e7e5fe; }
