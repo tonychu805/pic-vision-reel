@@ -105,6 +105,18 @@ h1 { margin:0 0 2px; font-size:17px; line-height:1.12; font-weight:500; letter-s
 .feedback-fab { position:fixed; right:16px; bottom:16px; z-index:20; padding:10px 16px; border:1px solid var(--divider); border-radius:999px; background:var(--surface); color:var(--text); font-size:12.5px; font-weight:500; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.45); }
 .feedback-fab:hover { border-color:rgba(145,132,217,.6); }
 
+/* Demo-admin mode (app/r/[shareId]/reel-share-client.tsx) -- deliberately
+   as quiet as .text-action, not meant to invite a player's attention. */
+.demo-admin { margin-top:10px; }
+.demo-admin-trigger { border:0; background:transparent; color:rgba(233,233,237,.3); font-size:11px; cursor:pointer; padding:4px 0; }
+.demo-admin-trigger:hover { color:rgba(233,233,237,.55); }
+.demo-admin-form, .demo-admin-picker { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.demo-admin-input { background:var(--surface); border:1px solid var(--divider); border-radius:6px; color:var(--text); font-size:12.5px; padding:5px 8px; }
+.demo-admin-error { color:var(--muted); font-size:11px; }
+.demo-admin-list { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; width:100%; }
+.demo-admin-list a { color:var(--text); font-size:12.5px; text-decoration:none; opacity:.8; }
+.demo-admin-list a:hover { opacity:1; color:var(--accent); }
+
 /* Public game calendar (/<slug>/<code>) */
 .calendar-court { margin-bottom:18px; }
 .calendar-court h2 { margin:0 0 8px; font-size:14px; font-weight:500; color:var(--text); }
