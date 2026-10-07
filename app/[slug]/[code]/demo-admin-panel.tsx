@@ -8,7 +8,7 @@
 // just UI, not the actual access check. Moved here from the /r/[shareId]
 // reel page (operator request, 2026-10-06) -- this page, not that one, is
 // what a QR scan actually opens first.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type DemoSession = { share_id: string; camera_label: string | null; created_at: string; reel_count: number }
 
@@ -25,6 +25,7 @@ const VERTICAL_TEST_SHARE_IDS = new Set([
 ])
 
 export default function DemoAdminPanel({ slug, code }: { slug: string; code: string }) {
+  const [checkingSession, setCheckingSession] = useState(true)
   const [open, setOpen] = useState(false)
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
@@ -33,6 +34,27 @@ export default function DemoAdminPanel({ slug, code }: { slug: string; code: str
   const [date, setDate] = useState('')
   const [sessions, setSessions] = useState<DemoSession[] | null>(null)
   const [sessionsLoading, setSessionsLoading] = useState(false)
+
+  // Already-signed-in-this-demo-day check: the login cookie lasts 8h
+  // specifically so it survives page loads/tab switches, but that's
+  // useless if the UI still starts collapsed behind "Admin login" and
+  // asks for the password again. Skip straight to the date picker when
+  // the cookie's still good.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/admin/session')
+      .then((res) => (res.ok ? res.json() : { authed: false }))
+      .then((data: { authed?: boolean }) => {
+        if (cancelled) return
+        if (data.authed) {
+          setAuthed(true)
+          setOpen(true)
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCheckingSession(false) })
+    return () => { cancelled = true }
+  }, [])
 
   async function submitPassword(e: React.FormEvent) {
     e.preventDefault()
@@ -72,6 +94,8 @@ export default function DemoAdminPanel({ slug, code }: { slug: string; code: str
     }
     setSessionsLoading(false)
   }
+
+  if (checkingSession) return <div className="demo-admin" />
 
   return (
     <div className="demo-admin">

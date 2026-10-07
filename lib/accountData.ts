@@ -8,6 +8,7 @@ export type AccountData = {
   isLineAccount: boolean
   email: string | null
   hasPassword: boolean
+  memberSince: string | null
 }
 
 // Shared by /account (the standalone fallback landing page after
@@ -16,7 +17,7 @@ export type AccountData = {
 // fetch either way, written once rather than drifting into two copies.
 export async function getAccountData(supabase: Awaited<ReturnType<typeof createClient>>, playerId: string): Promise<AccountData> {
   const [{ data: player }, { data: training }] = await Promise.all([
-    supabase.from('players').select('display_name').eq('id', playerId).maybeSingle(),
+    supabase.from('players').select('display_name, created_at').eq('id', playerId).maybeSingle(),
     supabase.from('player_training_consents').select('consented').eq('player_id', playerId).maybeSingle(),
   ])
 
@@ -46,5 +47,6 @@ export async function getAccountData(supabase: Awaited<ReturnType<typeof createC
     isLineAccount,
     email,
     hasPassword,
+    memberSince: player?.created_at ?? null,
   }
 }

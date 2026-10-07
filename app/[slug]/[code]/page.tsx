@@ -137,7 +137,6 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
           }
           account={
             <div>
-              <div className="eyebrow">{t(lang, 'accountTitle')}</div>
               <AccountForm
                 lang={lang}
                 initialName={account.displayName}
@@ -145,6 +144,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
                 isLineAccount={account.isLineAccount}
                 initialEmail={account.email}
                 hasPassword={account.hasPassword}
+                memberSince={account.memberSince}
                 showBackLink={false}
               />
               <PoweredByFooter lang={lang} />
