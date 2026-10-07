@@ -14,7 +14,6 @@
 // could drift from it.
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import { clockLabel } from '@/lib/calendar'
 import { checkIn, joinCheckIn, endCheckIn, updateCheckInEnd } from './actions'
@@ -86,6 +85,13 @@ const ERROR_KEYS: Record<string, StringKey> = {
   booked_soon: 'bookedSoonError',
 }
 
+// A commit action pending the player's explicit confirmation -- check-in,
+// join and end all start or stop a real recording, so a mis-tap on the
+// wrong court shouldn't be one click away from committing. Keyed so only
+// one card shows its confirm state at a time; confirming a different
+// card's action replaces it rather than stacking.
+type PendingAction = { key: string; message: string; run: () => void }
+
 export default function CheckinPanel({
   lang, slug, code, timeZone, options,
 }: {
@@ -100,6 +106,7 @@ export default function CheckinPanel({
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState<PendingAction | null>(null)
   // Keyed by camera_row_id -- each court can be booked to a different end
   // time (operator found the shared, single picker wrong: a real group
   // might have one court until 3pm and another until 4pm). No shared
@@ -120,17 +127,28 @@ export default function CheckinPanel({
     setError(t(lang, ERROR_KEYS[code] ?? 'genericError'))
   }
 
+  // Arms a card's confirm state instead of running the action immediately.
+  // Tapping Check in / Join / End always goes through here first.
+  function askToConfirm(key: string, message: string, run: () => void) {
+    setPending({ key, message, run })
+  }
+  function confirmPending() {
+    const p = pending
+    setPending(null)
+    p?.run()
+  }
+
   // Polls (via a real server refetch, not a client-only timer) while any
   // check-in on this page is still waiting for its camera to confirm.
   // Stops itself once nothing is pending, and gives up after
   // RECORDING_POLL_MAX_ATTEMPTS so a genuinely stuck camera doesn't poll
   // forever in silence -- pollAttempts is only ever used to decide
   // whether to show "this is taking a while", not to change behavior.
-  const anyPending = options.some((o) => o.recording_status === 'pending')
+  const anyRecordingPending = options.some((o) => o.recording_status === 'pending')
   const [pollAttempts, setPollAttempts] = useState(0)
   const pollAttemptsRef = useRef(0)
   useEffect(() => {
-    if (!anyPending) { pollAttemptsRef.current = 0; setPollAttempts(0); return }
+    if (!anyRecordingPending) { pollAttemptsRef.current = 0; setPollAttempts(0); return }
     if (pollAttemptsRef.current >= RECORDING_POLL_MAX_ATTEMPTS) return
     const id = setTimeout(() => {
       pollAttemptsRef.current += 1
@@ -138,7 +156,7 @@ export default function CheckinPanel({
       router.refresh()
     }, RECORDING_POLL_MS)
     return () => clearTimeout(id)
-  }, [anyPending, options, router])
+  }, [anyRecordingPending, options, router])
 
   // Hour (1-12) + AM/PM only -- no minutes anywhere, not even transiently
   // in a picker UI. <input type="time"> was tried first (step=3600 to
@@ -212,28 +230,20 @@ export default function CheckinPanel({
     router.refresh()
   }
 
-  async function signOut() {
-    await signOutEverywhere()
-    // A full reload, not a router refresh: the server component that
-    // fetches `options` (page.tsx) needs to re-read the now-cleared
-    // session cookie from scratch.
-    window.location.reload()
-  }
-
   function recordingStatusLine(o: CheckInOption) {
     if (o.recording_status === 'done') {
-      return <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>✓ {t(lang, 'recordingConfirmed')}</p>
+      return <p className="checkin-line">✓ {t(lang, 'recordingConfirmed')}</p>
     }
     if (o.recording_status === 'error') {
       return (
-        <p style={{ color: 'var(--error, #c0392b)', fontSize: 12.5, margin: 0 }}>
+        <p className="checkin-line checkin-line--error">
           {t(lang, 'recordingFailed', { error: o.recording_error ?? t(lang, 'genericError') })}
         </p>
       )
     }
     if (o.recording_status === 'pending') {
       return (
-        <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>
+        <p className="checkin-line">
           {pollAttempts >= RECORDING_POLL_MAX_ATTEMPTS ? t(lang, 'recordingTakingLonger') : t(lang, 'recordingConfirming')}
         </p>
       )
@@ -241,47 +251,96 @@ export default function CheckinPanel({
     return null
   }
 
-  const signOutLink = (
-    <button
-      onClick={signOut}
-      style={{ background: 'none', border: 'none', padding: 0, marginTop: 8, color: 'var(--muted)', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer' }}
-    >
-      {t(lang, 'signOut')}
-    </button>
-  )
+  function timePicker(cameraRowId: string, label: string) {
+    const { hour, period } = endTimeFor(cameraRowId)
+    return (
+      <div className="checkin-timepicker">
+        <span className="checkin-field-label">{label}</span>
+        <div className="checkin-timepicker-row">
+          <select
+            value={hour} onChange={(e) => setEndHourFor(cameraRowId, e.target.value)}
+            className="checkin-select"
+          >
+            <option value="" disabled>--</option>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+              <option key={h} value={h}>{h}</option>
+            ))}
+          </select>
+          <select
+            value={period} onChange={(e) => setEndPeriodFor(cameraRowId, e.target.value as 'AM' | 'PM')}
+            className="checkin-select"
+          >
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  // Swaps a card's action area for a "sure about this?" row once armed by
+  // askToConfirm -- same for every commit action, so Check in/Join/End all
+  // look and behave identically here.
+  function confirmBar(key: string) {
+    if (pending?.key !== key) return null
+    return (
+      <div className="checkin-confirm">
+        <p className="checkin-confirm-message">{pending.message}</p>
+        <div className="checkin-confirm-actions">
+          <button type="button" className="checkin-btn checkin-btn--ghost" onClick={() => setPending(null)}>
+            {t(lang, 'confirmCancel')}
+          </button>
+          <button type="button" className="checkin-btn checkin-btn--primary" onClick={confirmPending}>
+            {t(lang, 'confirmYes')}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  function cardHead(label: string, badge: { text: string; tone: 'free' | 'recording' | 'joinable' }) {
+    return (
+      <div className="checkin-head">
+        <span className="checkin-name">{label}</span>
+        <span className={`checkin-badge checkin-badge--${badge.tone}`}>{badge.text}</span>
+      </div>
+    )
+  }
 
   // "Get the reel from 19:00–20:00" for a booked session that just ended.
   function claimRow(o: CheckInOption) {
     if (!o.recent_session_id || !o.recent_starts_at || !o.recent_ends_at) return null
     const times = { start: clockLabel(o.recent_starts_at, timeZone), end: clockLabel(o.recent_ends_at, timeZone) }
     const tag = bookingTag(o.recent_booking_number, o.recent_booker_masked)
+    const confirmKey = `claim-${o.recent_session_id}`
     if (o.recent_already_joined) {
       return (
-        <div className="calendar-slot calendar-slot--pending">
-          <span>
-            {o.camera_label}
-            {tag && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 12.5 }}>{tag}</span>}
-          </span>
-          <span>{t(lang, 'checkInClaimedRecent', times)}</span>
+        <div className="checkin-card checkin-card--recording">
+          {cardHead(o.camera_label, { text: t(lang, 'checkInBusy'), tone: 'recording' })}
+          {tag && <p className="checkin-line">{tag}</p>}
+          <p className="checkin-line">{t(lang, 'checkInClaimedRecent', times)}</p>
         </div>
       )
     }
     const full = o.recent_participant_count >= 10
     return (
-      <button
-        className="calendar-slot"
-        style={{ width: '100%', boxSizing: 'border-box' }}
-        disabled={full || busy === o.recent_session_id}
-        onClick={() => doJoin(o.recent_session_id!)}
-      >
-        <span>
-          {o.camera_label}
-          {tag && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 12.5 }}>{tag}</span>}
-        </span>
-        <span className="calendar-slot-go">
-          {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInClaimRecent', { ...times, count: o.recent_participant_count })}
-        </span>
-      </button>
+      <div className="checkin-card checkin-card--joinable">
+        {cardHead(o.camera_label, { text: `${o.recent_participant_count}/10`, tone: 'joinable' })}
+        {tag && <p className="checkin-line">{tag}</p>}
+        <p className="checkin-line">{t(lang, 'checkInClaimRecent', { ...times, count: o.recent_participant_count })}</p>
+        {confirmBar(confirmKey) ?? (
+          <div className="checkin-actions">
+            <button
+              type="button"
+              className="checkin-btn checkin-btn--primary"
+              disabled={full || busy === o.recent_session_id}
+              onClick={() => askToConfirm(confirmKey, t(lang, 'confirmJoinMessage', { court: o.camera_label }), () => doJoin(o.recent_session_id!))}
+            >
+              {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInJoin', { count: o.recent_participant_count })}
+            </button>
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -290,145 +349,127 @@ export default function CheckinPanel({
       ? [bookingTag(o.booking_number, o.booker_masked), t(lang, 'checkInBookedUntil', { time: clockLabel(o.session_ends_at, timeZone) })]
           .filter(Boolean).join(' · ')
       : null
+
     if (!o.is_busy) {
-      const { hour, period } = endTimeFor(o.camera_row_id)
+      const confirmKey = `checkin-${o.camera_row_id}`
       return (
-        <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
-          <span>{o.camera_label}</span>
+        <div key={o.camera_row_id} className="checkin-card checkin-card--free">
+          {cardHead(o.camera_label, { text: t(lang, 'checkInStatusFree'), tone: 'free' })}
           {o.next_session_starts_at && (
-            <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>
-              {t(lang, 'checkInBookedFrom', { time: clockLabel(o.next_session_starts_at, timeZone) })}
-            </p>
+            <p className="checkin-line">{t(lang, 'checkInBookedFrom', { time: clockLabel(o.next_session_starts_at, timeZone) })}</p>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-            {t(lang, 'checkInEndTimeLabel')}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <select
-                value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
-                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }}
-              >
-                <option value="" disabled>--</option>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
-              <select
-                value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
-                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }}
-              >
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
-          </div>
-          <button
-            className="calendar-slot"
-            style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
-            disabled={busy === o.camera_row_id}
-            onClick={() => doCheckIn(o.camera_row_id)}
-          >
-            {t(lang, 'checkInStart')}
-          </button>
-        </div>
-      )
-    }
-    if (o.busy_session_id && o.is_owner) {
-      const { hour, period } = endTimeFor(o.camera_row_id)
-      return (
-        <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
-          <span>{o.camera_label}</span>
-          {recordingStatusLine(o)}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-            {t(lang, 'checkInExtendLabel')}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <select
-                value={hour} onChange={(e) => setEndHourFor(o.camera_row_id, e.target.value)}
-                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }}
-              >
-                <option value="" disabled>--</option>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
-              <select
-                value={period} onChange={(e) => setEndPeriodFor(o.camera_row_id, e.target.value as 'AM' | 'PM')}
-                style={{ padding: '8px 10px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }}
-              >
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
+          {timePicker(o.camera_row_id, t(lang, 'checkInEndTimeLabel'))}
+          {confirmBar(confirmKey) ?? (
+            <div className="checkin-actions">
               <button
-                className="calendar-slot"
-                style={{ boxSizing: 'border-box', justifyContent: 'center' }}
-                disabled={busy === o.busy_session_id}
-                onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}
+                type="button"
+                className="checkin-btn checkin-btn--primary"
+                disabled={busy === o.camera_row_id}
+                onClick={() => askToConfirm(confirmKey, t(lang, 'confirmCheckInMessage', { court: o.camera_label }), () => doCheckIn(o.camera_row_id))}
               >
-                {t(lang, 'checkInExtendSubmit')}
+                {t(lang, 'checkInStart')}
               </button>
             </div>
-          </div>
-          <button
-            className="calendar-slot"
-            style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
-            disabled={busy === o.busy_session_id}
-            onClick={() => doEnd(o.busy_session_id!)}
-          >
-            {t(lang, 'checkInEnd')}
-          </button>
+          )}
         </div>
       )
     }
+
+    if (o.busy_session_id && o.is_owner) {
+      const confirmKey = `end-${o.busy_session_id}`
+      return (
+        <div key={o.camera_row_id} className="checkin-card checkin-card--recording">
+          {cardHead(o.camera_label, { text: t(lang, 'checkInStatusRecording'), tone: 'recording' })}
+          {recordingStatusLine(o)}
+          {timePicker(o.camera_row_id, t(lang, 'checkInExtendLabel'))}
+          <div className="checkin-actions checkin-actions--split">
+            <button
+              type="button"
+              className="checkin-btn checkin-btn--ghost"
+              disabled={busy === o.busy_session_id}
+              onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}
+            >
+              {t(lang, 'checkInExtendSubmit')}
+            </button>
+            {pending?.key !== confirmKey && (
+              <button
+                type="button"
+                className="checkin-btn checkin-btn--danger"
+                disabled={busy === o.busy_session_id}
+                onClick={() => askToConfirm(confirmKey, t(lang, 'confirmEndMessage', { court: o.camera_label }), () => doEnd(o.busy_session_id!))}
+              >
+                {t(lang, 'checkInEnd')}
+              </button>
+            )}
+          </div>
+          {confirmBar(confirmKey)}
+        </div>
+      )
+    }
+
     if (o.busy_session_id && o.already_joined) {
       return (
-        <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
-          <span>{o.camera_label}</span>
-          <span>{t(lang, 'checkInAlreadyJoined')}</span>
-          {bookedUntil && <span style={{ color: 'var(--muted)', fontSize: 12.5 }}>{bookedUntil}</span>}
+        <div key={o.camera_row_id} className="checkin-card checkin-card--recording">
+          {cardHead(o.camera_label, { text: t(lang, 'checkInStatusRecording'), tone: 'recording' })}
+          <p className="checkin-line">{t(lang, 'checkInAlreadyJoined')}</p>
+          {bookedUntil && <p className="checkin-line">{bookedUntil}</p>}
           {recordingStatusLine(o)}
         </div>
       )
     }
+
     if (o.busy_session_id && !o.already_joined) {
       const full = o.participant_count >= 10
+      const confirmKey = `join-${o.busy_session_id}`
       return (
-        <button
-          key={o.camera_row_id}
-          className="calendar-slot"
-          style={{ width: '100%', boxSizing: 'border-box' }}
-          disabled={full || busy === o.busy_session_id}
-          onClick={() => doJoin(o.busy_session_id!)}
-        >
-          <span>
-            {o.camera_label}
-            {bookedUntil && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 12.5 }}>{bookedUntil}</span>}
-          </span>
-          <span className="calendar-slot-go">
-            {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInJoin', { count: o.participant_count })}
-          </span>
-        </button>
+        <div key={o.camera_row_id} className="checkin-card checkin-card--joinable">
+          {cardHead(o.camera_label, { text: `${o.participant_count}/10`, tone: 'joinable' })}
+          {bookedUntil && <p className="checkin-line">{bookedUntil}</p>}
+          {confirmBar(confirmKey) ?? (
+            <div className="checkin-actions">
+              <button
+                type="button"
+                className="checkin-btn checkin-btn--primary"
+                disabled={full || busy === o.busy_session_id}
+                onClick={() => askToConfirm(confirmKey, t(lang, 'confirmJoinMessage', { court: o.camera_label }), () => doJoin(o.busy_session_id!))}
+              >
+                {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInJoin', { count: o.participant_count })}
+              </button>
+            </div>
+          )}
+        </div>
       )
     }
+
     return (
-      <div key={o.camera_row_id} className="calendar-slot calendar-slot--pending">
-        <span>{o.camera_label}</span>
-        <span>{t(lang, 'checkInBusy')}</span>
+      <div key={o.camera_row_id} className="checkin-card checkin-card--recording">
+        {cardHead(o.camera_label, { text: t(lang, 'checkInStatusRecording'), tone: 'recording' })}
       </div>
     )
   }
 
   const anyFree = options.some((o) => !o.is_busy)
+  // Natural/numeric sort ("Court 2" before "Court 10"), not the raw order
+  // get_check_in_options happens to return -- that order isn't meaningful
+  // to a player picking a court.
+  const sortedOptions = [...options].sort((a, b) => a.camera_label.localeCompare(b.camera_label, undefined, { numeric: true }))
   return (
     <section className="calendar-court">
       <h2>{t(lang, 'checkInTitle')}</h2>
-      {!anyFree && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'checkInNoneFree')}</p>}
-      {options.map((o) => (
-        <Fragment key={o.camera_row_id}>
-          {claimRow(o)}
-          {courtRow(o)}
-        </Fragment>
-      ))}
+      {options.length === 0 ? (
+        <p style={{ color: 'var(--muted)', fontSize: 13 }}>{t(lang, 'checkInNoCameras')}</p>
+      ) : !anyFree && (
+        <p style={{ color: 'var(--muted)', fontSize: 13 }}>{t(lang, 'checkInNoneFree')}</p>
+      )}
+      <div className="checkin-grid">
+        {sortedOptions.map((o) => (
+          <Fragment key={o.camera_row_id}>
+            {claimRow(o)}
+            {courtRow(o)}
+          </Fragment>
+        ))}
+      </div>
       {error && <p style={{ color: 'var(--error, #c0392b)', fontSize: 12.5 }}>{error}</p>}
-      {signOutLink}
     </section>
   )
 }

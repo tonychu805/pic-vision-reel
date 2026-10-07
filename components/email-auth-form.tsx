@@ -26,10 +26,6 @@ import { ensurePlayerAfterEmailAuth } from '@/app/login/actions'
 import { recordConsent, setTrainingConsent } from '@/app/[slug]/[code]/actions'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-// fontSize 16, not 14 -- iOS Safari auto-zooms the page on focus for any
-// text input under 16px, and that zoom sticks around through later
-// navigation (confirmed on a real phone, 2026-10-06).
-const inputStyle = { padding: '10px 12px', border: '1px solid var(--divider)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 16 }
 
 export default function EmailAuthForm({
   lang, mode, next, consentGiven = true, trainingConsent = false, onBlocked,
@@ -133,20 +129,21 @@ export default function EmailAuthForm({
         type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
         placeholder={t(lang, 'emailLabel')}
         readOnly={mode === 'signup' && step === 'details'}
-        style={{ ...inputStyle, opacity: mode === 'signup' && step === 'details' ? 0.6 : 1 }}
+        className="field-input"
+        style={{ opacity: mode === 'signup' && step === 'details' ? 0.6 : 1 }}
       />
       {atDetailsStep && mode === 'signup' && (
         <input
           type="text" value={name} onChange={(e) => setName(e.target.value)}
           placeholder={t(lang, 'nameLabel')}
-          style={inputStyle}
+          className="field-input"
         />
       )}
       {atDetailsStep && (
         <input
           type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
           placeholder={t(lang, 'passwordLabel')}
-          style={inputStyle}
+          className="field-input"
         />
       )}
       <button

@@ -36,8 +36,7 @@ export default async function AccountPage() {
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <LangSwitch lang={lang} />
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 500, margin: 0 }}>{t(lang, 'accountTitle')}</h1>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <AccountForm
             lang={lang}
             initialName={account.displayName}
@@ -45,6 +44,7 @@ export default async function AccountPage() {
             isLineAccount={account.isLineAccount}
             initialEmail={account.email}
             hasPassword={account.hasPassword}
+            memberSince={account.memberSince}
           />
         </div>
         <PoweredByFooter lang={lang} />
