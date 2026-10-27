@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
 import { brandLogoUrl } from '@/lib/brandLogo'
 import { slidesToLoad } from '@/lib/loadWindow'
-import { t, type Lang } from '@/lib/i18n'
+import { t, type Lang, type StringKey } from '@/lib/i18n'
 import LangSwitch from '@/components/lang-switch'
 
 // Feedback form (Tally, form ODRRQR) for the player actually watching
@@ -62,6 +62,7 @@ type Slide = {
   id: string
   kind: 'full' | 'burst' | 'rally'
   rallyRank: number | null
+  badge: string | null
   videoUrl: string
   durationSec: number | null
   rallyCount: number | null
@@ -88,7 +89,17 @@ function sanitize(part: string) {
 // 'rally' slides need their own rank in the label ("Rally 3"), so this is
 // a function rather than the static Record the two fixed kinds used to be
 // enough for.
+// A badged rally reads as its badge ("Kitchen War") instead of its number.
+const BADGE_KEYS: Record<string, StringKey> = {
+  'Kitchen War': 'badgeKitchenWar',
+  'Quick Hands': 'badgeQuickHands',
+  'Hardest Swing': 'badgeHardestSwing',
+  'First Strike': 'badgeFirstStrike',
+  'Killer Shot': 'badgeKillerShot',
+}
+
 function kindLabel(slide: Slide, lang: Lang): string {
+  if (slide.kind === 'rally' && slide.badge && BADGE_KEYS[slide.badge]) return t(lang, BADGE_KEYS[slide.badge])
   if (slide.kind === 'rally') return t(lang, 'rally', { n: slide.rallyRank ?? '' }).trim()
   return t(lang, slide.kind === 'burst' ? 'quickHits' : 'fullReel')
 }
