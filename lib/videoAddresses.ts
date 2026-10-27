@@ -13,7 +13,10 @@ export function videosEndpoint(shareId: string): string {
   return `${CONSOLE_URL}/api/share/${shareId}/videos`
 }
 
-export type VideoAddresses = { expiresAt: string; videos: Record<string, string> }
+// vertical: the 9:16 copies the venue desktop cropped from its high-res
+// recording (2026-10-27), for the clips that have one; absent from an older
+// console.
+export type VideoAddresses = { expiresAt: string; videos: Record<string, string>; vertical?: Record<string, string> }
 
 /**
  * The share's current addresses, or null when the console says the share is
