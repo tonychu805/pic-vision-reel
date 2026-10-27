@@ -41,15 +41,25 @@
 // no fetch()/XHR calls in it at all, so connect-src needs nothing added --
 // the form itself submits from inside the framed document, under tally.so's
 // own CSP, not this page's.
+//
+// Signed reel addresses (2026-10-27, ADR-142): reels now play from the
+// private bucket through signed addresses on the R2 account endpoint
+// (<bucket>.<account>.r2.cloudflarestorage.com -- the production and the
+// staging bucket share that account), and the browser re-asks the console
+// for fresh addresses before they run out (lib/videoAddresses.ts). Without
+// both in media-src/connect-src the page rendered but no reel played --
+// caught on the staging share site before it reached production.
 const isDev = process.env.NODE_ENV === 'development'
+const r2 = 'https://*.a4990d92f47faeb0b0d0cbc35e64da92.r2.cloudflarestorage.com'
+const consoleOrigin = new URL(process.env.NEXT_PUBLIC_CONSOLE_URL || 'https://console.picvisionai.com').origin
 
 const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' https://tally.so${isDev ? " 'unsafe-eval'" : ''};
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https://cdn.picvisionai.com;
-    media-src 'self' https://cdn.picvisionai.com;
-    connect-src 'self' https://cdn.picvisionai.com;
+    media-src 'self' https://cdn.picvisionai.com ${r2};
+    connect-src 'self' https://cdn.picvisionai.com ${r2} ${consoleOrigin};
     font-src 'self' https://fonts.gstatic.com;
     frame-src https://tally.so;
     object-src 'none';
