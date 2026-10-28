@@ -118,6 +118,7 @@ In Sessions, mark only a currently joined court as the player's current court. T
 ### Navigation
 
 Three labeled, icon-supported destinations. Active state uses Court Green and stronger weight; inactive items remain readable in Court Muted.
+Recording is the center destination and primary return path for today's footage. Its raised green control stays visible across the venue tabs and becomes Court Ink when selected.
 
 ### Account
 

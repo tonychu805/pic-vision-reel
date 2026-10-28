@@ -115,7 +115,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
           checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={checkInOptions} />}
           sessions={
             <div className="sessions-view">
-              <div className="sessions-heading">
+              <div className="sessions-heading recording-heading">
                 <h1>{t(lang, 'sessionsTitle')}</h1>
                 <p>{dateLabel(new Date(), cal.timezone, lang)}</p>
               </div>

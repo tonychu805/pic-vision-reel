@@ -52,7 +52,7 @@ export default function CourtClubPreview() {
         </section>}
 
         {tab === 'sessions' && <div className="sessions-view">
-          <div className="sessions-heading"><h1>{t(lang, 'sessionsTitle')}</h1><p>{zh ? '10 月 29 日' : 'October 29'}</p></div>
+          <div className="sessions-heading recording-heading"><h1>{t(lang, 'sessionsTitle')}</h1><p>{zh ? '10 月 29 日' : 'October 29'}</p></div>
           <section className="calendar-court"><h2>{zh ? '1 號球場' : 'Court 1'}</h2><div className="calendar-slot calendar-slot--ready"><span className="session-row-copy"><strong>18:00–19:00</strong><small>{t(lang, 'sessionReady')}</small></span><span className="calendar-slot-go">{t(lang, 'watch')}</span></div><div className="calendar-slot calendar-slot--pending"><span className="session-row-copy"><strong>19:00–20:00</strong><small>{t(lang, 'reelsOnTheWay')}</small></span></div></section>
           <section className="calendar-court"><h2>{zh ? '2 號球場' : 'Court 2'}<span className="session-current-tag">{t(lang, 'yourCurrentCourt')}</span></h2><div className="calendar-slot calendar-slot--ready"><span className="session-row-copy"><strong>17:00–18:30</strong><small>{t(lang, 'sessionReady')}</small></span><span className="calendar-slot-go">{t(lang, 'watch')}</span></div></section>
         </div>}
