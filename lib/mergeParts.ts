@@ -10,9 +10,22 @@
 // That keeps the carousel at today's size (~12 short clips), which keeps
 // "Download all" to a sensible size (see reel-share-client.tsx).
 //
-// A share with no parts, or a single part, is returned untouched.
+// Badged clips come first, always shown, then the best of the rest fill the
+// page to MAX_RALLIES (operator, 2026-10-27: badged highlights first, then
+// the ranked rest, then quick hits). A badge is decided across the whole
+// session, so with badges on every part sends ALL its rallies as clips; this
+// is also what trims those to one page, even for a single part.
+//
+// A share with no parts or a single part, no badges and no more than
+// MAX_RALLIES clips is returned untouched.
 
-export type PartReel = { kind: string; rally_rank: number | null; part_index: number | null; score?: number | string | null }
+export type PartReel = {
+  kind: string
+  rally_rank: number | null
+  part_index: number | null
+  score?: number | string | null
+  badge?: string | null
+}
 
 const scoreOf = (r: PartReel) => (r.score === null || r.score === undefined || r.score === '' ? NaN : Number(r.score))
 
@@ -20,18 +33,23 @@ export const MAX_RALLIES = 10
 
 export function mergeParts<T extends PartReel>(reels: T[]): T[] {
   const parts = [...new Set(reels.map((r) => r.part_index).filter((p): p is number => p !== null))].sort((a, b) => a - b)
-  if (parts.length <= 1) return reels
+  const allRallies = reels.filter((r) => r.kind === 'rally')
+  if (parts.length <= 1 && !allRallies.some((r) => r.badge) && allRallies.length <= MAX_RALLIES) return reels
 
-  const partRallies = reels.filter((r) => r.kind === 'rally' && r.part_index !== null)
+  // Before parts (part_index null) the share is one set; after, only
+  // part clips count, as always.
+  const partRallies = parts.length ? allRallies.filter((r) => r.part_index !== null) : allRallies
   const scored = partRallies.length > 0 && partRallies.every((r) => Number.isFinite(scoreOf(r)))
-  const rallies = partRallies
-    .sort(scored
-      ? (a, b) => scoreOf(b) - scoreOf(a) || (a.part_index as number) - (b.part_index as number)
-      : (a, b) => (a.rally_rank ?? 99) - (b.rally_rank ?? 99) || (a.part_index as number) - (b.part_index as number))
-    .slice(0, MAX_RALLIES)
+  const order = scored
+    ? (a: T, b: T) => scoreOf(b) - scoreOf(a) || (a.part_index ?? 0) - (b.part_index ?? 0)
+    : (a: T, b: T) => (a.rally_rank ?? 99) - (b.rally_rank ?? 99) || (a.part_index ?? 0) - (b.part_index ?? 0)
+  const badged = partRallies.filter((r) => r.badge).sort(order)
+  const rest = partRallies.filter((r) => !r.badge).sort(order)
+  const rallies = [...badged, ...rest]
+    .slice(0, Math.max(MAX_RALLIES, badged.length))
     .map((r, i) => ({ ...r, rally_rank: i + 1 }))
 
-  const newest = parts[parts.length - 1]
+  const newest = parts.length ? parts[parts.length - 1] : null
   const extras = ['burst', 'full']
     .map((kind) => reels.find((r) => r.kind === kind && r.part_index === newest))
     .filter((r): r is T => r !== undefined)

@@ -32,6 +32,7 @@ type ShareReel = {
   created_at: string
   part_index: number | null
   score: number | string | null
+  badge?: string | null
 }
 
 export default async function ReelSharePage({ params }: { params: Promise<{ shareId: string }> }) {
@@ -39,9 +40,17 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
   if (!UUID_RE.test(shareId)) notFound()
 
   const supabase = supabasePublic()
-  const { data } = await supabase.rpc('get_reels_by_share_id', { p_share_id: shareId })
-  // A session sent in parts shows as one familiar set of reels (lib/mergeParts.ts).
-  const reels = mergeParts((data ?? []) as ShareReel[])
+  const [{ data }, { data: badgeRows }] = await Promise.all([
+    supabase.rpc('get_reels_by_share_id', { p_share_id: shareId }),
+    // A session's badges, decided once its last part is in (console
+    // lib/badges.ts). An error -- a database without the function yet --
+    // just means no badges, never a broken page.
+    supabase.rpc('get_badges_by_share_id', { p_share_id: shareId }),
+  ])
+  const badges = new Map(((badgeRows ?? []) as { id: string; badge: string }[]).map((b) => [b.id, b.badge]))
+  // A session sent in parts shows as one familiar set of reels (lib/mergeParts.ts),
+  // badged clips first.
+  const reels = mergeParts(((data ?? []) as ShareReel[]).map((r) => ({ ...r, badge: badges.get(r.id) ?? null })))
 
   if (reels.length === 0) notFound()
 
@@ -56,6 +65,7 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
       id: r.id,
       kind: r.kind as 'full' | 'burst' | 'rally',
       rallyRank: r.rally_rank,
+      badge: r.badge ?? null,
       videoUrl: addresses.videos[r.id],
       durationSec: r.duration_sec,
       rallyCount: r.rally_count,
