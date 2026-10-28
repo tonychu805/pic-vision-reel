@@ -308,6 +308,7 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .account-toggle input:checked + .account-toggle-track { background:#237653; }
 .venue-page .calendar-slot[style*="justify-content: center"] { border-color:#237653 !important; background:#237653; color:#fff; font-weight:700; }
 .venue-page .powered-by { color:#50645a; }
+.venue-page .powered-by img { display:none; }
 .venue-page :focus-visible { outline:3px solid #237653; outline-offset:3px; }
 .court-club-preview { padding-bottom:100px !important; }
 .court-club-preview .preview-note { margin:-14px 0 0; color:#50645a; font-size:12px; }
@@ -331,6 +332,7 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .account-panel .account-section-title { margin:0; font-size:17px; line-height:1.3; letter-spacing:-.02em; text-transform:none; color:#16392d; }
 .venue-page .account-footer-actions { display:flex; gap:16px; padding:8px 0; }
 .venue-page .account-footer-actions button { min-height:44px; padding:0 8px !important; }
+.account-footer-link { padding:0; border:0; background:none; color:var(--muted); font-size:13px; text-decoration:underline; text-underline-offset:3px; text-align:left; cursor:pointer; }
 .venue-page .session-row-copy { display:flex; flex-direction:column; gap:3px; }
 .venue-page .session-row-copy strong { font-size:16px; font-variant-numeric:tabular-nums; }
 .venue-page .session-row-copy small { color:#50645a; font-size:12px; }

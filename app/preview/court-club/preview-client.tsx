@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import BottomNav, { type CalendarTab } from '@/app/[slug]/[code]/bottom-nav'
+import PoweredByFooter from '@/components/powered-by-footer'
+import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang } from '@/lib/i18n'
 
 export default function CourtClubPreview() {
@@ -9,6 +11,11 @@ export default function CourtClubPreview() {
   const [lang, setLang] = useState<Lang>('en')
   const [previewEditing, setPreviewEditing] = useState(false)
   const zh = lang === 'zh-TW'
+
+  async function signOut() {
+    await signOutEverywhere()
+    window.location.href = '/login'
+  }
 
   return (
     <main className="share-page venue-page">
@@ -61,6 +68,8 @@ export default function CourtClubPreview() {
           {previewEditing && <div className="account-name-edit"><label htmlFor="preview-name">{t(lang, 'nameLabel')}</label><input id="preview-name" className="field-input" defaultValue={zh ? '示範球員' : 'Alex Chen'} /><div className="account-name-actions"><button className="checkin-btn checkin-btn--primary" onClick={() => setPreviewEditing(false)}>{t(lang, 'saveButton')}</button><button className="checkin-btn checkin-btn--ghost" onClick={() => setPreviewEditing(false)}>{t(lang, 'cancel')}</button></div></div>}
           <section className="account-section account-panel"><h2 className="account-section-title">{t(lang, 'sectionPrivacy')}</h2><div className="account-row"><span className="account-row-text">{t(lang, 'consentTraining')}</span><span className="preview-toggle" aria-hidden="true" /></div></section>
           <section className="account-section account-panel"><h2 className="account-section-title">{t(lang, 'sectionSecurity')}</h2><div className="account-row"><span className="account-row-text">{t(lang, 'signInMethodLabel')}</span><span className="account-badge">LINE</span></div></section>
+          <div className="account-footer-actions"><button type="button" className="account-footer-link" onClick={signOut}>{t(lang, 'signOut')}</button></div>
+          <PoweredByFooter lang={lang} />
         </div>}
       </div>
       <BottomNav lang={lang} active={tab} onSelect={setTab} />

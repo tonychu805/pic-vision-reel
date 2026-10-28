@@ -169,14 +169,14 @@ export default function AccountForm({
       <div className="account-footer-actions">
         <button
           onClick={signOut}
-          style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer', textAlign: 'left' }}
+          className="account-footer-link"
         >
           {t(lang, 'signOut')}
         </button>
         {showBackLink && (
           <button
             onClick={() => router.back()}
-            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer', textAlign: 'left' }}
+            className="account-footer-link"
           >
             ← {t(lang, 'backLabel')}
           </button>

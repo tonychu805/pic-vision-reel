@@ -126,6 +126,7 @@ Highlight is the center destination and primary return path for today's footage.
 ### Account
 
 The name is edited in its profile heading, with a local Save and Cancel state. Privacy and security use distinct, readable sections with their own boundaries. The optional training preference saves at the switch and reports the result beside it. Only supported sign-in and credential controls appear for the current account type.
+Sign out and the PicVision attribution remain visible below these sections in the signed-in Account tab and its sample preview.
 
 ## Do's and Don'ts
 
