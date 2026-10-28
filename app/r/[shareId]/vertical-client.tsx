@@ -5,6 +5,7 @@ import { slidesToLoad } from '@/lib/loadWindow'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
 import { clip, type Addresses, type FeedClip, type FeedReel } from '@/lib/verticalFeed'
+import { fetchVideoBlob } from '@/lib/videoDownload'
 import s from './vertical.module.css'
 import { BRAND_ICONS, type BrandIcon } from './brandIcons'
 
@@ -80,7 +81,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
   const [toast, setToast] = useState('')
   const [soundOn, setSoundOn] = useState(false)
   const [blobs, setBlobs] = useState<Record<string, Blob>>({})
-  const [ready, setReady] = useState<Record<string, boolean>>({})
+  const [failedDownloads, setFailedDownloads] = useState<string[]>([])
   const [wantAll, setWantAll] = useState(false)
   const requested = useRef<Set<string>>(new Set())
   const feedRef = useRef<HTMLDivElement>(null)
@@ -92,11 +93,14 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
   function load(url: string) {
     if (requested.current.has(url)) return
     requested.current.add(url)
-    fetch(url)
-      .then((r) => r.blob())
+    setFailedDownloads((prev) => prev.filter((failed) => failed !== url))
+    fetchVideoBlob(url)
       .then((b) => setBlobs((p) => ({ ...p, [url]: b })))
-      .catch(() => {})
-      .finally(() => setReady((p) => ({ ...p, [url]: true })))
+      .catch(() => {
+        requested.current.delete(url)
+        setFailedDownloads((prev) => [...prev, url])
+        setWantAll(false)
+      })
   }
 
   // The clip on screen and the next one.
@@ -237,7 +241,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     if (cur.wideUrl) load(cur.wideUrl) // on its way before they pick it
   }
 
-  const allReady = slides.every((sl) => ready[sl.videoUrl])
+  const allReady = slides.every((sl) => !!blobs[sl.videoUrl])
   async function downloadAll() {
     if (!allReady) {
       setWantAll(true)
@@ -245,7 +249,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
       return
     }
     setSheet(null)
-    const files = slides.filter((sl) => blobs[sl.videoUrl]).map((sl) => new File([blobs[sl.videoUrl]], fileName(sl), { type: 'video/mp4' }))
+    const files = slides.map((sl) => new File([blobs[sl.videoUrl]], fileName(sl), { type: 'video/mp4' }))
     const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean }
     try {
       if (nav.canShare?.({ files })) await navigator.share({ files, title: t(lang, 'shareTitleMany', { venue: venueName }) })
@@ -265,8 +269,8 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     setWantAll(false)
   }
 
-  const curReady = !!ready[cur.videoUrl]
-  const wideReady = !!(cur.wideUrl && ready[cur.wideUrl])
+  const curReady = !!blobs[cur.videoUrl]
+  const wideReady = !!(cur.wideUrl && blobs[cur.wideUrl])
 
   return (
     <main className={s.page}>
@@ -399,6 +403,12 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
         </div>
       )}
 
+      {failedDownloads.length > 0 && (
+        <div className={s.downloadError} role="alert">
+          <span>{t(lang, 'videoLoadFailed')}</span>
+          <button type="button" onClick={() => failedDownloads.forEach(load)}>{t(lang, 'retry')}</button>
+        </div>
+      )}
       {toast && <div className={s.toast} role="status">{toast}</div>}
     </main>
   )

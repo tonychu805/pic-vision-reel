@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
 import { brandLogoUrl } from '@/lib/brandLogo'
 import { slidesToLoad } from '@/lib/loadWindow'
+import { fetchVideoBlob } from '@/lib/videoDownload'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import LangSwitch from '@/components/lang-switch'
 
@@ -128,10 +129,12 @@ export default function ReelShareClient({
   lang: Lang
 }) {
   const [copied, setCopied] = useState(false)
+  const [copyFailed, setCopyFailed] = useState(false)
   const [appShareState, setAppShareState] = useState<Record<string, 'idle' | 'working'>>({})
   const [activeIndex, setActiveIndex] = useState(0)
   const [blobs, setBlobs] = useState<(Blob | null)[]>(() => slides.map(() => null))
-  const [ready, setReady] = useState<boolean[]>(() => slides.map(() => false))
+  const ready = blobs.map(Boolean)
+  const [failedDownloads, setFailedDownloads] = useState<number[]>([])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const slideRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -200,13 +203,10 @@ export default function ReelShareClient({
   function load(i: number) {
     if (requestedRef.current.has(i)) return
     requestedRef.current.add(i)
+    setFailedDownloads((prev) => prev.filter((failed) => failed !== i))
     const slide = slides[i]
     videoUrlFor(slide)
-      .then((url) => fetch(url, i === activeIndex ? ({ priority: 'high' } as RequestInit) : undefined))
-      .then((res) => {
-        if (!res.ok) throw new Error(String(res.status))
-        return res.blob()
-      })
+      .then((url) => fetchVideoBlob(url, i === activeIndex ? ({ priority: 'high' } as RequestInit) : undefined))
       .then((blob) => {
         if (!mountedRef.current) return
         setBlobs((prev) => {
@@ -215,14 +215,11 @@ export default function ReelShareClient({
           return next
         })
       })
-      .catch(() => {})
-      .finally(() => {
+      .catch(() => {
+        requestedRef.current.delete(i)
         if (!mountedRef.current) return
-        setReady((prev) => {
-          const next = [...prev]
-          next[i] = true
-          return next
-        })
+        setFailedDownloads((prev) => [...prev, i])
+        setWantAll(false)
       })
   }
 
@@ -291,11 +288,14 @@ export default function ReelShareClient({
   const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL}/r/${shareId}`
 
   async function copyLink() {
+    setCopied(false)
+    setCopyFailed(false)
     try {
-      await navigator.clipboard?.writeText(shareUrl)
-    } finally {
+      await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setCopyFailed(true)
     }
   }
 
@@ -311,9 +311,8 @@ export default function ReelShareClient({
       // in-memory Blob -- everything up to and including the
       // navigator.share() call below runs synchronously off the click,
       // no `await` in between, which is what keeps it inside Safari's
-      // user-gesture window. Only if the prefetch itself failed (rare)
-      // do we fall back to fetching fresh here.
-      const blob: Blob = blobs[index] ? blobs[index]! : await videoUrlFor(slide).then((url) => fetch(url)).then((res) => res.blob())
+      // user-gesture window. Failed downloads must be retried first.
+      const blob = blobs[index]!
       const file = new File([blob], fileNameFor(slide), { type: blob.type || 'video/mp4' })
 
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
@@ -354,8 +353,7 @@ export default function ReelShareClient({
     setAppShareState((s) => ({ ...s, [label]: 'working' }))
     try {
       const files = slides.map((slide, i) => {
-        const blob = blobs[i]!  // ready[] gate above guarantees every slide settled; a failed
-                                 // fetch would leave blob null and this would throw, caught below.
+        const blob = blobs[i]! // Only successful downloads count as ready.
         return new File([blob], fileNameFor(slide), { type: blob.type || 'video/mp4' })
       })
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
@@ -379,7 +377,7 @@ export default function ReelShareClient({
         }
       }
     } catch {
-      // Share sheet cancelled, or a blob was missing -- reset either way.
+      // The share sheet was cancelled or sharing was declined.
     }
     setAppShareState((s) => ({ ...s, [label]: 'idle' }))
   }
@@ -495,6 +493,16 @@ export default function ReelShareClient({
             </button>
           )}
         </div>
+
+        {copyFailed && <p role="alert">{t(lang, 'copyFailed')}</p>}
+        {failedDownloads.length > 0 && (
+          <div role="alert">
+            <p>{t(lang, 'videoLoadFailed')}</p>
+            <button type="button" className="text-action" onClick={() => failedDownloads.forEach(load)}>
+              {t(lang, 'retry')}
+            </button>
+          </div>
+        )}
 
         <footer className="powered-by">
           <span>{t(lang, 'poweredBy')}</span>
