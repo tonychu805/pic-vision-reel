@@ -10,23 +10,12 @@
 // visitor who got here via a venue's QR code never has to leave this
 // page to see it.)
 import { t, type Lang } from '@/lib/i18n'
-import { useEffect, useRef } from 'react'
 
 export type CalendarTab = 'checkin' | 'sessions' | 'account'
 
-export default function BottomNav({ lang, active, onSelect, onHeightChange }: { lang: Lang; active: CalendarTab; onSelect: (tab: CalendarTab) => void; onHeightChange: (height: number) => void }) {
-  const navRef = useRef<HTMLElement>(null)
-  useEffect(() => {
-    const nav = navRef.current
-    if (!nav) return
-    const measure = () => onHeightChange(nav.getBoundingClientRect().height)
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(nav, { box: 'border-box' })
-    return () => observer.disconnect()
-  }, [onHeightChange])
+export default function BottomNav({ lang, active, onSelect }: { lang: Lang; active: CalendarTab; onSelect: (tab: CalendarTab) => void }) {
   return (
-    <nav className="bottom-nav" ref={navRef}>
+    <nav className="bottom-nav">
       <button type="button" className={`bottom-nav-item${active === 'checkin' ? ' active' : ''}`} onClick={() => onSelect('checkin')}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 6 9 17l-5-5" />
