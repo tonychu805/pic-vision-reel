@@ -24,9 +24,8 @@ export default function BottomNav({ lang, active, onSelect }: { lang: Lang; acti
       </button>
       <button type="button" className={`bottom-nav-item bottom-nav-item--recording${active === 'sessions' ? ' active' : ''}`} aria-current={active === 'sessions' ? 'page' : undefined} onClick={() => onSelect('sessions')}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="5" width="16" height="14" rx="2" />
-          <path d="m18 10 4-2v8l-4-2" />
-          <circle cx="10" cy="12" r="2.5" />
+          <path d="m12 2 1.7 6.3L20 10l-6.3 1.7L12 18l-1.7-6.3L4 10l6.3-1.7L12 2Z" />
+          <path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z" />
         </svg>
         <span>{t(lang, 'navSessions')}</span>
       </button>

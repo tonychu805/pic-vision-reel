@@ -281,15 +281,16 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .bottom-nav-item { min-height:50px; color:#50645a; font-size:12px; }
 .venue-page .bottom-nav-item.active { color:#195b40; font-weight:700; }
 .venue-page .bottom-nav-item.active svg { stroke-width:2.5; }
-.venue-page .bottom-nav-item--recording { position:relative; margin:-16px 2px 0; padding:10px 2px 7px; border-radius:14px; background:#e4eee3; color:#195b40; font-weight:700; box-shadow:0 4px 12px rgba(22,57,45,.12); }
-.venue-page .bottom-nav-item--recording.active { background:#16392d; color:#fff; }
-.venue-page .bottom-nav-item--recording svg { width:25px; height:25px; }
+.venue-page .bottom-nav-item--recording { position:relative; margin:-20px 2px 0; padding:0 2px 5px; color:#195b40; font-weight:700; }
+.venue-page .bottom-nav-item--recording svg { width:54px; height:54px; padding:13px; border-radius:50%; background:#237653; color:#fff; box-shadow:0 6px 15px rgba(22,57,45,.22); }
+.venue-page .bottom-nav-item--recording.active svg { background:#16392d; stroke-width:2.5; }
+.venue-page .bottom-nav-item--recording span { margin-top:1px; }
 .venue-page .sessions-view { display:flex; flex-direction:column; gap:18px; }
 .venue-page .sessions-heading { display:flex; flex-direction:column; gap:5px; }
 .venue-page .recording-heading { padding:20px; border-radius:14px; background:#16392d; color:#fff; }
 .venue-page .recording-heading h1 { color:#fff; }
-.venue-page .recording-heading p { color:#c6ddcc; }
 .venue-page .sessions-heading p { margin:0; color:#50645a; font-size:14px; }
+.venue-page .recording-heading p { color:#c6ddcc; }
 .venue-page .sessions-empty { margin:0; color:#50645a; font-size:14px; }
 .venue-page .sessions-view .calendar-court { display:flex; flex-direction:column; gap:8px; }
 .venue-page .sessions-view .calendar-court h2 { font-size:15px; }
