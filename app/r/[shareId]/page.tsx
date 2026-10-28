@@ -1,104 +1,45 @@
-import { notFound } from 'next/navigation'
-import { supabasePublic } from '@/lib/supabase'
-import { fetchVideoAddresses, videosEndpoint } from '@/lib/videoAddresses'
-import ReelShareClient from './reel-share-client'
-import { mergeParts } from '@/lib/mergeParts'
 import { currentLang } from '@/lib/lang-server'
+import { videosEndpoint } from '@/lib/videoAddresses'
+import { verticalFeed } from '@/lib/verticalFeed'
+import { loadShare } from './load'
+import WideView from './wide-view'
+import VerticalShareClient from './vertical-client'
 
-// Public, no auth -- knowing the share_id is the whole access boundary.
-// get_reels_by_share_id() (see lib/supabase.ts) is the only read path the
-// anon key has; a wrong/deleted/malformed shareId just 404s here.
-//
-// One page per SESSION, not per reel (ADR-076, operator: "one session id,
-// one share page") -- share_id groups up to 12 reel rows now (up to 10
-// individual top-ranked rally clips + burst-moments + full, 2026-09-12).
-// The function's own ORDER BY (not this page) is what fixes the order:
-// rally clips by rally_rank (i.e. by score, best first), then burst, then
-// full -- encoded in the DB rather than left to upload/report order.
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-type ShareReel = {
-  id: string
-  kind: string
-  rally_rank: number | null
-  r2_bucket: string
-  r2_key_ranked: string
-  brand_name: string | null
-  brand_logo_key: string | null
-  brand_logo_ink: 'light' | 'dark' | null
-  camera_label: string | null
-  duration_sec: number | null
-  rally_count: number | null
-  created_at: string
-  part_index: number | null
-  score: number | string | null
-  badge?: string | null
-}
-
+// The share page. Vertical (9:16) by default (operator, 2026-10-28), once
+// the venue desktop has sent at least one 9:16 crop for the session
+// (lib/verticalFeed.ts); the wide page otherwise, and always at
+// /r/<id>/wide.
 export default async function ReelSharePage({ params }: { params: Promise<{ shareId: string }> }) {
   const { shareId } = await params
-  if (!UUID_RE.test(shareId)) notFound()
+  const { reels, addresses } = await loadShare(shareId)
 
-  const supabase = supabasePublic()
-  const [{ data }, { data: badgeRows }] = await Promise.all([
-    supabase.rpc('get_reels_by_share_id', { p_share_id: shareId }),
-    // A session's badges, decided once its last part is in (console
-    // lib/badges.ts). An error -- a database without the function yet --
-    // just means no badges, never a broken page.
-    supabase.rpc('get_badges_by_share_id', { p_share_id: shareId }),
-  ])
-  const badges = new Map(((badgeRows ?? []) as { id: string; badge: string }[]).map((b) => [b.id, b.badge]))
-  // A session sent in parts shows as one familiar set of reels (lib/mergeParts.ts),
-  // badged clips first.
-  const reels = mergeParts(((data ?? []) as ShareReel[]).map((r) => ({ ...r, badge: badges.get(r.id) ?? null })))
-
-  if (reels.length === 0) notFound()
-
-  // Signed, 1-hour video addresses from the console (lib/videoAddresses.ts).
-  // null = the share is unknown, removed or past its 30 days.
-  const addresses = await fetchVideoAddresses(shareId)
-  if (!addresses) notFound()
-
-  const slides = reels
-    .filter((r) => addresses.videos[r.id])
-    .map((r) => ({
-      id: r.id,
-      kind: r.kind as 'full' | 'burst' | 'rally',
-      rallyRank: r.rally_rank,
-      badge: r.badge ?? null,
-      videoUrl: addresses.videos[r.id],
-      durationSec: r.duration_sec,
-      rallyCount: r.rally_count,
-    }))
-  if (slides.length === 0) notFound()
+  const feed = verticalFeed(reels, addresses)
+  if (!feed) return <WideView shareId={shareId} reels={reels} addresses={addresses} />
 
   const first = reels[0]
-
-  // Rendered here (server component) instead of inside the client
-  // component so this hint hits <head> before any client JS has even
-  // downloaded, not just before the client's useEffect runs -- covers the
-  // first (most likely to be watched/shared first) slide specifically.
-  // The client component then fetches the on-screen slide and the next one
-  // as Blobs (lib/loadWindow.ts), so share tiles can call navigator.share()
-  // synchronously off the tap -- an awaited fetch mid-gesture silently
-  // misses Safari's activation window.
-  const cdnOrigin = new URL(slides[0].videoUrl).origin
+  const played = new Date(first.created_at)
+  // Venue time zone (Taiwan), not UTC: a 7 AM game there is the previous day in UTC.
+  const gameDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).format(played)
+  const lang = await currentLang()
+  const when = new Intl.DateTimeFormat(lang, { timeZone: 'Asia/Taipei', weekday: 'short', month: 'short', day: 'numeric' }).format(played)
+  const court = (first.camera_label ?? '').replace(/^.*?-\s*/, '') || 'Court'
+  const cdnOrigin = new URL(feed[0].videoUrl).origin
 
   return (
     <>
       <link rel="preconnect" href={cdnOrigin} crossOrigin="anonymous" />
-      <link rel="preload" as="fetch" href={slides[0].videoUrl} crossOrigin="anonymous" />
-      <ReelShareClient
-        shareId={shareId}
-        slides={slides}
+      <link rel="preload" as="fetch" href={feed[0].videoUrl} crossOrigin="anonymous" />
+      <VerticalShareClient
+        reels={reels.filter((r) => r.kind === 'rally')}
+        addresses={addresses}
         addressesExpireAt={addresses.expiresAt}
         videosEndpoint={videosEndpoint(shareId)}
         venueName={first.brand_name ?? 'Your venue'}
-        logoKey={first.brand_logo_key}
-        logoInk={first.brand_logo_ink}
-        cameraLabel={first.camera_label}
-        createdAt={first.created_at}
-        lang={await currentLang()}
+        gameDate={gameDate}
+        court={court}
+        when={when}
+        lang={lang}
+        wideHref={`/r/${shareId}/wide`}
       />
     </>
   )
