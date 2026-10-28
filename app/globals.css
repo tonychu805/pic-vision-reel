@@ -305,3 +305,10 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .calendar-slot[style*="justify-content: center"] { border-color:#237653 !important; background:#237653; color:#fff; font-weight:700; }
 .venue-page .powered-by { color:#50645a; }
 .venue-page :focus-visible { outline:3px solid #237653; outline-offset:3px; }
+.court-club-preview { padding-bottom:100px !important; }
+.court-club-preview .preview-note { margin:-14px 0 0; color:#50645a; font-size:12px; }
+.court-club-preview .checkin-select { min-height:44px; }
+.court-club-preview button:disabled { opacity:1; cursor:default; }
+.court-club-preview .preview-account { display:flex; flex-direction:column; gap:18px; }
+.court-club-preview .preview-toggle { width:40px; height:24px; flex:none; border-radius:999px; background:#d3dfd6; position:relative; }
+.court-club-preview .preview-toggle:before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; border-radius:50%; background:#fff; }
