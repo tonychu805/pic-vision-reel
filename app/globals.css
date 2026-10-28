@@ -224,3 +224,84 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .account-toggle input:checked + .account-toggle-track { background:var(--accent); }
 .account-toggle input:checked + .account-toggle-track::before { transform:translateX(16px); }
 .account-toggle input:focus-visible + .account-toggle-track { outline:2px solid var(--accent); outline-offset:2px; }
+
+/* Court Club — the venue journey is read outdoors, often one-handed and in
+   a hurry. It therefore gets a warm, high-legibility field-guide surface;
+   the reel player intentionally remains the product's dark, cinematic
+   destination. These tokens are locally scoped so login, account fallback,
+   and public reel links retain their established worlds. */
+.venue-page {
+  --bg:#f4f6f0;
+  --surface:#ffffff;
+  --text:#16392d;
+  --muted:#50645a;
+  --accent:#237653;
+  --accent-soft:#e4eee3;
+  --divider:#d3dfd6;
+  --error:#ad3a31;
+  background:var(--bg);
+  color:var(--text);
+}
+.venue-page .share-shell { gap:24px; padding:22px 18px 92px; }
+.venue-page .venue-header { min-height:48px; }
+.venue-page .venue-header > span { font-size:18px; font-weight:700; letter-spacing:-.025em; }
+.venue-page .venue-mark { border-radius:14px; border-color:#bed0c2; color:#237653; background:#e4eee3; }
+.venue-page .lang-switch { border-color:#c5d4c9; background:#fff; }
+.venue-page .lang-switch button { min-height:36px; color:#50645a; }
+.venue-page .lang-switch button.active { background:#e4eee3; color:#16392d; }
+.venue-page .calendar-court { margin:0; }
+.venue-page .calendar-court h2,
+.venue-page .sessions-heading h1 { margin:0; color:#16392d; font-size:26px; line-height:1.15; font-weight:700; letter-spacing:-.035em; }
+.venue-page .checkin-panel > h2 { margin-bottom:14px; }
+.venue-page .your-session { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 18px; padding:15px 16px; border-radius:14px; background:#16392d; color:#fff; box-shadow:0 8px 20px rgba(22,57,45,.16); }
+.venue-page .your-session div { display:flex; flex-direction:column; gap:1px; }
+.venue-page .your-session span { color:#b8d6c2; font-size:12px; font-weight:700; letter-spacing:.02em; }
+.venue-page .your-session strong { font-size:18px; letter-spacing:-.02em; }
+.venue-page .your-session p { max-width:116px; margin:0; color:#edf6ef; font-size:12px; line-height:1.35; text-align:right; }
+.venue-page .checkin-grid { gap:12px; }
+.venue-page .checkin-card { gap:12px; padding:16px; border-color:#d3dfd6; border-radius:14px; box-shadow:0 3px 10px rgba(22,57,45,.06); }
+.venue-page .checkin-card--free { border-color:#b9d8c3; }
+.venue-page .checkin-card--recording { border-color:#b8d6c2; background:#f8fbf8; }
+.venue-page .checkin-card--joinable { border-color:#dfcf9f; }
+.venue-page .checkin-head { align-items:flex-start; }
+.venue-page .checkin-name { font-size:16px; font-weight:700; }
+.venue-page .checkin-badge { padding:4px 9px; font-size:12px; }
+.venue-page .checkin-badge--free { color:#195b40; background:#e4eee3; }
+.venue-page .checkin-badge--recording { color:#8c312b; background:#f9e8e5; }
+.venue-page .checkin-badge--joinable { color:#735800; background:#f7eed1; }
+.venue-page .checkin-line { color:#50645a; font-size:13px; }
+.venue-page .checkin-field-label { color:#3f584b; font-size:12px; font-weight:600; }
+.venue-page .checkin-select,
+.venue-page .field-input { min-height:44px; border-color:#bfcfc3; background:#fff; color:#16392d; }
+.venue-page .checkin-btn { min-height:46px; border-radius:10px; font-weight:700; }
+.venue-page .checkin-btn--primary { background:#237653; color:#fff; }
+.venue-page .checkin-btn--ghost { border-color:#abc3b2; color:#16392d; }
+.venue-page .checkin-btn--danger { border-color:#d9a7a1; color:#96382f; }
+.venue-page .bottom-nav { max-width:430px; border-color:#d3dfd6; background:rgba(255,255,255,.96); box-shadow:0 -6px 20px rgba(22,57,45,.08); }
+.venue-page .bottom-nav-item { min-height:50px; color:#50645a; font-size:12px; }
+.venue-page .bottom-nav-item.active { color:#195b40; font-weight:700; }
+.venue-page .bottom-nav-item.active svg { stroke-width:2.5; }
+.venue-page .sessions-view { display:flex; flex-direction:column; gap:18px; }
+.venue-page .sessions-heading { display:flex; flex-direction:column; gap:5px; }
+.venue-page .sessions-heading p { margin:0; color:#50645a; font-size:14px; }
+.venue-page .sessions-empty { margin:0; color:#50645a; font-size:14px; }
+.venue-page .sessions-view .calendar-court { display:flex; flex-direction:column; gap:8px; }
+.venue-page .sessions-view .calendar-court h2 { font-size:15px; }
+.venue-page .calendar-slot { min-height:62px; margin:0; padding:13px 14px; border-color:#d3dfd6; border-radius:12px; background:#fff; color:#16392d; box-shadow:0 2px 7px rgba(22,57,45,.04); }
+.venue-page a.calendar-slot:hover { background:#edf5ef; border-color:#8cb79a; }
+.venue-page .calendar-slot-go { color:#196646; font-weight:700; }
+.venue-page .calendar-slot--pending { color:#50645a; background:#f9fbf8; }
+.venue-page .account-header { padding:2px 0 8px; }
+.venue-page .account-avatar { width:54px; height:54px; background:#e4eee3; color:#195b40; }
+.venue-page .account-header-name { color:#16392d; font-size:20px; font-weight:700; font-style:normal !important; }
+.venue-page .account-header-meta,
+.venue-page .account-field-label,
+.venue-page .account-row-sub { color:#50645a; }
+.venue-page .account-section { gap:12px; padding-top:20px; border-color:#d3dfd6; }
+.venue-page .account-section-title { color:#3f584b; font-size:12px; font-weight:700; letter-spacing:.04em; }
+.venue-page .account-row-text { font-size:14px; color:#16392d; }
+.venue-page .account-badge { color:#195b40; background:#e4eee3; font-size:12px; }
+.venue-page .account-toggle input:checked + .account-toggle-track { background:#237653; }
+.venue-page .calendar-slot[style*="justify-content: center"] { border-color:#237653 !important; background:#237653; color:#fff; font-weight:700; }
+.venue-page .powered-by { color:#50645a; }
+.venue-page :focus-visible { outline:3px solid #237653; outline-offset:3px; }

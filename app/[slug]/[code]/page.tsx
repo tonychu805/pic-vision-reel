@@ -93,7 +93,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
 
   const courts = byCourt(cal.games)
   return (
-    <main className="share-page">
+    <main className="share-page venue-page">
       <div className="share-shell">
         <header className="venue-header">
           {cal.logo_key ? (
@@ -113,9 +113,12 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
           lang={lang}
           checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={checkInOptions} />}
           sessions={
-            <div>
-              <div className="eyebrow">{t(lang, 'todaysGames')} · {dateLabel(new Date(), cal.timezone, lang)}</div>
-              {courts.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'noGamesYet')}</p>}
+            <div className="sessions-view">
+              <div className="sessions-heading">
+                <h1>{t(lang, 'sessionsTitle')}</h1>
+                <p>{dateLabel(new Date(), cal.timezone, lang)}</p>
+              </div>
+              {courts.length === 0 && <p className="sessions-empty">{t(lang, 'noGamesYet')}</p>}
               {courts.map((c) => (
                 <section key={c.court} className="calendar-court">
                   <h2>{c.court}</h2>

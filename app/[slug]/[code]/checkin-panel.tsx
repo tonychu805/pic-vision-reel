@@ -449,13 +449,23 @@ export default function CheckinPanel({
   }
 
   const anyFree = options.some((o) => !o.is_busy)
+  const ownSession = options.find((o) => o.is_busy && o.is_owner && o.busy_session_id)
   // Natural/numeric sort ("Court 2" before "Court 10"), not the raw order
   // get_check_in_options happens to return -- that order isn't meaningful
   // to a player picking a court.
   const sortedOptions = [...options].sort((a, b) => a.camera_label.localeCompare(b.camera_label, undefined, { numeric: true }))
   return (
-    <section className="calendar-court">
+    <section className="calendar-court checkin-panel">
       <h2>{t(lang, 'checkInTitle')}</h2>
+      {ownSession && (
+        <div className="your-session" aria-live="polite">
+          <div>
+            <span>{t(lang, 'yourSession')}</span>
+            <strong>{ownSession.camera_label}</strong>
+          </div>
+          <p>{ownSession.session_ends_at ? t(lang, 'sessionUntil', { time: clockLabel(ownSession.session_ends_at, timeZone) }) : t(lang, 'checkInStatusRecording')}</p>
+        </div>
+      )}
       {options.length === 0 ? (
         <p style={{ color: 'var(--muted)', fontSize: 13 }}>{t(lang, 'checkInNoCameras')}</p>
       ) : !anyFree && (

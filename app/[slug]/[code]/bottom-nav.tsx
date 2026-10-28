@@ -16,20 +16,20 @@ export type CalendarTab = 'checkin' | 'sessions' | 'account'
 export default function BottomNav({ lang, active, onSelect }: { lang: Lang; active: CalendarTab; onSelect: (tab: CalendarTab) => void }) {
   return (
     <nav className="bottom-nav">
-      <button type="button" className={`bottom-nav-item${active === 'checkin' ? ' active' : ''}`} onClick={() => onSelect('checkin')}>
+      <button type="button" className={`bottom-nav-item${active === 'checkin' ? ' active' : ''}`} aria-current={active === 'checkin' ? 'page' : undefined} onClick={() => onSelect('checkin')}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 6 9 17l-5-5" />
         </svg>
         <span>{t(lang, 'navCheckIn')}</span>
       </button>
-      <button type="button" className={`bottom-nav-item${active === 'sessions' ? ' active' : ''}`} onClick={() => onSelect('sessions')}>
+      <button type="button" className={`bottom-nav-item${active === 'sessions' ? ' active' : ''}`} aria-current={active === 'sessions' ? 'page' : undefined} onClick={() => onSelect('sessions')}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="5" width="18" height="16" rx="2" />
           <path d="M3 10h18M8 3v4M16 3v4" />
         </svg>
         <span>{t(lang, 'navSessions')}</span>
       </button>
-      <button type="button" className={`bottom-nav-item${active === 'account' ? ' active' : ''}`} onClick={() => onSelect('account')}>
+      <button type="button" className={`bottom-nav-item${active === 'account' ? ' active' : ''}`} aria-current={active === 'account' ? 'page' : undefined} onClick={() => onSelect('account')}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="8" r="4" />
           <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" />
