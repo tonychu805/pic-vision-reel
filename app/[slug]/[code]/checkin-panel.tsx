@@ -450,8 +450,7 @@ export default function CheckinPanel({
   // to a player picking a court.
   const sortedOptions = [...options].sort((a, b) => a.camera_label.localeCompare(b.camera_label, undefined, { numeric: true }))
   return (
-    <section className="calendar-court checkin-panel">
-      <h2>{t(lang, 'checkInTitle')}</h2>
+    <section className="calendar-court checkin-panel" aria-label={t(lang, 'checkInTitle')}>
       {ownSession && (
         <div className="your-session" aria-live="polite">
           <div>

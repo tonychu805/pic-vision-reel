@@ -252,7 +252,6 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .calendar-court { margin:0; }
 .venue-page .calendar-court h2,
 .venue-page .sessions-heading h1 { margin:0; color:#16392d; font-size:26px; line-height:1.15; font-weight:700; letter-spacing:-.035em; }
-.venue-page .checkin-panel > h2 { margin-bottom:14px; }
 .venue-page .your-session { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 18px; padding:15px 16px; border-radius:14px; background:#16392d; color:#fff; box-shadow:0 8px 20px rgba(22,57,45,.16); }
 .venue-page .your-session div { display:flex; flex-direction:column; gap:1px; }
 .venue-page .your-session span { color:#b8d6c2; font-size:12px; font-weight:700; letter-spacing:.02em; }

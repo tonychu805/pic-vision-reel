@@ -23,8 +23,7 @@ export default function CourtClubPreview() {
         </header>
         <p className="preview-note">{zh ? '設計預覽 · 以下為示範資料' : 'Design preview · Sample data'}</p>
 
-        {tab === 'checkin' && <section className="calendar-court checkin-panel">
-          <h2>{t(lang, 'checkInTitle')}</h2>
+        {tab === 'checkin' && <section className="calendar-court checkin-panel" aria-label={t(lang, 'checkInTitle')}>
           <div className="your-session">
             <div><span>{t(lang, 'yourSession')}</span><strong>{zh ? '2 號球場' : 'Court 2'}</strong></div>
             <p>{t(lang, 'sessionUntil', { time: '20:00' })}</p>
