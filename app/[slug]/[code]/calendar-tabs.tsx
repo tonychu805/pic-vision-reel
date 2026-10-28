@@ -12,14 +12,15 @@ import BottomNav, { type CalendarTab } from './bottom-nav'
 
 export default function CalendarTabs({ lang, checkin, sessions, account }: { lang: Lang; checkin: ReactNode; sessions: ReactNode; account: ReactNode }) {
   const [tab, setTab] = useState<CalendarTab>('checkin')
+  const [navHeight, setNavHeight] = useState(67)
   return (
     <>
       <div style={{ display: tab === 'checkin' ? 'contents' : 'none' }}>{checkin}</div>
       <div style={{ display: tab === 'sessions' ? 'contents' : 'none' }}>{sessions}</div>
       <div style={{ display: tab === 'account' ? 'contents' : 'none' }}>{account}</div>
       {/* Matches .bottom-nav's real rendered height so fixed positioning never covers scrolled content. */}
-      <div style={{ height: 58 }} aria-hidden="true" />
-      <BottomNav lang={lang} active={tab} onSelect={setTab} />
+      <div style={{ height: navHeight, flexShrink: 0 }} aria-hidden="true" />
+      <BottomNav lang={lang} active={tab} onSelect={setTab} onHeightChange={setNavHeight} />
     </>
   )
 }

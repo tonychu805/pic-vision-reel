@@ -44,6 +44,7 @@ exports.bundleClients = function bundleClients() {
   }
   const publicClient = add(path.join(root, 'app/r/[shareId]/reel-share-client.tsx'))
   const verticalClient = add(path.join(root, 'app/r/[shareId]/vertical-client.tsx'))
+  const calendarClient = add(path.join(root, 'app/[slug]/[code]/calendar-tabs.tsx'))
   const react = add(require.resolve('react'))
   const dom = add(require.resolve('react-dom/client'))
   return `const process={env:{NODE_ENV:'production',NEXT_PUBLIC_APP_URL:location.origin}};
@@ -51,7 +52,7 @@ exports.bundleClients = function bundleClients() {
     function __require(i){if(cache[i])return cache[i].exports;const m=cache[i]={exports:{}};modules[i](m,m.exports,__require);return m.exports;}
     const React=__require(${react}),ReactDOM=__require(${dom});
     window.mount=(kind,props)=>{
-      const Component=__require(kind==='vertical'?${verticalClient}:${publicClient}).default;
+      const Component=__require(kind==='calendar'?${calendarClient}:kind==='vertical'?${verticalClient}:${publicClient}).default;
       ReactDOM.createRoot(document.getElementById('app')).render(React.createElement(Component,props));
     };`
 }

@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict')
 const { before, after, test } = require('node:test')
 const http = require('node:http')
+const fs = require('node:fs')
+const path = require('node:path')
 const { chromium } = require('playwright')
 const { bundleClients } = require('./clientHarness.cjs')
 
@@ -155,4 +157,30 @@ test('vertical HTTP errors cannot be shared; retry restores This clip and All cl
   await page.getByRole('button', { name: /All 1 clips/ }).click()
   await page.waitForFunction(() => window.shared.length === 2)
   assert.equal(await page.evaluate(() => window.shared[1][0].body), 'recovered video bytes')
+})
+
+test('bottom navigation stays usable and reserves its full height when the bottom inset grows', async () => {
+  const page = await setup()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.addStyleTag({ content: fs.readFileSync(path.join(__dirname, '../app/globals.css'), 'utf8').replace(/^@import.*$/gm, '') })
+  await page.evaluate(() => window.mount('calendar', {
+    lang: 'en', checkin: 'CHECKIN PANEL', sessions: 'SESSIONS PANEL', account: 'ACCOUNT PANEL',
+  }))
+  const spacerMatchesNav = () => page.waitForFunction(() => {
+    const nav = document.querySelector('.bottom-nav')
+    const spacer = nav.previousElementSibling
+    return Math.abs(nav.getBoundingClientRect().height - spacer.getBoundingClientRect().height) < 1
+  })
+  await spacerMatchesNav()
+  // Desktop browsers don't expose the iPhone inset; exercise the resulting
+  // size change explicitly to check the ResizeObserver and reserved space.
+  await page.addStyleTag({ content: '.bottom-nav { padding-bottom: 41px; }' })
+  await spacerMatchesNav()
+  for (const [button, panel] of [['Account', 'ACCOUNT PANEL'], ['Sessions', 'SESSIONS PANEL'], ['Check in', 'CHECKIN PANEL']]) {
+    await page.getByRole('navigation').getByRole('button', { name: button, exact: true }).click()
+    assert.ok((await page.locator('body').innerText()).includes(panel))
+  }
+  await page.setViewportSize({ width: 390, height: 664 })
+  await spacerMatchesNav()
+  assert.equal(await page.locator('.bottom-nav').evaluate((nav) => Math.round(nav.getBoundingClientRect().bottom)), 664)
 })
