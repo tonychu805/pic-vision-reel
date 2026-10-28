@@ -89,7 +89,7 @@ Venue content is mobile-first, constrained to 430px, with 18px horizontal page p
 
 ## Elevation & Depth
 
-Court rows and recording rows sit directly on Court Paper and are separated by fine rules. Account panels retain their white surface. The current session uses scale and spacing for emphasis; it has no shadow.
+Court and recording rows sit directly on Court Paper. Fine rules separate court rows in Check in and court groups in Highlight; individual recording rows rely on spacing. Account panels retain their white surface. The current session uses scale and spacing for emphasis; it has no shadow.
 
 ## Shapes
 

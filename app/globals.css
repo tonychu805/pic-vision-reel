@@ -251,13 +251,14 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .calendar-court { margin:0; }
 .venue-page .calendar-court h2,
 .venue-page .sessions-heading h1 { margin:0; color:#16392d; font-size:26px; line-height:1.15; font-weight:700; letter-spacing:-.035em; }
-.venue-page .your-session { display:flex; align-items:end; justify-content:space-between; gap:16px; margin:0 0 26px; padding:0 0 18px; border-bottom:1px solid #9fbaa8; color:#16392d; }
+.venue-page .your-session { display:flex; align-items:end; justify-content:space-between; gap:16px; margin:0 0 8px; padding:0 0 18px; border-bottom:1px solid #9fbaa8; color:#16392d; }
 .venue-page .your-session div { display:flex; flex-direction:column; gap:3px; min-width:0; }
 .venue-page .your-session span { color:#50645a; font-size:13px; font-weight:600; }
 .venue-page .your-session strong { font-size:30px; line-height:1.08; letter-spacing:-.035em; }
 .venue-page .your-session p { max-width:112px; margin:0 0 2px; color:#195b40; font-size:13px; font-weight:600; line-height:1.35; text-align:right; }
-.venue-page .checkin-grid { gap:0; border-top:1px solid #c6d5c9; }
+.venue-page .checkin-grid { gap:0; }
 .venue-page .checkin-card { gap:12px; padding:19px 0 20px; border:0; border-bottom:1px solid #c6d5c9; border-radius:0; background:transparent; box-shadow:none; }
+.venue-page .checkin-card:last-child { border-bottom:0; }
 .venue-page .checkin-head { align-items:flex-start; }
 .venue-page .checkin-name { font-size:19px; font-weight:700; letter-spacing:-.02em; }
 .venue-page .checkin-badge { display:inline-flex; align-items:center; gap:7px; padding:0; border-radius:0; background:transparent; font-size:12px; font-weight:600; white-space:nowrap; }
@@ -282,13 +283,14 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .bottom-nav-item--recording.active svg { background:#16392d; stroke-width:2.5; }
 .venue-page .bottom-nav-item--recording span { margin-top:1px; }
 .venue-page .sessions-view { display:flex; flex-direction:column; gap:0; }
-.venue-page .sessions-heading { display:flex; align-items:end; justify-content:space-between; gap:12px; padding:4px 0 26px; }
+.venue-page .sessions-heading { display:flex; align-items:end; justify-content:space-between; gap:12px; padding:4px 0 12px; }
 .venue-page .sessions-heading h1 { max-width:210px; word-spacing:.04em; }
 .venue-page .sessions-heading p { margin:0 0 2px; color:#50645a; font-size:13px; white-space:nowrap; }
 .venue-page .sessions-empty { margin:0; color:#50645a; font-size:14px; }
-.venue-page .sessions-view .calendar-court { display:flex; flex-direction:column; gap:0; margin-bottom:22px; border-top:1px solid #9fbaa8; }
+.venue-page .sessions-view .calendar-court { display:flex; flex-direction:column; gap:0; margin-bottom:22px; border-top:0; }
+.venue-page .sessions-view .calendar-court + .calendar-court { border-top:1px solid #9fbaa8; }
 .venue-page .sessions-view .calendar-court h2 { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:14px 0 9px; font-size:17px; }
-.venue-page .calendar-slot { min-height:72px; margin:0; padding:12px 0; border:0; border-bottom:1px solid #d3dfd6; border-radius:0; background:transparent; color:#16392d; box-shadow:none; }
+.venue-page .calendar-slot { min-height:72px; margin:0; padding:12px 0; border:0; border-radius:0; background:transparent; color:#16392d; box-shadow:none; }
 .venue-page a.calendar-slot:hover { background:#e9f0e8; }
 .venue-page .calendar-slot-go { display:inline-flex; align-items:center; gap:8px; color:#195b40; font-size:13px; font-weight:700; white-space:nowrap; }
 .venue-page .calendar-slot-go svg { width:32px; height:32px; }
