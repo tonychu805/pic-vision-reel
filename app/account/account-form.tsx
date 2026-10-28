@@ -25,9 +25,12 @@ export default function AccountForm({
 }) {
   const router = useRouter()
   const [name, setName] = useState(initialName)
+  const [savedName, setSavedName] = useState(initialName)
+  const [editingName, setEditingName] = useState(false)
   const [training, setTraining] = useState(initialTraining)
   const [busy, setBusy] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [nameMessage, setNameMessage] = useState<string | null>(null)
+  const [trainingMessage, setTrainingMessage] = useState<string | null>(null)
 
   const [newEmail, setNewEmail] = useState('')
   const [emailBusy, setEmailBusy] = useState(false)
@@ -37,15 +40,30 @@ export default function AccountForm({
   const [passwordBusy, setPasswordBusy] = useState(false)
   const [passwordResult, setPasswordResult] = useState<string | null>(null)
 
-  async function save() {
+  async function saveName() {
     setBusy(true)
-    setSaved(false)
-    const [{ error: nameError }] = await Promise.all([
-      updateDisplayName(name),
-      setTrainingConsent(training),
-    ])
-    setBusy(false)
-    if (!nameError) setSaved(true)
+    setNameMessage(null)
+    try {
+      const { error } = await updateDisplayName(name)
+      if (error) { setNameMessage(t(lang, 'nameSaveFailed')); return }
+      setSavedName(name.trim())
+      setEditingName(false)
+    } catch { setNameMessage(t(lang, 'nameSaveFailed')) }
+    finally { setBusy(false) }
+  }
+
+  async function changeTraining(value: boolean) {
+    setTraining(value)
+    setBusy(true)
+    setTrainingMessage(null)
+    try {
+      const { error } = await setTrainingConsent(value)
+      if (error) throw new Error(error)
+      setTrainingMessage(t(lang, 'savedMessage'))
+    } catch {
+      setTraining(!value)
+      setTrainingMessage(t(lang, 'trainingSaveFailed'))
+    } finally { setBusy(false) }
   }
 
   async function changeEmail() {
@@ -73,7 +91,7 @@ export default function AccountForm({
     window.location.href = '/login'
   }
 
-  const initial = (initialName || initialEmail || '?').trim().charAt(0).toUpperCase()
+  const initial = (savedName || initialEmail || '?').trim().charAt(0).toUpperCase()
   const signInMethod = isLineAccount ? 'LINE' : hasPassword ? t(lang, 'signInMethodEmail') : t(lang, 'signInMethodGoogle')
   const memberSinceText = memberSince
     ? t(lang, 'memberSinceLabel', {
@@ -85,10 +103,12 @@ export default function AccountForm({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div className="account-header">
         <div className="account-avatar">{initial}</div>
-        <div>
-          <div className="account-header-name" style={initialName ? undefined : { color: 'var(--muted)', fontWeight: 400, fontStyle: 'italic' }}>
-            {initialName || t(lang, 'nameNotSet')}
-          </div>
+        <div className="account-identity">
+          {editingName ? <div className="account-name-edit">
+            <label className="account-field-label" htmlFor="account-name">{t(lang, 'nameLabel')}</label>
+            <input id="account-name" autoFocus className="field-input" value={name} disabled={busy} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void saveName(); if (e.key === 'Escape') { setName(savedName); setEditingName(false) } }} />
+            <div className="account-name-actions"><button type="button" className="checkin-btn checkin-btn--primary" disabled={busy} onClick={saveName}>{t(lang, 'saveButton')}</button><button type="button" className="checkin-btn checkin-btn--ghost" disabled={busy} onClick={() => { setName(savedName); setEditingName(false); setNameMessage(null) }}>{t(lang, 'cancel')}</button></div>
+          </div> : <button type="button" className="account-name-button" onClick={() => setEditingName(true)} aria-label={t(lang, 'editName')}><span className="account-header-name">{savedName || t(lang, 'nameNotSet')}</span><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button>}
           <div className="account-header-meta">
             {signInMethod}
             {memberSinceText && ` · ${memberSinceText}`}
@@ -96,25 +116,18 @@ export default function AccountForm({
         </div>
       </div>
 
-      <div className="account-section">
-        <div className="account-section-title">{t(lang, 'sectionProfile')}</div>
-        <label className="account-field-label">{t(lang, 'nameLabel')}</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="field-input" />
-        <button className="calendar-slot" style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }} disabled={busy} onClick={save}>
-          {t(lang, 'saveButton')}
-        </button>
-        {saved && <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>{t(lang, 'savedMessage')}</p>}
-      </div>
+      {nameMessage && <p role="alert" className="account-feedback">{nameMessage}</p>}
 
       <div className="account-section">
         <div className="account-section-title">{t(lang, 'sectionPrivacy')}</div>
         <label className="account-row" style={{ cursor: 'pointer' }}>
           <span className="account-row-text">{t(lang, 'consentTraining')}</span>
           <span className="account-toggle">
-            <input type="checkbox" checked={training} onChange={(e) => setTraining(e.target.checked)} />
+            <input type="checkbox" checked={training} disabled={busy} onChange={(e) => void changeTraining(e.target.checked)} />
             <span className="account-toggle-track" />
           </span>
         </label>
+        {trainingMessage && <p role="status" className="account-feedback">{trainingMessage}</p>}
       </div>
 
       <div className="account-section">

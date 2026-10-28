@@ -116,6 +116,10 @@ The signature component: a dark Court Ink status block showing the player’s co
 
 Three labeled, icon-supported destinations. Active state uses Court Green and stronger weight; inactive items remain readable in Court Muted.
 
+### Account
+
+The name is edited in its profile heading, with a local Save and Cancel state. The optional training preference saves at the switch and reports the result beside it. Only supported sign-in and credential controls appear for the current account type.
+
 ## Do's and Don'ts
 
 ### Do:

@@ -312,3 +312,12 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .court-club-preview .preview-account { display:flex; flex-direction:column; gap:18px; }
 .court-club-preview .preview-toggle { width:40px; height:24px; flex:none; border-radius:999px; background:#d3dfd6; position:relative; }
 .court-club-preview .preview-toggle:before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; border-radius:50%; background:#fff; }
+.account-identity { min-width:0; flex:1; }
+.account-name-button { display:inline-flex; align-items:center; gap:8px; padding:4px 0; border:0; background:transparent; color:var(--text); text-align:left; cursor:pointer; }
+.account-name-button svg { flex:none; color:var(--accent); }
+.account-name-edit { display:flex; flex-direction:column; gap:8px; width:100%; }
+.account-name-actions { display:flex; gap:8px; }
+.account-name-actions .checkin-btn { min-width:0; }
+.account-feedback { color:var(--error); font-size:12.5px; margin:0; }
+.venue-page .account-name-button { color:#16392d; }
+.venue-page .account-name-button svg { color:#237653; }

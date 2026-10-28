@@ -7,6 +7,7 @@ import { t, type Lang } from '@/lib/i18n'
 export default function CourtClubPreview() {
   const [tab, setTab] = useState<CalendarTab>('checkin')
   const [lang, setLang] = useState<Lang>('en')
+  const [previewEditing, setPreviewEditing] = useState(false)
   const zh = lang === 'zh-TW'
 
   return (
@@ -57,8 +58,8 @@ export default function CourtClubPreview() {
         </div>}
 
         {tab === 'account' && <div className="preview-account">
-          <div className="account-header"><div className="account-avatar">A</div><div><div className="account-header-name">{zh ? '示範球員' : 'Alex Chen'}</div><div className="account-header-meta">LINE</div></div></div>
-          <div className="account-section"><div className="account-section-title">{t(lang, 'sectionProfile')}</div><label className="account-field-label">{t(lang, 'nameLabel')}</label><div className="field-input">{zh ? '示範球員' : 'Alex Chen'}</div><button className="checkin-btn checkin-btn--primary" disabled>{t(lang, 'saveButton')}</button></div>
+          <div className="account-header"><div className="account-avatar">A</div><div><button className="account-name-button" onClick={() => setPreviewEditing(true)}><span className="account-header-name">{zh ? '示範球員' : 'Alex Chen'}</span><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button><div className="account-header-meta">LINE</div></div></div>
+          {previewEditing && <div className="account-name-edit"><label htmlFor="preview-name">{t(lang, 'nameLabel')}</label><input id="preview-name" className="field-input" defaultValue={zh ? '示範球員' : 'Alex Chen'} /><div className="account-name-actions"><button className="checkin-btn checkin-btn--primary" onClick={() => setPreviewEditing(false)}>{t(lang, 'saveButton')}</button><button className="checkin-btn checkin-btn--ghost" onClick={() => setPreviewEditing(false)}>{t(lang, 'cancel')}</button></div></div>}
           <div className="account-section"><div className="account-section-title">{t(lang, 'sectionPrivacy')}</div><div className="account-row"><span className="account-row-text">{t(lang, 'consentTraining')}</span><span className="preview-toggle" aria-hidden="true" /></div></div>
           <div className="account-section"><div className="account-section-title">{t(lang, 'sectionSecurity')}</div><div className="account-row"><span className="account-row-text">{t(lang, 'signInMethodLabel')}</span><span className="account-badge">LINE</span></div></div>
         </div>}
