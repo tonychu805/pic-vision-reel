@@ -12,18 +12,18 @@ colors:
   recording-red: "#ad3a31"
 typography:
   display:
-    fontFamily: "Inter, system-ui, sans-serif"
+    fontFamily: "Barlow, PingFang TC, Noto Sans TC, sans-serif"
     fontSize: "26px"
     fontWeight: 700
     lineHeight: 1.15
     letterSpacing: "-0.035em"
   body:
-    fontFamily: "Inter, system-ui, sans-serif"
+    fontFamily: "Barlow, PingFang TC, Noto Sans TC, sans-serif"
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.55
   label:
-    fontFamily: "Inter, system-ui, sans-serif"
+    fontFamily: "Barlow, PingFang TC, Noto Sans TC, sans-serif"
     fontSize: "12px"
     fontWeight: 700
 rounded:
@@ -41,11 +41,10 @@ components:
     textColor: "{colors.court-surface}"
     rounded: "{rounded.control}"
     height: "46px"
-  card:
-    backgroundColor: "{colors.court-surface}"
+  court-row:
+    backgroundColor: "{colors.court-paper}"
     textColor: "{colors.court-ink}"
-    rounded: "{rounded.card}"
-    padding: "16px"
+    divider: "{colors.court-border}"
 ---
 
 # Design System: PicVision player web
@@ -56,7 +55,7 @@ components:
 
 The venue flow is a calm courtside companion: confident outdoors, legible at a glance, and clear about the player’s own recording. It begins as a practical field guide and hands off to PicVision’s existing dark, cinematic reel viewer when the footage is ready.
 
-Key characteristics: player-first status, quiet paper-like surfaces, court-green as an action signal, and explicit rather than clever controls.
+Key characteristics: player-first status, quiet paper-like surfaces, court-green as an action signal, and explicit rather than clever controls. Court and recording lists use typography and dividers instead of repeated cards.
 
 ## Colors
 
@@ -77,7 +76,7 @@ Court Club is warm neutral paper with deep green information hierarchy. Green co
 
 ## Typography
 
-**Display and body:** Inter, system-ui, sans-serif.
+**Venue display and body:** Barlow, with PingFang TC / Noto Sans TC fallbacks for Traditional Chinese. The reel player retains its existing type system.
 
 - **Display:** 26px / 700 / 1.15 / -0.035em for page titles.
 - **Title:** 18–20px / 700 for venue, session, and account identity.
@@ -86,15 +85,15 @@ Court Club is warm neutral paper with deep green information hierarchy. Green co
 
 ## Layout
 
-Venue content is mobile-first, constrained to 430px, with 18px horizontal page padding and 24px between major sections. The fixed three-item navigation retains its own bottom clearance. Put a current player session above the complete court list; do not reorder or hide courts to manufacture hierarchy.
+Venue content is mobile-first, constrained to 430px, with 18px horizontal page padding and 24px between major sections. The fixed three-item navigation retains its own bottom clearance. Put a current player session above the complete court list; do not reorder or hide courts to manufacture hierarchy. Court groups and recordings share a divider rhythm so the list can be scanned by court and time.
 
 ## Elevation & Depth
 
-Cards are primarily separated by paper/surface contrast and a 1px border. Only cards use a low ambient shadow (`0 3px 10px rgba(22,57,45,.06)`). The active-session block earns a deeper contextual shadow because it is the status anchor, not decoration.
+Court rows and recording rows sit directly on Court Paper and are separated by fine rules. Account panels retain their white surface. The current session uses scale and spacing for emphasis; it has no shadow.
 
 ## Shapes
 
-Cards and session blocks use 14px corners. Controls use 10px. Pills are reserved for small state labels and language/sign-in badges; large actions remain rounded rectangles, never pills.
+Account panels use 14px corners. Court and recording rows have square edges. Controls use small corners. State markers are text and a colored dot; large actions remain rounded rectangles, never pills.
 
 ## Components
 
@@ -104,14 +103,18 @@ Cards and session blocks use 14px corners. Controls use 10px. Pills are reserved
 - **Secondary:** white/transparent with a readable green-gray border.
 - **Danger:** quiet red outline; retain explicit text such as End.
 
-### Court cards
+### Court rows
 
-Use white surfaces with a 1px Court Border, 16px padding, a strong court title, and an explicit status pill. Available, live, and joinable states use descriptive text as well as color.
+Use unboxed rows with a strong court title, a small status dot, and explicit text. Available, live, and joinable states use descriptive text as well as color.
 An owned court shows its current end time first; the time editor opens only when requested.
 
 ### Your session
 
-The signature component: a dark Court Ink status block showing the player’s court and recording end time. It summarizes without replacing the actionable court card below.
+The signature component: a large court name and recording end time above the court list, separated from it by a single rule. It summarizes without replacing the actionable court row below.
+
+### Highlights
+
+The date shares the title line; recordings are grouped by court. Ready rows show their time and a clear play action; pending rows state that reels are on the way. Do not invent thumbnails for sessions when the calendar has no image data.
 
 In Sessions, mark only a currently joined court as the player's current court. The calendar does not identify a player's historical games.
 

@@ -115,7 +115,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
           checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={checkInOptions} />}
           sessions={
             <div className="sessions-view">
-              <div className="sessions-heading recording-heading">
+              <div className="sessions-heading">
                 <h1>{t(lang, 'sessionsTitle')}</h1>
                 <p>{dateLabel(new Date(), cal.timezone, lang)}</p>
               </div>
@@ -126,7 +126,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
                   {c.games.map((g) => g.share_id ? (
                     <a key={g.started_at} className="calendar-slot calendar-slot--ready" href={`/r/${g.share_id}`}>
                       <span className="session-row-copy"><strong>{slotLabel(g, cal.timezone)}</strong><small>{t(lang, 'sessionReady')}</small></span>
-                      <span className="calendar-slot-go">{t(lang, 'watch')}</span>
+                      <span className="calendar-slot-go"><svg aria-hidden="true" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="currentColor"/><path d="m13 10 9 6-9 6V10Z" fill="currentColor"/></svg><span>{t(lang, 'watch')}</span></span>
                     </a>
                   ) : (
                     <div key={g.started_at} className="calendar-slot calendar-slot--pending">

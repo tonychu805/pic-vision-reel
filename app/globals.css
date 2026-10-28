@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -140,10 +140,8 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .calendar-slot--pending { color:var(--muted); }
 .calendar-slot--pending span:last-child { font-size:12.5px; }
 
-/* Check-in court cards (app/[slug]/[code]/checkin-panel.tsx) -- a real
-   component system (header/body/action areas), not .calendar-slot with a
-   color bar layered on. Each card is its own elevated surface, state read
-   from a top-right status badge rather than a thin edge accent. */
+/* Shared check-in controls. The venue theme below presents the courts as
+   divided rows; the base rules also serve non-venue surfaces. */
 .checkin-grid { display:flex; flex-direction:column; gap:10px; }
 .checkin-card { display:flex; flex-direction:column; gap:10px; padding:14px 16px; border-radius:14px; background:var(--surface); border:1px solid var(--divider); box-shadow:0 1px 0 rgba(0,0,0,.12); }
 .checkin-card--free { border-color:rgba(145,132,217,.35); }
@@ -241,6 +239,7 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
   --error:#ad3a31;
   background:var(--bg);
   color:var(--text);
+  font-family:Barlow,"PingFang TC","Noto Sans TC",sans-serif;
 }
 .venue-page .share-shell { gap:24px; padding:22px 18px 92px; }
 .venue-page .venue-header { min-height:48px; }
@@ -252,27 +251,25 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .calendar-court { margin:0; }
 .venue-page .calendar-court h2,
 .venue-page .sessions-heading h1 { margin:0; color:#16392d; font-size:26px; line-height:1.15; font-weight:700; letter-spacing:-.035em; }
-.venue-page .your-session { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 18px; padding:15px 16px; border-radius:14px; background:#16392d; color:#fff; box-shadow:0 8px 20px rgba(22,57,45,.16); }
-.venue-page .your-session div { display:flex; flex-direction:column; gap:1px; }
-.venue-page .your-session span { color:#b8d6c2; font-size:12px; font-weight:700; letter-spacing:.02em; }
-.venue-page .your-session strong { font-size:18px; letter-spacing:-.02em; }
-.venue-page .your-session p { max-width:116px; margin:0; color:#edf6ef; font-size:12px; line-height:1.35; text-align:right; }
-.venue-page .checkin-grid { gap:12px; }
-.venue-page .checkin-card { gap:12px; padding:16px; border-color:#d3dfd6; border-radius:14px; box-shadow:0 3px 10px rgba(22,57,45,.06); }
-.venue-page .checkin-card--free { border-color:#b9d8c3; }
-.venue-page .checkin-card--recording { border-color:#b8d6c2; background:#f8fbf8; }
-.venue-page .checkin-card--joinable { border-color:#dfcf9f; }
+.venue-page .your-session { display:flex; align-items:end; justify-content:space-between; gap:16px; margin:0 0 26px; padding:0 0 18px; border-bottom:1px solid #9fbaa8; color:#16392d; }
+.venue-page .your-session div { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.venue-page .your-session span { color:#50645a; font-size:13px; font-weight:600; }
+.venue-page .your-session strong { font-size:30px; line-height:1.08; letter-spacing:-.035em; }
+.venue-page .your-session p { max-width:112px; margin:0 0 2px; color:#195b40; font-size:13px; font-weight:600; line-height:1.35; text-align:right; }
+.venue-page .checkin-grid { gap:0; border-top:1px solid #c6d5c9; }
+.venue-page .checkin-card { gap:12px; padding:19px 0 20px; border:0; border-bottom:1px solid #c6d5c9; border-radius:0; background:transparent; box-shadow:none; }
 .venue-page .checkin-head { align-items:flex-start; }
-.venue-page .checkin-name { font-size:16px; font-weight:700; }
-.venue-page .checkin-badge { padding:4px 9px; font-size:12px; }
-.venue-page .checkin-badge--free { color:#195b40; background:#e4eee3; }
-.venue-page .checkin-badge--recording { color:#8c312b; background:#f9e8e5; }
-.venue-page .checkin-badge--joinable { color:#735800; background:#f7eed1; }
+.venue-page .checkin-name { font-size:19px; font-weight:700; letter-spacing:-.02em; }
+.venue-page .checkin-badge { display:inline-flex; align-items:center; gap:7px; padding:0; border-radius:0; background:transparent; font-size:12px; font-weight:600; white-space:nowrap; }
+.venue-page .checkin-badge::before { content:''; width:7px; height:7px; flex:none; border-radius:50%; background:currentColor; }
+.venue-page .checkin-badge--free { color:#195b40; background:transparent; }
+.venue-page .checkin-badge--recording { color:#a23930; background:transparent; }
+.venue-page .checkin-badge--joinable { color:#775c16; background:transparent; }
 .venue-page .checkin-line { color:#50645a; font-size:13px; }
 .venue-page .checkin-field-label { color:#3f584b; font-size:12px; font-weight:600; }
 .venue-page .checkin-select,
 .venue-page .field-input { min-height:44px; border-color:#bfcfc3; background:#fff; color:#16392d; }
-.venue-page .checkin-btn { min-height:46px; border-radius:10px; font-weight:700; }
+.venue-page .checkin-btn { min-height:44px; border-radius:7px; font-weight:650; }
 .venue-page .checkin-btn--primary { background:#237653; color:#fff; }
 .venue-page .checkin-btn--ghost { border-color:#abc3b2; color:#16392d; }
 .venue-page .checkin-btn--danger { border-color:#d9a7a1; color:#96382f; }
@@ -281,22 +278,21 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .bottom-nav-item.active { color:#195b40; font-weight:700; }
 .venue-page .bottom-nav-item.active svg { stroke-width:2.5; }
 .venue-page .bottom-nav-item--recording { position:relative; margin:-20px 2px 0; padding:0 2px 5px; color:#195b40; font-weight:700; }
-.venue-page .bottom-nav-item--recording svg { width:54px; height:54px; padding:13px; border-radius:50%; background:#237653; color:#fff; box-shadow:0 6px 15px rgba(22,57,45,.22); }
+.venue-page .bottom-nav-item--recording svg { width:54px; height:54px; padding:13px; border-radius:50%; background:#237653; color:#fff; box-shadow:0 3px 9px rgba(22,57,45,.16); }
 .venue-page .bottom-nav-item--recording.active svg { background:#16392d; stroke-width:2.5; }
 .venue-page .bottom-nav-item--recording span { margin-top:1px; }
-.venue-page .sessions-view { display:flex; flex-direction:column; gap:18px; }
-.venue-page .sessions-heading { display:flex; flex-direction:column; gap:5px; }
-.venue-page .recording-heading { padding:20px; border-radius:14px; background:#16392d; color:#fff; }
-.venue-page .recording-heading h1 { color:#fff; }
-.venue-page .sessions-heading p { margin:0; color:#50645a; font-size:14px; }
-.venue-page .recording-heading p { color:#c6ddcc; }
+.venue-page .sessions-view { display:flex; flex-direction:column; gap:0; }
+.venue-page .sessions-heading { display:flex; align-items:end; justify-content:space-between; gap:12px; padding:4px 0 26px; }
+.venue-page .sessions-heading h1 { max-width:210px; word-spacing:.04em; }
+.venue-page .sessions-heading p { margin:0 0 2px; color:#50645a; font-size:13px; white-space:nowrap; }
 .venue-page .sessions-empty { margin:0; color:#50645a; font-size:14px; }
-.venue-page .sessions-view .calendar-court { display:flex; flex-direction:column; gap:8px; }
-.venue-page .sessions-view .calendar-court h2 { font-size:15px; }
-.venue-page .calendar-slot { min-height:62px; margin:0; padding:13px 14px; border-color:#d3dfd6; border-radius:12px; background:#fff; color:#16392d; box-shadow:0 2px 7px rgba(22,57,45,.04); }
-.venue-page a.calendar-slot:hover { background:#edf5ef; border-color:#8cb79a; }
-.venue-page .calendar-slot-go { color:#196646; font-weight:700; }
-.venue-page .calendar-slot--pending { color:#50645a; background:#f9fbf8; }
+.venue-page .sessions-view .calendar-court { display:flex; flex-direction:column; gap:0; margin-bottom:22px; border-top:1px solid #9fbaa8; }
+.venue-page .sessions-view .calendar-court h2 { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:14px 0 9px; font-size:17px; }
+.venue-page .calendar-slot { min-height:72px; margin:0; padding:12px 0; border:0; border-bottom:1px solid #d3dfd6; border-radius:0; background:transparent; color:#16392d; box-shadow:none; }
+.venue-page a.calendar-slot:hover { background:#e9f0e8; }
+.venue-page .calendar-slot-go { display:inline-flex; align-items:center; gap:8px; color:#195b40; font-size:13px; font-weight:700; white-space:nowrap; }
+.venue-page .calendar-slot-go svg { width:32px; height:32px; }
+.venue-page .calendar-slot--pending { color:#50645a; background:transparent; }
 .venue-page .account-header { padding:2px 0 8px; }
 .venue-page .account-avatar { width:54px; height:54px; background:#e4eee3; color:#195b40; }
 .venue-page .account-header-name { color:#16392d; font-size:20px; font-weight:700; font-style:normal !important; }
@@ -340,4 +336,4 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .calendar-slot--pending { min-height:76px; }
 .venue-page .checkin-owner-time { margin:-3px 0 0; font-size:13px; font-weight:600; color:#3f584b; }
 .venue-page .checkin-edit-end { display:flex; flex-direction:column; gap:10px; }
-.venue-page .session-current-tag { margin-left:10px; padding:4px 8px; border-radius:999px; background:#e4eee3; color:#195b40; font-size:11px; font-weight:600; vertical-align:middle; }
+.venue-page .session-current-tag { margin:0; padding:0; border-radius:0; background:transparent; color:#195b40; font-size:12px; font-weight:600; }
