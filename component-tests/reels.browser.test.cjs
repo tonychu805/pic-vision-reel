@@ -156,3 +156,176 @@ test('vertical HTTP errors cannot be shared; retry restores This clip and All cl
   await page.waitForFunction(() => window.shared.length === 2)
   assert.equal(await page.evaluate(() => window.shared[1][0].body), 'recovered video bytes')
 })
+
+const accountProps = {
+  lang: 'en', initialName: 'Old name', initialTraining: false,
+  isLineAccount: true, initialEmail: null, hasPassword: false, memberSince: null, showBackLink: false,
+}
+async function accountPage(overrides = {}) {
+  const page = await setup()
+  await page.evaluate((input) => {
+    window.accountCalls = []
+    window.accountResults = {}
+    window.runAccountAction = async (action, value) => {
+      window.accountCalls.push({ action, value })
+      const result = window.accountResults[action]
+      if (result === 'throw') throw new Error('Network disconnected')
+      return { error: result ?? null }
+    }
+    window.mount('account', input)
+  }, { ...accountProps, ...overrides })
+  return page
+}
+
+test('account reports failed privacy saves, reflects partial name success, and retries', async () => {
+  const page = await accountPage()
+  await page.evaluate(() => { window.accountResults.training = 'consent update rejected' })
+  await page.getByRole('textbox').fill('  New name  ')
+  await page.getByRole('checkbox').check()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByRole('alert').filter({ hasText: "Couldn't save your training preference" }).waitFor()
+  assert.equal(await page.getByText('Saved.', { exact: true }).count(), 0)
+  assert.equal(await page.locator('.account-header-name').innerText(), 'New name')
+  assert.equal(await page.locator('.account-avatar').innerText(), 'N')
+  assert.equal(await page.getByRole('checkbox').isChecked(), true)
+  await page.evaluate(() => { window.accountResults = {} })
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByText('Saved.', { exact: true }).waitFor()
+  assert.equal(await page.getByRole('alert').count(), 0)
+  assert.equal(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'training').at(-1).value), true)
+  await page.getByRole('checkbox').uncheck()
+  assert.equal(await page.getByText('Saved.', { exact: true }).count(), 0)
+})
+
+test('failed name updates stay visible and exceptions never strand Save', async () => {
+  const page = await accountPage()
+  await page.getByRole('textbox').fill('New name')
+  for (const failure of ['database rejected update', 'throw']) {
+    await page.evaluate((failure) => { window.accountResults.name = failure }, failure)
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    await page.getByRole('alert').filter({ hasText: "Couldn't save your name" }).waitFor()
+    assert.equal(await page.getByRole('button', { name: 'Save', exact: true }).isEnabled(), true)
+    assert.equal(await page.locator('.account-header-name').innerText(), 'Old name')
+    assert.equal(await page.locator('.account-avatar').innerText(), 'O')
+    assert.equal(await page.getByText('Saved.', { exact: true }).count(), 0)
+  }
+  await page.evaluate(() => { window.accountResults = {} })
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByText('Saved.', { exact: true }).waitFor()
+  assert.equal(await page.locator('.account-header-name').innerText(), 'New name')
+  assert.equal(await page.locator('.account-avatar').innerText(), 'N')
+  // Removing a name is a valid saved state too.
+  await page.getByRole('textbox').fill('')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByText('Saved.', { exact: true }).waitFor()
+  assert.equal(await page.locator('.account-avatar').innerText(), '?')
+})
+
+test('email and password action exceptions allow a retry with visible feedback', async () => {
+  const page = await accountPage({ isLineAccount: false, initialEmail: 'test@example.com', hasPassword: true })
+  await page.evaluate(() => { window.accountResults = { email: 'throw', password: 'throw' } })
+  await page.locator('input[type=email]').fill('new@example.com')
+  await page.locator('input[type=password]').fill('new-password')
+  for (const name of ['Change email', 'Change password']) {
+    const button = page.getByRole('button', { name, exact: true })
+    await button.click()
+    await page.waitForFunction(() => ![...document.querySelectorAll('button')].some((b) => b.disabled))
+    assert.equal(await button.isEnabled(), true)
+  }
+  assert.ok((await page.locator('body').innerText()).includes('Something went wrong'))
+})
+
+test('signing out preserves the venue path for the next login', async () => {
+  const page = await accountPage()
+  const venuePath = '/pgc/fixturecode'
+  await page.evaluate((path) => history.replaceState({}, '', path), venuePath)
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await page.waitForURL((url) => url.pathname === '/login')
+  assert.equal(new URL(page.url()).searchParams.get('next'), venuePath)
+})
+
+// Generate a real, playable fixture in the browser; no player footage is
+// committed and no external encoder is needed in CI.
+async function videoBytes(page) {
+  return Buffer.from(await page.evaluate(async () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 160; canvas.height = 90
+    const stream = canvas.captureStream(10)
+    const chunks = []
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' })
+    recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
+    const finished = new Promise((resolve) => { recorder.onstop = resolve })
+    recorder.start()
+    for (let i = 0; i < 21; i++) {
+      canvas.getContext('2d').fillStyle = i % 2 ? 'blue' : 'green'
+      canvas.getContext('2d').fillRect(0, 0, 160, 90)
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    recorder.stop()
+    await finished
+    stream.getTracks().forEach((track) => track.stop())
+    return Array.from(new Uint8Array(await new Blob(chunks, { type: 'video/webm' }).arrayBuffer()))
+  }))
+}
+
+test('vertical URL refresh preserves playback position, paused state and prepared downloads', async () => {
+  const page = await setup()
+  const bytes = await videoBytes(page)
+  const downloads = []
+  await page.route('**/clip*.webm*', (route) => {
+    if (route.request().resourceType() === 'fetch') downloads.push(route.request().url())
+    const range = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range ?? '')
+    if (range) {
+      const start = Number(range[1])
+      const end = range[2] ? Math.min(Number(range[2]), bytes.length - 1) : bytes.length - 1
+      return route.fulfill({ status: 206, contentType: 'video/webm', headers: {
+        'Accept-Ranges': 'bytes', 'Content-Range': `bytes ${start}-${end}/${bytes.length}`,
+      }, body: bytes.subarray(start, end + 1) })
+    }
+    return route.fulfill({ contentType: 'video/webm', body: bytes })
+  })
+  let generation = 0
+  await page.route('**/refresh-test', (route) => {
+    generation++
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+      // Keep expiry due so the test can exercise a second renewal manually.
+      expiresAt: '2000-01-01T00:00:00Z',
+      videos: { v0: `${origin}/clip-wide.webm?generation=${generation}` },
+      vertical: { v0: `${origin}/clip-crop.webm?generation=${generation}` },
+    }) })
+  })
+  await page.evaluate((origin) => {
+    window.setInterval = (fn) => { window.refreshTick = fn; return 1 }
+    window.clearInterval = () => {}
+    window.mount('vertical', {
+      reels: [{ id: 'v0', kind: 'rally', rally_rank: 1, duration_sec: 2 }],
+      addresses: { videos: { v0: `${origin}/clip-wide.webm` }, vertical: { v0: `${origin}/clip-crop.webm` } },
+      addressesExpireAt: '2000-01-01T00:00:00Z', videosEndpoint: `${origin}/refresh-test`,
+      venueName: 'Review venue', gameDate: '2026-10-28', court: 'Court 1', when: 'Today', lang: 'en', wideHref: null,
+    })
+  }, origin)
+  await page.waitForFunction(() => document.querySelector('video')?.currentTime > 0)
+  await page.getByRole('button', { name: 'Download', exact: true }).click()
+  await page.getByRole('button', { name: /This clip/ }).waitFor()
+  await page.locator('video').evaluate((video) => { video.currentTime = 0.6 })
+  await page.evaluate(() => window.refreshTick())
+  await page.waitForFunction(() => {
+    const video = document.querySelector('video')
+    return video.src.includes('generation=1') && !video.paused && video.currentTime >= 0.6
+  })
+  await page.waitForFunction(() => ![...document.querySelectorAll('button')].find((b) => b.textContent.includes('This clip')).disabled)
+  assert.ok(downloads.includes(`${origin}/clip-crop.webm?generation=1`))
+  assert.ok(downloads.includes(`${origin}/clip-wide.webm?generation=1`))
+  // Renewing a paused video must not turn it back on.
+  await page.locator('video').evaluate((video) => { video.pause(); video.currentTime = 0.5 })
+  await page.waitForFunction(() => !document.querySelector('video').seeking && Math.abs(document.querySelector('video').currentTime - 0.5) < 0.05)
+  await page.evaluate(() => window.refreshTick())
+  await page.waitForFunction(() => {
+    const video = document.querySelector('video')
+    return video.src.includes('generation=2') && video.readyState >= 1 && Math.abs(video.currentTime - 0.5) < 0.05
+  })
+  assert.equal(await page.locator('video').evaluate((video) => video.paused), true)
+  await page.getByRole('button', { name: /This clip/ }).click()
+  await page.waitForFunction(() => window.shared.length === 1)
+  assert.equal(await page.evaluate(() => window.shared[0].length), 1)
+})

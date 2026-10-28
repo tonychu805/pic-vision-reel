@@ -103,11 +103,17 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
       })
   }
 
-  // The clip on screen and the next one.
+  // Re-prepare the current/next files when signed addresses or crops change.
   useEffect(() => {
+    const liveUrls = new Set(slides.flatMap((slide) => [slide.videoUrl, slide.wideUrl]))
+    setFailedDownloads((previous) => {
+      const current = previous.filter((url) => liveUrls.has(url))
+      return current.length === previous.length ? previous : current
+    })
     slidesToLoad(active, slides.length).forEach((i) => load(slides[i].videoUrl))
+    if (sheet === 'download' && slides[active]?.wideUrl) load(slides[active].wideUrl!)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active])
+  }, [active, slides, sheet])
 
   // Which clip is on screen.
   useEffect(() => {
@@ -123,15 +129,35 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     return () => obs.disconnect()
   }, [slides.length])
 
-  // Play only the clip on screen.
+  // Updating a video src resets playback. Capture its position and play/pause
+  // state before assigning a renewed address, and restore them once loaded.
+  const playbackRef = useRef({ active: -1, soundOn })
   useEffect(() => {
+    const activeChanged = playbackRef.current.active !== active
+    const soundChanged = playbackRef.current.soundOn !== soundOn
+    const cleanups: (() => void)[] = []
     videoRefs.current.forEach((v, i) => {
       if (!v) return
       v.muted = !soundOn
-      if (i === active) v.play().catch(() => {})
-      else v.pause()
+      const hasSource = v.hasAttribute('src')
+      const shouldPlay = i === active && (!hasSource || activeChanged || soundChanged || !v.paused)
+      if (v.getAttribute('src') !== slides[i].videoUrl) {
+        const position = v.currentTime
+        const restore = () => {
+          if (position > 0) v.currentTime = Number.isFinite(v.duration) ? Math.min(position, v.duration) : position
+          if (shouldPlay) v.play().catch(() => {})
+        }
+        v.addEventListener('loadedmetadata', restore, { once: true })
+        cleanups.push(() => v.removeEventListener('loadedmetadata', restore))
+        v.src = slides[i].videoUrl
+      } else if (shouldPlay) {
+        v.play().catch(() => {})
+      }
+      if (i !== active) v.pause()
     })
-  }, [active, soundOn])
+    playbackRef.current = { active, soundOn }
+    return () => cleanups.forEach((cleanup) => cleanup())
+  }, [active, soundOn, slides])
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
@@ -280,7 +306,6 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
             <video
               ref={(el) => { videoRefs.current[i] = el }}
               className={sl.wide ? `${s.video} ${s.videoWide}` : s.video}
-              src={sl.videoUrl}
               muted
               loop
               playsInline
