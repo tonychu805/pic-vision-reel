@@ -1,23 +1,17 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { supabasePublic } from '@/lib/supabase'
 import { fetchVideoAddresses } from '@/lib/videoAddresses'
-import { mergeParts } from '@/lib/mergeParts'
-import VerticalShareClient, { type VerticalSlide } from './vertical-client'
+import { currentLang } from '@/lib/lang-server'
+import type { FeedReel } from '@/lib/verticalFeed'
+import VerticalShareClient from '../vertical-client'
 
-// TEST page (2026-09-28), beside the real one at /r/[shareId], which it does
-// not change: the same session as a full-screen 9:16 feed with Share / Send /
-// Download. Same access rule as the real page: knowing the share id.
-//
-// Where the vertical clips come from, first that applies:
-//   1. The venue desktop's 9:16 crops of its high-res recording (2026-10-27,
-//      pic-vision desktop/electron/verticalCrop.js), signed by the console
-//      like every other video here: the share page's own clips, badged
-//      first, each with its sharp 16:9 version as the "wide" download.
-//   2. The 09-28 pilot: clips uploaded by hand (scripts/follow_crop_session.py)
-//      to <brand>/vertical-test/<shareId>/ on the reels CDN with a
-//      manifest.json. Kept so the pilot's links still play.
-// Anything else 404s.
+// The vertical test page (2026-09-28). Since 2026-10-28 the vertical feed is
+// the share page's default (../page.tsx), so a share with the venue
+// desktop's 9:16 crops goes there. What's left here is the 09-28 pilot:
+// clips uploaded by hand (scripts/follow_crop_session.py) to
+// <brand>/vertical-test/<shareId>/ on the reels CDN with a manifest.json,
+// kept so the pilot's links still play. Anything else 404s.
 export const metadata: Metadata = { title: 'Your highlights (test)', robots: { index: false, follow: false } }
 export const dynamic = 'force-dynamic'
 
@@ -60,32 +54,30 @@ export default async function VerticalTestPage({ params }: { params: Promise<{ s
   const when = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', weekday: 'short', month: 'short', day: 'numeric' }).format(played)
   const court = (first.camera_label ?? '').replace(/^.*?-\s*/, '') || 'Court'
 
-  const slides = (await desktopSlides(shareId, rows, court, when)) ?? (await pilotSlides(shareId, first, court, when))
-  if (!slides?.length) notFound()
-
-  return <VerticalShareClient slides={slides} venueName={venueName} gameDate={gameDate} />
-}
-
-// 1. The desktop's 9:16 crops, in the share page's own order (badged first).
-async function desktopSlides(shareId: string, rows: Row[], court: string, when: string): Promise<VerticalSlide[] | null> {
   const addresses = await fetchVideoAddresses(shareId)
-  const vertical = addresses?.vertical ?? {}
-  if (!addresses || Object.keys(vertical).length === 0) return null
-  return mergeParts(rows)
-    .filter((r) => r.kind === 'rally' && vertical[r.id])
-    .map((r) => ({
-      id: r.id,
-      label: r.badge ?? `Rally ${r.rally_rank}`,
-      videoUrl: vertical[r.id],
-      wideUrl: addresses.videos[r.id] ?? null,
-      durationSec: r.duration_sec ?? 0,
-      court,
-      when,
-    }))
+  if (addresses && Object.keys(addresses.vertical ?? {}).length > 0) redirect(`/r/${shareId}`)
+
+  const pilot = await pilotClips(shareId, first)
+  if (!pilot?.reels.length) notFound()
+
+  return (
+    <VerticalShareClient
+      reels={pilot.reels}
+      addresses={{ videos: {}, vertical: pilot.urls }}
+      addressesExpireAt={null}
+      videosEndpoint={null}
+      venueName={venueName}
+      gameDate={gameDate}
+      court={court}
+      when={when}
+      lang={await currentLang()}
+      wideHref={null}
+    />
+  )
 }
 
-// 2. The 09-28 pilot's hand-uploaded clips on the CDN.
-async function pilotSlides(shareId: string, first: Row, court: string, when: string): Promise<VerticalSlide[] | null> {
+// The 09-28 pilot's hand-uploaded clips on the CDN.
+async function pilotClips(shareId: string, first: Row): Promise<{ reels: FeedReel[]; urls: Record<string, string> } | null> {
   // The brand folder is the first part of this session's own reel keys
   // (<brand_id>/reels/<id>.mp4); legacy keys without one have no test clips.
   const brand = first.r2_key_ranked.split('/')[0]
@@ -94,13 +86,8 @@ async function pilotSlides(shareId: string, first: Row, court: string, when: str
   const res = await fetch(`${base}/manifest.json`, { cache: 'no-store' })
   if (!res.ok) return null
   const manifest = (await res.json()) as Manifest
-  return manifest.slides.map((s) => ({
-    id: s.id,
-    label: s.label,
-    videoUrl: `${base}/${s.file}`,
-    wideUrl: null,
-    durationSec: s.durationSec,
-    court,
-    when,
-  }))
+  return {
+    reels: manifest.slides.map((s, i) => ({ id: s.id, kind: 'rally', rally_rank: i + 1, badge: null, duration_sec: s.durationSec })),
+    urls: Object.fromEntries(manifest.slides.map((s) => [s.id, `${base}/${s.file}`])),
+  }
 }

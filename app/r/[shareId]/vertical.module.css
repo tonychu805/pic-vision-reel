@@ -49,3 +49,9 @@
 .toast { position: absolute; left: 50%; top: calc(84px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); padding: 10px 16px; border-radius: 999px; background: #e9e9ed; color: #161826; font-size: 13px; font-weight: 600; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,.45); z-index: 20; }
 button:focus-visible { outline: 2px solid #b9b0f0; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } .dot { transition: none; } }
+
+/* A clip whose 9:16 crop hasn't arrived yet: its 16:9 clip, fitted. */
+.videoWide { object-fit: contain; object-position: center; background: #0c0d14; }
+/* Link to the wide (16:9) page, beside the sound button. */
+.wideLink { margin-left: auto; padding: 8px 12px; border-radius: 999px; background: rgba(22,24,38,.5); color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; }
+.wideLink + .iconBtn { margin-left: 0; }
