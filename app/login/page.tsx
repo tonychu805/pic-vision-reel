@@ -37,7 +37,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           also use top-anchored) is what gives the middle block's flex:1
           actual room to center within -- justify-content alone does
           nothing on a container that's only ever as tall as its content. */}
-      <div className="share-shell share-shell--full-height">
+      <div className="share-shell" style={{ minHeight: '100vh' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <LangSwitch lang={lang} />
         </div>

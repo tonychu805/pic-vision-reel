@@ -32,7 +32,7 @@ export default async function AccountPage() {
 
   return (
     <main className="share-page">
-      <div className="share-shell share-shell--full-height">
+      <div className="share-shell" style={{ minHeight: '100vh' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <LangSwitch lang={lang} />
         </div>
