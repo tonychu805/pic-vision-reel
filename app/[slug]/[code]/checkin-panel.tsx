@@ -107,6 +107,7 @@ export default function CheckinPanel({
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingAction | null>(null)
+  const [editingEndFor, setEditingEndFor] = useState<string | null>(null)
   // Keyed by camera_row_id -- each court can be booked to a different end
   // time (operator found the shared, single picker wrong: a real group
   // might have one court until 3pm and another until 4pm). No shared
@@ -381,16 +382,10 @@ export default function CheckinPanel({
         <div key={o.camera_row_id} className="checkin-card checkin-card--recording">
           {cardHead(o.camera_label, { text: t(lang, 'checkInStatusRecording'), tone: 'recording' })}
           {recordingStatusLine(o)}
-          {timePicker(o.camera_row_id, t(lang, 'checkInExtendLabel'))}
+          {o.session_ends_at && <p className="checkin-owner-time">{t(lang, 'sessionUntil', { time: clockLabel(o.session_ends_at, timeZone) })}</p>}
+          {editingEndFor === o.camera_row_id && <div className="checkin-edit-end">{timePicker(o.camera_row_id, t(lang, 'checkInExtendLabel'))}<button type="button" className="checkin-btn checkin-btn--primary" disabled={busy === o.busy_session_id} onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}>{t(lang, 'checkInExtendSubmit')}</button></div>}
           <div className="checkin-actions checkin-actions--split">
-            <button
-              type="button"
-              className="checkin-btn checkin-btn--ghost"
-              disabled={busy === o.busy_session_id}
-              onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}
-            >
-              {t(lang, 'checkInExtendSubmit')}
-            </button>
+            <button type="button" className="checkin-btn checkin-btn--ghost" onClick={() => setEditingEndFor(editingEndFor === o.camera_row_id ? null : o.camera_row_id)}>{editingEndFor === o.camera_row_id ? t(lang, 'cancel') : t(lang, 'checkInExtendLabel')}</button>
             {pending?.key !== confirmKey && (
               <button
                 type="button"

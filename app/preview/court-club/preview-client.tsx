@@ -53,15 +53,15 @@ export default function CourtClubPreview() {
 
         {tab === 'sessions' && <div className="sessions-view">
           <div className="sessions-heading"><h1>{t(lang, 'sessionsTitle')}</h1><p>{zh ? '10 月 29 日' : 'October 29'}</p></div>
-          <section className="calendar-court"><h2>{zh ? '1 號球場' : 'Court 1'}</h2><div className="calendar-slot"><span>18:00–19:00</span><span className="calendar-slot-go">{t(lang, 'watch')}</span></div><div className="calendar-slot calendar-slot--pending"><span>19:00–20:00</span><span>{t(lang, 'reelsOnTheWay')}</span></div></section>
-          <section className="calendar-court"><h2>{zh ? '2 號球場' : 'Court 2'}</h2><div className="calendar-slot"><span>17:00–18:30</span><span className="calendar-slot-go">{t(lang, 'watch')}</span></div></section>
+          <section className="calendar-court"><h2>{zh ? '1 號球場' : 'Court 1'}</h2><div className="calendar-slot calendar-slot--ready"><span className="session-row-copy"><strong>18:00–19:00</strong><small>{t(lang, 'sessionReady')}</small></span><span className="calendar-slot-go">{t(lang, 'watch')}</span></div><div className="calendar-slot calendar-slot--pending"><span className="session-row-copy"><strong>19:00–20:00</strong><small>{t(lang, 'reelsOnTheWay')}</small></span></div></section>
+          <section className="calendar-court"><h2>{zh ? '2 號球場' : 'Court 2'}</h2><div className="calendar-slot calendar-slot--ready"><span className="session-row-copy"><strong>17:00–18:30</strong><small>{t(lang, 'sessionReady')}</small></span><span className="calendar-slot-go">{t(lang, 'watch')}</span></div></section>
         </div>}
 
         {tab === 'account' && <div className="preview-account">
           <div className="account-header"><div className="account-avatar">A</div><div><button className="account-name-button" onClick={() => setPreviewEditing(true)}><span className="account-header-name">{zh ? '示範球員' : 'Alex Chen'}</span><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button></div></div>
           {previewEditing && <div className="account-name-edit"><label htmlFor="preview-name">{t(lang, 'nameLabel')}</label><input id="preview-name" className="field-input" defaultValue={zh ? '示範球員' : 'Alex Chen'} /><div className="account-name-actions"><button className="checkin-btn checkin-btn--primary" onClick={() => setPreviewEditing(false)}>{t(lang, 'saveButton')}</button><button className="checkin-btn checkin-btn--ghost" onClick={() => setPreviewEditing(false)}>{t(lang, 'cancel')}</button></div></div>}
-          <div className="account-section"><div className="account-section-title">{t(lang, 'sectionPrivacy')}</div><div className="account-row"><span className="account-row-text">{t(lang, 'consentTraining')}</span><span className="preview-toggle" aria-hidden="true" /></div></div>
-          <div className="account-section"><div className="account-section-title">{t(lang, 'sectionSecurity')}</div><div className="account-row"><span className="account-row-text">{t(lang, 'signInMethodLabel')}</span><span className="account-badge">LINE</span></div></div>
+          <section className="account-section account-panel"><h2 className="account-section-title">{t(lang, 'sectionPrivacy')}</h2><div className="account-row"><span className="account-row-text">{t(lang, 'consentTraining')}</span><span className="preview-toggle" aria-hidden="true" /></div></section>
+          <section className="account-section account-panel"><h2 className="account-section-title">{t(lang, 'sectionSecurity')}</h2><div className="account-row"><span className="account-row-text">{t(lang, 'signInMethodLabel')}</span><span className="account-badge">LINE</span></div></section>
         </div>}
       </div>
       <BottomNav lang={lang} active={tab} onSelect={setTab} />

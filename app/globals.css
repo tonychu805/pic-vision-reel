@@ -321,3 +321,16 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .account-feedback { color:var(--error); font-size:12.5px; margin:0; }
 .venue-page .account-name-button { color:#16392d; }
 .venue-page .account-name-button svg { color:#237653; }
+.venue-page .account-layout { display:flex; flex-direction:column; gap:18px; }
+.venue-page .account-header { padding:8px 0 10px; }
+.venue-page .account-panel { padding:20px 18px; border:1px solid #d3dfd6; border-radius:14px; background:#fff; gap:16px; }
+.venue-page .account-panel .account-section-title { margin:0; font-size:17px; line-height:1.3; letter-spacing:-.02em; text-transform:none; color:#16392d; }
+.venue-page .account-footer-actions { display:flex; gap:16px; padding:8px 0; }
+.venue-page .account-footer-actions button { min-height:44px; padding:0 8px !important; }
+.venue-page .session-row-copy { display:flex; flex-direction:column; gap:3px; }
+.venue-page .session-row-copy strong { font-size:16px; font-variant-numeric:tabular-nums; }
+.venue-page .session-row-copy small { color:#50645a; font-size:12px; }
+.venue-page .calendar-slot--ready { min-height:76px; }
+.venue-page .calendar-slot--pending { min-height:76px; }
+.venue-page .checkin-owner-time { margin:-3px 0 0; font-size:13px; font-weight:600; color:#3f584b; }
+.venue-page .checkin-edit-end { display:flex; flex-direction:column; gap:10px; }

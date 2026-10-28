@@ -123,14 +123,13 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
                 <section key={c.court} className="calendar-court">
                   <h2>{c.court}</h2>
                   {c.games.map((g) => g.share_id ? (
-                    <a key={g.started_at} className="calendar-slot" href={`/r/${g.share_id}`}>
-                      <span>{slotLabel(g, cal.timezone)}</span>
+                    <a key={g.started_at} className="calendar-slot calendar-slot--ready" href={`/r/${g.share_id}`}>
+                      <span className="session-row-copy"><strong>{slotLabel(g, cal.timezone)}</strong><small>{t(lang, 'sessionReady')}</small></span>
                       <span className="calendar-slot-go">{t(lang, 'watch')}</span>
                     </a>
                   ) : (
                     <div key={g.started_at} className="calendar-slot calendar-slot--pending">
-                      <span>{slotLabel(g, cal.timezone)}</span>
-                      <span>{t(lang, 'reelsOnTheWay')}</span>
+                      <span className="session-row-copy"><strong>{slotLabel(g, cal.timezone)}</strong><small>{t(lang, 'reelsOnTheWay')}</small></span>
                     </div>
                   ))}
                 </section>

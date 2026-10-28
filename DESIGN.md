@@ -107,6 +107,7 @@ Cards and session blocks use 14px corners. Controls use 10px. Pills are reserved
 ### Court cards
 
 Use white surfaces with a 1px Court Border, 16px padding, a strong court title, and an explicit status pill. Available, live, and joinable states use descriptive text as well as color.
+An owned court shows its current end time first; the time editor opens only when requested.
 
 ### Your session
 
@@ -118,7 +119,7 @@ Three labeled, icon-supported destinations. Active state uses Court Green and st
 
 ### Account
 
-The name is edited in its profile heading, with a local Save and Cancel state. The optional training preference saves at the switch and reports the result beside it. Only supported sign-in and credential controls appear for the current account type.
+The name is edited in its profile heading, with a local Save and Cancel state. Privacy and security use distinct, readable sections with their own boundaries. The optional training preference saves at the switch and reports the result beside it. Only supported sign-in and credential controls appear for the current account type.
 
 ## Do's and Don'ts
 

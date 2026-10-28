@@ -95,7 +95,7 @@ export default function AccountForm({
   const signInMethod = isLineAccount ? 'LINE' : hasPassword ? t(lang, 'signInMethodEmail') : t(lang, 'signInMethodGoogle')
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div className="account-layout">
       <div className="account-header">
         <div className="account-avatar">{initial}</div>
         <div className="account-identity">
@@ -109,8 +109,8 @@ export default function AccountForm({
 
       {nameMessage && <p role="alert" className="account-feedback">{nameMessage}</p>}
 
-      <div className="account-section">
-        <div className="account-section-title">{t(lang, 'sectionPrivacy')}</div>
+      <section className="account-section account-panel">
+        <h2 className="account-section-title">{t(lang, 'sectionPrivacy')}</h2>
         <label className="account-row" style={{ cursor: 'pointer' }}>
           <span className="account-row-text">{t(lang, 'consentTraining')}</span>
           <span className="account-toggle">
@@ -119,10 +119,10 @@ export default function AccountForm({
           </span>
         </label>
         {trainingMessage && <p role="status" className="account-feedback">{trainingMessage}</p>}
-      </div>
+      </section>
 
-      <div className="account-section">
-        <div className="account-section-title">{t(lang, 'sectionSecurity')}</div>
+      <section className="account-section account-panel">
+        <h2 className="account-section-title">{t(lang, 'sectionSecurity')}</h2>
         <div className="account-row">
           <span className="account-row-text">{t(lang, 'signInMethodLabel')}</span>
           <span className="account-badge">{signInMethod}</span>
@@ -164,9 +164,9 @@ export default function AccountForm({
             )}
           </>
         )}
-      </div>
+      </section>
 
-      <div className="account-section" style={{ flexDirection: 'row', gap: 16 }}>
+      <div className="account-footer-actions">
         <button
           onClick={signOut}
           style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer', textAlign: 'left' }}
