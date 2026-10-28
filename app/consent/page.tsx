@@ -54,7 +54,7 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
 
   return (
     <main className="share-page">
-      <div className="share-shell" style={{ minHeight: '100vh' }}>
+      <div className="share-shell share-shell--full-height">
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <LangSwitch lang={lang} />
         </div>

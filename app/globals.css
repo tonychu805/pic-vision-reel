@@ -22,6 +22,8 @@
    itself would be. */
 .consent-box--needed { outline:2px solid var(--error); outline-offset:0; animation:consent-shake .4s ease-in-out; }
 * { box-sizing:border-box; }
+/* Keep Safari's canvas/overscroll area dark too, beyond the body box. */
+html { background:var(--bg); color-scheme:dark; }
 html, body { min-height:100%; }
 body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; font-size:15px; line-height:1.55; }
 a { color:inherit; }
@@ -34,8 +36,9 @@ a { color:inherit; }
    page -- rendered it correctly; this is a known Safari button+flexbox
    quirk Chromium doesn't reproduce, not a CSS logic bug). */
 button { font:inherit; appearance:none; -webkit-appearance:none; }
-.share-page { min-height:100vh; display:flex; justify-content:center; background:var(--bg); }
+.share-page { min-height:100vh; min-height:100dvh; display:flex; justify-content:center; background:var(--bg); }
 .share-shell { width:100%; max-width:430px; display:flex; flex-direction:column; gap:16.8px; padding:18px 18px 28px; }
+.share-shell--full-height { min-height:100vh; min-height:100dvh; }
 .venue-header { display:flex; align-items:center; gap:11px; }
 /* min-width:0 is load-bearing, not decorative -- a flex item's default
    min-width is its unwrapped content width, so without this a long venue
