@@ -92,6 +92,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
   }
 
   const courts = byCourt(cal.games)
+  const currentCourts = new Set(checkInOptions.filter((option) => option.is_busy && (option.is_owner || option.already_joined)).map((option) => option.camera_label))
   return (
     <main className="share-page venue-page">
       <div className="share-shell">
@@ -121,7 +122,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
               {courts.length === 0 && <p className="sessions-empty">{t(lang, 'noGamesYet')}</p>}
               {courts.map((c) => (
                 <section key={c.court} className="calendar-court">
-                  <h2>{c.court}</h2>
+                  <h2>{c.court}{currentCourts.has(c.court) && <span className="session-current-tag">{t(lang, 'yourCurrentCourt')}</span>}</h2>
                   {c.games.map((g) => g.share_id ? (
                     <a key={g.started_at} className="calendar-slot calendar-slot--ready" href={`/r/${g.share_id}`}>
                       <span className="session-row-copy"><strong>{slotLabel(g, cal.timezone)}</strong><small>{t(lang, 'sessionReady')}</small></span>

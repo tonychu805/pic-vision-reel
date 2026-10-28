@@ -113,6 +113,8 @@ An owned court shows its current end time first; the time editor opens only when
 
 The signature component: a dark Court Ink status block showing the player’s court and recording end time. It summarizes without replacing the actionable court card below.
 
+In Sessions, mark only a currently joined court as the player's current court. The calendar does not identify a player's historical games.
+
 ### Navigation
 
 Three labeled, icon-supported destinations. Active state uses Court Green and stronger weight; inactive items remain readable in Court Muted.

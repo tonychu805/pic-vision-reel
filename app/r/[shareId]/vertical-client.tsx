@@ -79,6 +79,9 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [toast, setToast] = useState('')
   const [soundOn, setSoundOn] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const [duration, setDuration] = useState(0)
   const [blobs, setBlobs] = useState<Record<string, Blob>>({})
   const [ready, setReady] = useState<Record<string, boolean>>({})
   const [wantAll, setWantAll] = useState(false)
@@ -124,10 +127,12 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     videoRefs.current.forEach((v, i) => {
       if (!v) return
       v.muted = !soundOn
-      if (i === active) v.play().catch(() => {})
+      if (i === active && !paused) v.play().catch(() => {})
       else v.pause()
     })
-  }, [active, soundOn])
+  }, [active, soundOn, paused])
+
+  useEffect(() => { setElapsed(0); setDuration(0); setPaused(false) }, [active])
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
@@ -281,7 +286,9 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
               loop
               playsInline
               preload="metadata"
-              onClick={() => setSoundOn((v) => !v)}
+              onClick={() => setPaused((v) => !v)}
+              onTimeUpdate={(event) => { if (i === active) setElapsed(event.currentTarget.currentTime) }}
+              onLoadedMetadata={(event) => { if (i === active) setDuration(event.currentTarget.duration) }}
             />
             <div className={s.shadeBottom} />
             <div className={s.caption}>
@@ -294,6 +301,14 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
             </div>
           </div>
         ))}
+      </div>
+
+      <div className={s.playback}>
+        <button type="button" className={s.playbackButton} aria-label={t(lang, paused ? 'vPlay' : 'vPause')} onClick={() => setPaused((value) => !value)}>
+          {paused ? <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m7 4 14 8-14 8V4Z" /></svg> : <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zm8 0h4v16h-4z" /></svg>}
+        </button>
+        <input type="range" min="0" max={Math.max(duration, 1)} step="0.1" value={Math.min(elapsed, Math.max(duration, 1))} aria-label={t(lang, 'vSeek')} className={s.seek} onChange={(event) => { const video = videoRefs.current[active]; if (video) { video.currentTime = Number(event.target.value); setElapsed(video.currentTime) } }} />
+        <span className={s.playbackTime}>{fmt(elapsed)} / {fmt(duration || cur.durationSec)}</span>
       </div>
 
       <header className={s.top}>
