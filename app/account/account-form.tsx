@@ -9,7 +9,7 @@ import { updateDisplayName, updateEmail, updatePassword } from './actions'
 
 
 export default function AccountForm({
-  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword, memberSince, showBackLink = true,
+  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword, showBackLink = true,
 }: {
   lang: Lang
   initialName: string
@@ -93,11 +93,6 @@ export default function AccountForm({
 
   const initial = (savedName || initialEmail || '?').trim().charAt(0).toUpperCase()
   const signInMethod = isLineAccount ? 'LINE' : hasPassword ? t(lang, 'signInMethodEmail') : t(lang, 'signInMethodGoogle')
-  const memberSinceText = memberSince
-    ? t(lang, 'memberSinceLabel', {
-        date: new Date(memberSince).toLocaleDateString(lang === 'zh-TW' ? 'zh-TW' : 'en-US', { year: 'numeric', month: 'long' }),
-      })
-    : null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -109,10 +104,6 @@ export default function AccountForm({
             <input id="account-name" autoFocus className="field-input" value={name} disabled={busy} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void saveName(); if (e.key === 'Escape') { setName(savedName); setEditingName(false) } }} />
             <div className="account-name-actions"><button type="button" className="checkin-btn checkin-btn--primary" disabled={busy} onClick={saveName}>{t(lang, 'saveButton')}</button><button type="button" className="checkin-btn checkin-btn--ghost" disabled={busy} onClick={() => { setName(savedName); setEditingName(false); setNameMessage(null) }}>{t(lang, 'cancel')}</button></div>
           </div> : <button type="button" className="account-name-button" onClick={() => setEditingName(true)} aria-label={t(lang, 'editName')}><span className="account-header-name">{savedName || t(lang, 'nameNotSet')}</span><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button>}
-          <div className="account-header-meta">
-            {signInMethod}
-            {memberSinceText && ` · ${memberSinceText}`}
-          </div>
         </div>
       </div>
 
