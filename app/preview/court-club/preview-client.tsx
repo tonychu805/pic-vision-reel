@@ -100,7 +100,6 @@ export default function CourtClubPreview() {
                   <span className="account-edit-hint">{t(lang, 'editName')}</span>
                 </button>
               )}
-              <span className="account-header-meta">LINE</span>
             </div>
           </div>
           <section className="panel">

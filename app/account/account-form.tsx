@@ -130,7 +130,6 @@ export default function AccountForm({
               <span className="account-edit-hint">{t(lang, 'editName')}</span>
             </button>
           )}
-          <span className="account-header-meta">{signInMethod}</span>
         </div>
       </div>
 

@@ -191,7 +191,6 @@ h2 { margin:0; }
 .account-header-name { font-size:24px; line-height:1.1; font-weight:800; font-stretch:82%; }
 .account-header-name--empty { color:var(--ink-3); }
 .account-edit-hint { font-size:13px; font-weight:700; color:var(--court); text-decoration:underline; text-underline-offset:3px; }
-.account-header-meta { font-size:13px; color:var(--ink-2); }
 .account-name-edit { display:flex; flex-direction:column; gap:8px; width:100%; }
 .account-footer-actions { display:flex; gap:20px; }
 
