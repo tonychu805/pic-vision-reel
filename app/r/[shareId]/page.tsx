@@ -1,6 +1,7 @@
 import { currentLang } from '@/lib/lang-server'
 import { videosEndpoint } from '@/lib/videoAddresses'
 import { verticalFeed } from '@/lib/verticalFeed'
+import { isFlagOn } from '@/lib/featureFlags'
 import { loadShare } from './load'
 import WideView from './wide-view'
 import VerticalShareClient from './vertical-client'
@@ -24,6 +25,8 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
   const when = new Intl.DateTimeFormat(lang, { timeZone: 'Asia/Taipei', weekday: 'short', month: 'short', day: 'numeric' }).format(played)
   const court = (first.camera_label ?? '').replace(/^.*?-\s*/, '') || 'Court'
   const cdnOrigin = new URL(feed[0].videoUrl).origin
+  // Hidden while the PostHog flag is off (operator, 2026-10-29).
+  const soundButton = await isFlagOn('share-sound-button')
 
   return (
     <>
@@ -40,6 +43,7 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
         when={when}
         lang={lang}
         wideHref={`/r/${shareId}/wide`}
+        soundButton={soundButton}
       />
     </>
   )

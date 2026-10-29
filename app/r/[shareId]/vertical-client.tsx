@@ -51,6 +51,9 @@ export type VerticalProps = {
   lang: Lang
   // The wide page for this share, when there is one.
   wideHref: string | null
+  // The sound on/off button and its hint; behind the share-sound-button
+  // PostHog flag (lib/featureFlags.ts), off = hidden and clips stay muted.
+  soundButton?: boolean
 }
 
 type SheetKind = 'share' | 'send' | 'download'
@@ -77,7 +80,7 @@ function fmt(sec: number) {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`
 }
 
-export default function VerticalShareClient({ reels, addresses: initialAddresses, addressesExpireAt, videosEndpoint, venueName, gameDate, court, when, lang, wideHref }: VerticalProps) {
+export default function VerticalShareClient({ reels, addresses: initialAddresses, addressesExpireAt, videosEndpoint, venueName, gameDate, court, when, lang, wideHref, soundButton = false }: VerticalProps) {
   const [addresses, setAddresses] = useState<Addresses>(initialAddresses)
   const slides: FeedClip[] = useMemo(
     () => reels.filter((r) => addresses.vertical?.[r.id] || addresses.videos[r.id]).map((r) => clip(r, addresses)),
@@ -412,7 +415,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
             {t(lang, 'vWideView')}
           </a>
         )}
-        <div className={s.soundWrap}>
+        {soundButton && <div className={s.soundWrap}>
           {soundHint && !soundOn && <span className={s.soundHint} role="status">{t(lang, 'vTapForSound')}</span>}
           <button type="button" className={soundOn ? `${s.iconBtn} ${s.iconBtnOn}` : s.iconBtn} onClick={toggleSound} aria-label={t(lang, soundOn ? 'vMute' : 'vSoundOn')} aria-pressed={soundOn}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -420,7 +423,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
               {soundOn ? <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> : <path d="m22 9-6 6M16 9l6 6" />}
             </svg>
           </button>
-        </div>
+        </div>}
       </header>
 
       <nav className={s.rail} aria-label={t(lang, 'vShare')}>
