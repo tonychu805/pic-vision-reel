@@ -27,10 +27,13 @@
 //     an @import) but the .woff2/.ttf files themselves from a DIFFERENT
 //     domain, gstatic.com (font-src).
 //
-// No connect-src for Supabase here, unlike the console app: this app's
-// Supabase client only runs in the server component (app/r/[shareId]/
-// page.tsx), never in the 'use client' one -- the browser never talks to
-// it directly, so it isn't in the allow-list.
+// Supabase in connect-src (2026-10-29): this used to say the browser never
+// talks to Supabase. Untrue since the email sign-in/sign-up form
+// (components/email-auth-form.tsx calls signInWithPassword/signUp from the
+// browser): every email sign-in on share.picvisionai.com failed with "Failed
+// to fetch" (connect-src blocked /auth/v1/token). LINE sign-in was unaffected
+// (server-side). The origin is read from NEXT_PUBLIC_SUPABASE_URL so staging
+// allows its own project, as the console's next.config.mjs does.
 //
 // tally.so (2026-09-22, the reel-share-client.tsx feedback button): this
 // CSP is exactly why that button did nothing when tapped -- the browser
@@ -55,6 +58,13 @@ const consoleOrigin = new URL(process.env.NEXT_PUBLIC_CONSOLE_URL || 'https://co
 // Public assets (venue logos): the production CDN unless this deploy points
 // elsewhere -- staging's public bucket has its own address (lib/brandLogo.ts).
 const assetOrigin = `https://${process.env.NEXT_PUBLIC_ASSET_CDN_HOST || 'cdn.picvisionai.com'}`
+const supabaseOrigin = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+  } catch {
+    return 'https://evceszapbiuwdmqfisqx.supabase.co'
+  }
+})()
 
 const cspHeader = `
     default-src 'self';
@@ -62,7 +72,7 @@ const cspHeader = `
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https://cdn.picvisionai.com ${assetOrigin};
     media-src 'self' https://cdn.picvisionai.com ${r2};
-    connect-src 'self' https://cdn.picvisionai.com ${r2} ${consoleOrigin};
+    connect-src 'self' https://cdn.picvisionai.com ${r2} ${consoleOrigin} ${supabaseOrigin};
     font-src 'self' https://fonts.gstatic.com;
     frame-src https://tally.so;
     object-src 'none';
