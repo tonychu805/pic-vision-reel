@@ -95,7 +95,9 @@ h2 { margin:0; }
 /* min-width:0 is load-bearing -- a flex item's default min-width is its
    unwrapped content width, so without this a long venue name (e.g. "Pickle
    Day Social Club") refuses to truncate and squeezes the lang switch. */
-.venue-header>span { min-width:0; flex:1 1 auto; font-size:17px; font-weight:700; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* Long names ("Pickle Day Social Club 匹克日俱樂部") wrap to two lines
+   before they are cut, so the whole name usually shows (2026-10-29). */
+.venue-header>span { min-width:0; flex:1 1 auto; font-size:17px; font-weight:700; line-height:1.2; letter-spacing:-.01em; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow-wrap:anywhere; }
 .venue-mark { width:44px; height:44px; flex:none; display:grid; place-items:center; border-radius:8px; background:var(--court); color:var(--paper); font-size:20px; font-weight:800; font-stretch:80%; }
 .theme-night .venue-mark { background:var(--ball); color:var(--ball-ink); }
 /* Uploaded logo: a plate with a fixed colour, not the page background -- a

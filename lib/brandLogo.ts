@@ -11,7 +11,11 @@
 // by the `ink` measured when the file was uploaded.
 export type LogoInk = 'light' | 'dark'
 
-const CDN_DOMAIN = 'cdn.picvisionai.com'
+// The production CDN in front of the public bucket, unless this deploy says
+// otherwise: staging uploads go to the staging public bucket, which
+// cdn.picvisionai.com does not serve, so its logos never showed (2026-10-29).
+// Read at build time (NEXT_PUBLIC_), same as the console's copy.
+const CDN_DOMAIN = process.env.NEXT_PUBLIC_ASSET_CDN_HOST || 'cdn.picvisionai.com'
 
 export function brandLogoUrl(key: string): string {
   return `https://${CDN_DOMAIN}/${key}`
