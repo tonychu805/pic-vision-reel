@@ -8,6 +8,7 @@
 // not restart every time they switch back.
 import { useState, type ReactNode } from 'react'
 import type { Lang } from '@/lib/i18n'
+import PoweredByFooter from '@/components/powered-by-footer'
 import BottomNav, { type CalendarTab } from './bottom-nav'
 
 export default function CalendarTabs({ lang, checkin, sessions, account }: { lang: Lang; checkin: ReactNode; sessions: ReactNode; account: ReactNode }) {
@@ -17,6 +18,7 @@ export default function CalendarTabs({ lang, checkin, sessions, account }: { lan
       <div style={{ display: tab === 'checkin' ? 'contents' : 'none' }}>{checkin}</div>
       <div style={{ display: tab === 'sessions' ? 'contents' : 'none' }}>{sessions}</div>
       <div style={{ display: tab === 'account' ? 'contents' : 'none' }}>{account}</div>
+      <PoweredByFooter lang={lang} />
       {/* Matches .bottom-nav's real rendered height so fixed positioning never covers scrolled content. */}
       <div style={{ height: 58 }} aria-hidden="true" />
       <BottomNav lang={lang} active={tab} onSelect={setTab} />
