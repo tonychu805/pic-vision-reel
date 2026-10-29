@@ -536,7 +536,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
                 )}
               </div>
             )}
-            <div className={s.foot}><span>{t(lang, 'poweredBy')}</span><Wordmark tone="night" size="sm" /></div>
+            <div className={s.foot}><span>{t(lang, 'poweredBy')}</span><Wordmark tone="night" size="sm" ball={false} /></div>
           </div>
         </div>
       )}

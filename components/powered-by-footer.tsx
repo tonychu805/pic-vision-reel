@@ -8,7 +8,7 @@ export default function PoweredByFooter({ lang, tone = 'paper' }: { lang: Lang; 
   return (
     <footer className="powered-by">
       <span>{t(lang, 'poweredBy')}</span>
-      <Wordmark tone={tone} size="sm" />
+      <Wordmark tone={tone} size="sm" ball={false} />
     </footer>
   )
 }

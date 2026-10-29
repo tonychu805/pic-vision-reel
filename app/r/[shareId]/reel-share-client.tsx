@@ -516,7 +516,7 @@ export default function ReelShareClient({
 
         <footer className="powered-by">
           <span>{t(lang, 'poweredBy')}</span>
-          <Wordmark tone="night" size="sm" />
+          <Wordmark tone="night" size="sm" ball={false} />
         </footer>
       </div>
 
