@@ -69,8 +69,8 @@ export default function CourtClubPreview() {
           <section className="account-section account-panel"><h2 className="account-section-title">{t(lang, 'sectionPrivacy')}</h2><div className="account-row"><span className="account-row-text">{t(lang, 'consentTraining')}</span><span className="preview-toggle" aria-hidden="true" /></div></section>
           <section className="account-section account-panel"><h2 className="account-section-title">{t(lang, 'sectionSecurity')}</h2><div className="account-row"><span className="account-row-text">{t(lang, 'signInMethodLabel')}</span><span className="account-badge">LINE</span></div></section>
           <div className="account-footer-actions"><button type="button" className="account-footer-link" onClick={signOut}>{t(lang, 'signOut')}</button></div>
-          <PoweredByFooter lang={lang} />
         </div>}
+        <PoweredByFooter lang={lang} />
       </div>
       <BottomNav lang={lang} active={tab} onSelect={setTab} />
     </main>

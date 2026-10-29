@@ -7,7 +7,6 @@ import { byCourt, dateLabel, slotLabel, type CalendarGame } from '@/lib/calendar
 import { t } from '@/lib/i18n'
 import { currentLang } from '@/lib/lang-server'
 import LangSwitch from '@/components/lang-switch'
-import PoweredByFooter from '@/components/powered-by-footer'
 import { getAccountData } from '@/lib/accountData'
 import AccountForm from '@/app/account/account-form'
 import CheckinPanel, { type CheckInOption } from './checkin-panel'
@@ -139,19 +138,16 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
             </div>
           }
           account={
-            <div>
-              <AccountForm
-                lang={lang}
-                initialName={account.displayName}
-                initialTraining={account.trainingConsented}
-                isLineAccount={account.isLineAccount}
-                initialEmail={account.email}
-                hasPassword={account.hasPassword}
-                memberSince={account.memberSince}
-                showBackLink={false}
-              />
-              <PoweredByFooter lang={lang} />
-            </div>
+            <AccountForm
+              lang={lang}
+              initialName={account.displayName}
+              initialTraining={account.trainingConsented}
+              isLineAccount={account.isLineAccount}
+              initialEmail={account.email}
+              hasPassword={account.hasPassword}
+              memberSince={account.memberSince}
+              showBackLink={false}
+            />
           }
         />
       </div>

@@ -241,7 +241,7 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
   color:var(--text);
   font-family:Barlow,"PingFang TC","Noto Sans TC",sans-serif;
 }
-.venue-page .share-shell { gap:24px; padding:22px 18px 92px; }
+.venue-page .share-shell { min-height:100vh; min-height:100dvh; gap:24px; padding:22px 18px 92px; }
 .venue-page .venue-header { min-height:48px; }
 .venue-page .venue-header > span { font-size:18px; font-weight:700; letter-spacing:-.025em; }
 .venue-page .venue-mark { border-radius:14px; border-color:#bed0c2; color:#237653; background:#e4eee3; }
