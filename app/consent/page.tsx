@@ -67,7 +67,10 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
         <section className="consent-content" aria-labelledby="consent-title">
           <h1 id="consent-title">{t(lang, 'consentPageTitle')}</h1>
           <p className="consent-intro">{t(lang, 'consentIntro')}</p>
-          <ConsentForm lang={lang} next={safeNext} initialTraining={training?.consented ?? false} />
+          {/* Ticked by default for a player who has not chosen yet (operator,
+              2026-10-29; see components/signup-consent-gate.tsx). An earlier
+              explicit choice, yes or no, is kept. */}
+          <ConsentForm lang={lang} next={safeNext} initialTraining={training?.consented ?? true} />
         </section>
         <PoweredByFooter lang={lang} />
       </div>
