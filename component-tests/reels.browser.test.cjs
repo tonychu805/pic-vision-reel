@@ -157,6 +157,35 @@ test('vertical HTTP errors cannot be shared; retry restores This clip and All cl
   assert.equal(await page.evaluate(() => window.shared[1][0].body), 'recovered video bytes')
 })
 
+// Send shares the page link; Share attaches the clip (operator, 2026-10-29).
+// Until then both attached the clip and a phone could not send the link.
+test('vertical Send shares the page link, Share still attaches the clip', async () => {
+  const page = await setup()
+  await page.route('**/clip0.mp4', (route) => route.fulfill({ status: 200, contentType: 'video/mp4', body: 'clip bytes' }))
+  await page.evaluate(() => {
+    window.sends = []
+    Object.defineProperty(navigator, 'share', { value: async (data) => {
+      window.sends.push({ url: data.url ?? null, files: (data.files ?? []).length })
+    }, configurable: true })
+  })
+  const input = { reels: [{ id: 'v0', kind: 'rally', rally_rank: 1, badge: null, duration_sec: 2 }],
+    addresses: { videos: { v0: `${origin}/clip0.mp4` }, vertical: { v0: `${origin}/clip0.mp4` } },
+    addressesExpireAt: null, videosEndpoint: null, venueName: 'Review venue', gameDate: '2026-10-28',
+    court: 'Court 1', when: 'Today', lang: 'en', wideHref: null }
+  await page.evaluate((input) => window.mount('vertical', input), input)
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await page.waitForFunction(() => window.sends.length === 1)
+  const sent = await page.evaluate(() => window.sends[0])
+  assert.equal(sent.files, 0)
+  assert.equal(sent.url, await page.evaluate(() => window.location.href))
+  // Share waits for the clip to be prefetched, then attaches it.
+  await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => e.name.endsWith('/clip0.mp4')))
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: 'Share', exact: true }).click()
+  await page.waitForFunction(() => window.sends.length === 2)
+  assert.equal(await page.evaluate(() => window.sends[1].files), 1)
+})
+
 const accountProps = {
   lang: 'en', initialName: 'Old name', initialTraining: false,
   isLineAccount: true, initialEmail: null, hasPassword: false, memberSince: null, showBackLink: false,

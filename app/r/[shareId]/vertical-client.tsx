@@ -288,14 +288,26 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     }
   }
 
-  // Share and Send go straight to the phone's own share panel with the clip
+  // Share goes straight to the phone's own share panel with the clip
   // attached (operator, 2026-09-28): a web page can't hand a video to one
   // particular app, so a panel of app tiles in front of it only made people
-  // choose the app twice. Both run synchronously off the tap when the clip
+  // choose the app twice. It runs synchronously off the tap when the clip
   // is loaded, which Safari requires. Our own tile panel is only the
-  // fallback for a browser that can't share files (mostly desktop), where
-  // each tile shares the page link instead.
-  function shareDirect(kind: 'share' | 'send') {
+  // fallback for a browser that can't share files (mostly desktop).
+  //
+  // Send shares this page's link, not the file (operator, 2026-10-29): Share
+  // is for posting the clip; Send is for telling a friend, who gets the
+  // whole session with a link preview instead of one video file. Until then
+  // both attached the clip, and a phone had no way to send the link at all.
+  function sendLink() {
+    if (typeof navigator.share === 'function') {
+      navigator.share({ url: pageUrl, title: `${venueName} — ${label(cur)}` }).catch(() => {})
+      return
+    }
+    setSheet('send')
+  }
+
+  function shareDirect(kind: 'share') {
     const blob = blobs[cur.videoUrl]
     const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean }
     const file = blob ? new File([blob], fileName(cur), { type: blob.type || 'video/mp4' }) : null
@@ -313,7 +325,13 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
   }
 
   function pickApp(app: AppOption) {
+    const kind = sheet
     setSheet(null)
+    // The Send panel (no Web Share here) hands each app the page link.
+    if (kind === 'send' && app.hrefFor) {
+      window.open(app.hrefFor(pageUrl), '_blank', 'noopener,noreferrer')
+      return
+    }
     shareFile(cur.videoUrl, fileName(cur), app.hrefFor?.(pageUrl))
   }
 
@@ -437,7 +455,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
         <RailButton label={t(lang, 'vShare')} onClick={() => shareDirect('share')}>
           <path d="M12 15V3" /><path d="m7 8 5-5 5 5" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
         </RailButton>
-        <RailButton label={t(lang, 'vSend')} onClick={() => shareDirect('send')}>
+        <RailButton label={t(lang, 'vSend')} onClick={sendLink}>
           <path d="M21.5 2.5 10.6 13.4" /><path d="m21.5 2.5-7 19-3.9-8.1-8.1-3.9 19-7Z" />
         </RailButton>
         <RailButton label={t(lang, 'download')} onClick={openDownload}>
@@ -479,9 +497,9 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
             {sheet !== 'download' ? (
               <div className={s.grid}>
                 {(sheet === 'share' ? SHARE_APPS : SEND_APPS).map((app) => (
-                  <button key={app.name} type="button" className={s.gridBtn} onClick={() => pickApp(app)} disabled={!curReady}>
+                  <button key={app.name} type="button" className={s.gridBtn} onClick={() => pickApp(app)} disabled={sheet === 'share' && !curReady}>
                     <span className={s.tile} style={{ background: app.icon.hex }}>
-                      {curReady ? (
+                      {sheet === 'send' || curReady ? (
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d={app.icon.path} /></svg>
                       ) : <span className={s.spinner} />}
                     </span>
