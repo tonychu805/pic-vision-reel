@@ -31,7 +31,7 @@ export default async function AccountPage() {
   const account = await getAccountData(supabase, playerId)
 
   return (
-    <main className="share-page">
+    <main className="share-page venue-page">
       <div className="share-shell" style={{ minHeight: '100vh' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <LangSwitch lang={lang} />

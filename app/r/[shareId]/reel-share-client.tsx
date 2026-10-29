@@ -1,5 +1,7 @@
 'use client'
 
+import Wordmark from '@/components/wordmark'
+import { BRAND_ICONS, type BrandIcon } from './brandIcons'
 import Script from 'next/script'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
@@ -70,17 +72,17 @@ type Slide = {
 }
 
 const socials = [
-  { label: 'Instagram', icon: '◎' },
-  { label: 'TikTok', icon: '♪' },
-  { label: 'Facebook', icon: 'f', hrefFor: (url: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
-  { label: 'X', icon: '𝕏', hrefFor: (url: string) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}` },
+  { label: 'Instagram', icon: BRAND_ICONS.instagram },
+  { label: 'TikTok', icon: BRAND_ICONS.tiktok },
+  { label: 'Facebook', icon: BRAND_ICONS.facebook, hrefFor: (url: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+  { label: 'X', icon: BRAND_ICONS.x, hrefFor: (url: string) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}` },
 ]
 
 const messengers = [
-  { label: 'WhatsApp', icon: '◔', hrefFor: (url: string) => `https://wa.me/?text=${encodeURIComponent(url)}` },
-  { label: 'LINE', icon: '•••', hrefFor: (url: string) => `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}` },
-  { label: 'Messenger', icon: '⌁', hrefFor: (url: string) => `fb-messenger://share?link=${encodeURIComponent(url)}` },
-  { label: 'Messages', labelKey: 'messages' as const, icon: '▰', hrefFor: (url: string) => `sms:?body=${encodeURIComponent(url)}` },
+  { label: 'WhatsApp', icon: BRAND_ICONS.whatsapp, hrefFor: (url: string) => `https://wa.me/?text=${encodeURIComponent(url)}` },
+  { label: 'LINE', icon: BRAND_ICONS.line, hrefFor: (url: string) => `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}` },
+  { label: 'Messenger', icon: BRAND_ICONS.messenger, hrefFor: (url: string) => `fb-messenger://share?link=${encodeURIComponent(url)}` },
+  { label: 'Messages', labelKey: 'messages' as const, icon: BRAND_ICONS.messages, hrefFor: (url: string) => `sms:?body=${encodeURIComponent(url)}` },
 ]
 
 function sanitize(part: string) {
@@ -385,7 +387,7 @@ export default function ReelShareClient({
   const allReady = slides.every((_, i) => ready[i])
 
   return (
-    <main className="share-page">
+    <main className="share-page theme-night reel-wide">
       <div className="share-shell">
         <header className="venue-header">
           {logoKey ? (
@@ -475,20 +477,21 @@ export default function ReelShareClient({
             {appShareState['Download'] === 'working' || !ready[activeIndex] ? (
               <span className="text-action-spinner" aria-hidden="true" />
             ) : (
-              <span aria-hidden="true">↓</span>
-            )}{' '}
+              <ActionIcon d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+            )}
             {t(lang, 'download')}
           </button>
           <button className="text-action" type="button" onClick={copyLink}>
-            <span aria-hidden="true">{copied ? '✓' : '↗'}</span> {copied ? t(lang, 'linkCopied') : t(lang, 'copyLink')}
+            <ActionIcon d={copied ? 'm5 12 5 5 9-10' : 'M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1'} />
+            {copied ? t(lang, 'linkCopied') : t(lang, 'copyLink')}
           </button>
           {slides.length > 1 && (
             <button className="text-action" type="button" onClick={downloadAll} disabled={wantAll && !allReady}>
               {appShareState['Download all'] === 'working' || (wantAll && !allReady) ? (
                 <span className="text-action-spinner" aria-hidden="true" />
               ) : (
-                <span aria-hidden="true">⇊</span>
-              )}{' '}
+                <ActionIcon d="M8 3v10M4 9l4 4 4-4M16 3v10M12 9l4 4 4-4M4 21h16" />
+              )}
               {t(lang, wantAll && allReady ? 'downloadAllReady' : 'downloadAll')}
             </button>
           )}
@@ -506,8 +509,7 @@ export default function ReelShareClient({
 
         <footer className="powered-by">
           <span>{t(lang, 'poweredBy')}</span>
-          <img src="/pic-vision-logo-white.png" alt="" />
-          <span>picvision AI</span>
+          <Wordmark tone="night" size="sm" />
         </footer>
       </div>
 
@@ -532,11 +534,19 @@ export default function ReelShareClient({
   )
 }
 
-function ShareTile({ label, icon, strong, busy, onClick }: { label: string; icon: string; strong?: boolean; busy: boolean; onClick: () => void }) {
+function ShareTile({ label, icon, busy, onClick }: { label: string; icon: BrandIcon; strong?: boolean; busy: boolean; onClick: () => void }) {
   return (
-    <button type="button" className={`share-tile${strong ? ' share-tile-strong' : ''}`} onClick={onClick}>
-      {busy ? <span className="tile-spinner" aria-hidden="true" /> : <strong aria-hidden="true">{icon}</strong>}
+    <button type="button" className="share-tile" onClick={onClick}>
+      <span className="share-tile-icon" style={{ background: icon.hex }} aria-hidden="true">
+        {busy ? <span className="tile-spinner" /> : <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d={icon.path} /></svg>}
+      </span>
       <span>{label}</span>
     </button>
+  )
+}
+
+function ActionIcon({ d }: { d: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
   )
 }

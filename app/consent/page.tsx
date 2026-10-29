@@ -52,16 +52,23 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
     redirect(safeNext)
   }
 
+  const { data: training } = await supabase
+    .from('player_training_consents')
+    .select('consented')
+    .eq('player_id', playerId)
+    .maybeSingle()
+
   return (
-    <main className="share-page">
-      <div className="share-shell" style={{ minHeight: '100vh' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <main className="share-page venue-page consent-page">
+      <div className="share-shell">
+        <div className="consent-topbar">
           <LangSwitch lang={lang} />
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 16 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 500, margin: 0 }}>{t(lang, 'consentPageTitle')}</h1>
-          <ConsentForm lang={lang} next={safeNext} />
-        </div>
+        <section className="consent-content" aria-labelledby="consent-title">
+          <h1 id="consent-title">{t(lang, 'consentPageTitle')}</h1>
+          <p className="consent-intro">{t(lang, 'consentIntro')}</p>
+          <ConsentForm lang={lang} next={safeNext} initialTraining={training?.consented ?? false} />
+        </section>
         <PoweredByFooter lang={lang} />
       </div>
     </main>

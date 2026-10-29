@@ -1,14 +1,14 @@
 import { t, type Lang } from '@/lib/i18n'
+import Wordmark from '@/components/wordmark'
 
-// Same markup as app/r/[shareId]/reel-share-client.tsx's footer, pulled
-// out so /login and /signup can use the identical mark without depending
-// on that (client-only) component.
-export default function PoweredByFooter({ lang }: { lang: Lang }) {
+// Same footer as app/r/[shareId]/reel-share-client.tsx's, pulled out so
+// /login and /signup can use the identical mark without depending on that
+// (client-only) component.
+export default function PoweredByFooter({ lang, tone = 'paper' }: { lang: Lang; tone?: 'paper' | 'night' }) {
   return (
     <footer className="powered-by">
       <span>{t(lang, 'poweredBy')}</span>
-      <img src="/pic-vision-logo-white.png" alt="" />
-      <span>picvision AI</span>
+      <Wordmark tone={tone} size="sm" />
     </footer>
   )
 }

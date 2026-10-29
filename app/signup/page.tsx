@@ -27,16 +27,16 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
 
   return (
     <main className="share-page">
-      <div className="share-shell" style={{ minHeight: '100vh' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="share-shell">
+        <div className="consent-topbar">
           <LangSwitch lang={lang} />
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 22 }}>
-          <AuthHeader lang={lang} next={safeNext} subtitleKey="signUpSubtitle" />
+        <div className="auth-main">
+          <AuthHeader lang={lang} next={safeNext} titleKey="signUpTitle" subtitleKey="signUpSubtitle" />
           <SignupConsentGate lang={lang} next={safeNext} />
-          <p style={{ textAlign: 'center', fontSize: 13 }}>
+          <p className="auth-switch">
             {t(lang, 'haveAccountAlready')}{' '}
-            <Link href={`/login?next=${encodeURIComponent(safeNext)}`} style={{ color: 'var(--accent)' }}>{t(lang, 'goToSignIn')}</Link>
+            <Link href={`/login?next=${encodeURIComponent(safeNext)}`}>{t(lang, 'goToSignIn')}</Link>
           </p>
         </div>
         <PoweredByFooter lang={lang} />

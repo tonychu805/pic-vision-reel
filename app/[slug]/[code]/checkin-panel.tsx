@@ -107,6 +107,7 @@ export default function CheckinPanel({
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingAction | null>(null)
+  const [editingEndFor, setEditingEndFor] = useState<string | null>(null)
   // Keyed by camera_row_id -- each court can be booked to a different end
   // time (operator found the shared, single picker wrong: a real group
   // might have one court until 3pm and another until 4pm). No shared
@@ -381,16 +382,10 @@ export default function CheckinPanel({
         <div key={o.camera_row_id} className="checkin-card checkin-card--recording">
           {cardHead(o.camera_label, { text: t(lang, 'checkInStatusRecording'), tone: 'recording' })}
           {recordingStatusLine(o)}
-          {timePicker(o.camera_row_id, t(lang, 'checkInExtendLabel'))}
+          {o.session_ends_at && <p className="checkin-owner-time">{t(lang, 'sessionUntil', { time: clockLabel(o.session_ends_at, timeZone) })}</p>}
+          {editingEndFor === o.camera_row_id && <div className="checkin-edit-end">{timePicker(o.camera_row_id, t(lang, 'checkInExtendLabel'))}<button type="button" className="checkin-btn checkin-btn--primary" disabled={busy === o.busy_session_id} onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}>{t(lang, 'checkInExtendSubmit')}</button></div>}
           <div className="checkin-actions checkin-actions--split">
-            <button
-              type="button"
-              className="checkin-btn checkin-btn--ghost"
-              disabled={busy === o.busy_session_id}
-              onClick={() => doUpdateEnd(o.busy_session_id!, o.camera_row_id)}
-            >
-              {t(lang, 'checkInExtendSubmit')}
-            </button>
+            <button type="button" className="checkin-btn checkin-btn--ghost" onClick={() => setEditingEndFor(editingEndFor === o.camera_row_id ? null : o.camera_row_id)}>{editingEndFor === o.camera_row_id ? t(lang, 'cancel') : t(lang, 'checkInExtendLabel')}</button>
             {pending?.key !== confirmKey && (
               <button
                 type="button"
@@ -449,13 +444,22 @@ export default function CheckinPanel({
   }
 
   const anyFree = options.some((o) => !o.is_busy)
+  const ownSession = options.find((o) => o.is_busy && o.is_owner && o.busy_session_id)
   // Natural/numeric sort ("Court 2" before "Court 10"), not the raw order
   // get_check_in_options happens to return -- that order isn't meaningful
   // to a player picking a court.
   const sortedOptions = [...options].sort((a, b) => a.camera_label.localeCompare(b.camera_label, undefined, { numeric: true }))
   return (
-    <section className="calendar-court">
-      <h2>{t(lang, 'checkInTitle')}</h2>
+    <section className="calendar-court checkin-panel" aria-label={t(lang, 'checkInTitle')}>
+      {ownSession && (
+        <div className="your-session" aria-live="polite">
+          <div>
+            <span>{t(lang, 'yourSession')}</span>
+            <strong>{ownSession.camera_label}</strong>
+          </div>
+          <p>{ownSession.session_ends_at ? t(lang, 'sessionUntil', { time: clockLabel(ownSession.session_ends_at, timeZone) }) : t(lang, 'checkInStatusRecording')}</p>
+        </div>
+      )}
       {options.length === 0 ? (
         <p style={{ color: 'var(--muted)', fontSize: 13 }}>{t(lang, 'checkInNoCameras')}</p>
       ) : !anyFree && (
@@ -469,7 +473,7 @@ export default function CheckinPanel({
           </Fragment>
         ))}
       </div>
-      {error && <p style={{ color: 'var(--error, #c0392b)', fontSize: 12.5 }}>{error}</p>}
+      {error && <p className="form-note form-note--error" role="alert">{error}</p>}
     </section>
   )
 }

@@ -31,26 +31,26 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
 
   return (
     <>
-      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={consentGiven} onBlocked={handleBlocked} />
-      <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12.5 }}>{t(lang, 'orDivider')}</p>
-      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={consentGiven} onBlocked={handleBlocked} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>
-          {t(lang, 'consentPrefix')}{' '}
-          <a href="https://picvisionai.com/venue-player-notice-template" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{t(lang, 'consentNoticeLink')}</a>
-          {' '}{t(lang, 'consentMiddle')}{' '}
-          <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{t(lang, 'consentPrivacyLink')}</a>
-          {t(lang, 'consentSuffix')}
-        </p>
-        <label style={{ display: 'flex', gap: 8, fontSize: 12.5, alignItems: 'center' }}>
+      <div className="consent-choice">
+        <label className="consent-choice-label">
           <input
             key={`essential-${shakeToken}`}
             type="checkbox" checked={essentialBox} onChange={(e) => setEssentialBox(e.target.checked)}
             className={!essentialBox && shakeToken > 0 ? 'consent-box--needed' : ''}
           />
-          {t(lang, 'consentEssential')}
+          <span>{t(lang, 'consentEssential')}</span>
         </label>
+        <p className="consent-legal">
+          {t(lang, 'consentPrefix')}{' '}
+          <a href="https://picvisionai.com/venue-player-notice-template" target="_blank" rel="noreferrer">{t(lang, 'consentNoticeLink')}</a>
+          {' '}{t(lang, 'consentMiddle')}{' '}
+          <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer">{t(lang, 'consentPrivacyLink')}</a>
+          {t(lang, 'consentSuffix')}
+        </p>
       </div>
+      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={consentGiven} onBlocked={handleBlocked} />
+      <p className="or-divider">{t(lang, 'orDivider')}</p>
+      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={consentGiven} onBlocked={handleBlocked} />
     </>
   )
 }

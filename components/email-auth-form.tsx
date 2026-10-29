@@ -120,11 +120,11 @@ export default function EmailAuthForm({
   }
 
   if (checkEmail) {
-    return <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'checkYourEmail')}</p>
+    return <p className="form-note" role="status">{t(lang, 'checkYourEmail')}</p>
   }
 
   return (
-    <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <form onSubmit={submit} className="field-group">
       <input
         type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
         placeholder={t(lang, 'emailLabel')}
@@ -147,14 +147,13 @@ export default function EmailAuthForm({
         />
       )}
       <button
-        type="submit" disabled={busy} className="calendar-slot"
-        style={{ justifyContent: 'center' }}
+        type="submit" disabled={busy} className="btn btn--secondary btn--block"
       >
         {mode === 'signup'
           ? t(lang, step === 'email' ? 'signUpSubmit' : 'completeSignUp')
           : t(lang, 'signInSubmit')}
       </button>
-      {error && <p style={{ color: 'var(--error, #c0392b)', fontSize: 12.5 }}>{error}</p>}
+      {error && <p className="form-note form-note--error" role="alert">{error}</p>}
     </form>
   )
 }

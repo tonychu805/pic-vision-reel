@@ -1,226 +1,353 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-:root { --bg:#161826; --surface:#232532; --text:#e9e9ed; --muted:#9698a5; --accent:#9184d9; --accent-soft:#2b2741; --divider:rgba(233,233,237,.16); --error:#c0392b; }
-/* A checkbox a signup button tried to proceed without ticking (see
-   components/signup-consent-gate.tsx): border flashes red and the box
-   shakes once. Re-triggerable -- the component remounts this element
-   (changing its key) on every blocked attempt, which restarts the
-   animation from scratch even if a previous one hasn't finished. */
-@keyframes consent-shake {
-  0%, 100% { transform:translateX(0); }
-  20%, 60% { transform:translateX(-4px); }
-  40%, 80% { transform:translateX(4px); }
+/* Clubhouse (2026-10-29): one identity for the whole share site.
+   - Daylight (chalk paper, court-green ink) for everything a player reads
+     or fills in: venue tabs, sign-in, consent, account.
+   - Night (green-black) only where video is the page: the reels feed and
+     the wide page.
+   - Ball yellow is the single accent, and only for what deserves the eye:
+     a badge, a progress line, sound on. Never decoration.
+   - Archivo throughout; its condensed width (font-stretch) is the
+     scoreboard voice for times, numbers and headings.
+   - Square-ish signage shapes (4-10px radii). Pills only for tags. */
+:root {
+  --font: Archivo, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+
+  --paper: #f3f1e9;
+  --paper-2: #e9e6da;
+  --card: #fffdf7;
+  --ink: #13201a;
+  --ink-2: #4b5a51;
+  --ink-3: #78857d;
+  --rule: #dcd7c8;
+  --rule-strong: #b9b3a0;
+
+  --court: #1f5a3f;
+  --court-deep: #143d2c;
+  --court-tint: #e0e9dd;
+
+  --ball: #d7ee3c;
+  --ball-ink: #1a240f;
+
+  --signal: #b5392b;
+  --signal-tint: #f5e2dd;
+  --amber: #8a6514;
+
+  --night: #0d1310;
+  --night-2: #171f1a;
+  --on-night: #f3f1e9;
+  --on-night-2: rgba(243,241,233,.78);
+  --on-night-3: rgba(243,241,233,.55);
+  --night-rule: rgba(243,241,233,.14);
+
+  /* Page roles: daylight unless a surface opts into night. */
+  --bg: var(--paper);
+  --surface: var(--card);
+  --text: var(--ink);
+  --muted: var(--ink-2);
+  --accent: var(--court);
+  --divider: var(--rule);
+  --error: var(--signal);
 }
-/* Applied directly to the <input type="checkbox"> itself (operator
-   request 2026-09-30: no extra wrapper box around it) -- outline rather
-   than border, since outline draws outside the element's own box without
-   touching its native rendering, which is more consistently supported
-   across browsers for a checkbox than styling `border` on the input
-   itself would be. */
-.consent-box--needed { outline:2px solid var(--error); outline-offset:0; animation:consent-shake .4s ease-in-out; }
+.theme-night {
+  --bg: var(--night);
+  --surface: var(--night-2);
+  --text: var(--on-night);
+  --muted: var(--on-night-3);
+  --accent: var(--ball);
+  --divider: var(--night-rule);
+  color-scheme: dark;
+}
+
 * { box-sizing:border-box; }
 html, body { min-height:100%; }
-body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; font-size:15px; line-height:1.55; }
+body { margin:0; background:var(--bg); color:var(--text); font-family:var(--font); font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
 a { color:inherit; }
 /* appearance:none resets Safari/WebKit's native button chrome, which can
    otherwise override or conflict with a custom flex layout applied via a
-   class (found 2026-09-30: a <button class="calendar-slot"> with
-   justify-content:space-between rendered its two child spans jammed
-   together with no gap on a real iPhone Safari, while Chromium -- and
-   even a DOM-injected probe with the exact same markup/CSS on the same
-   page -- rendered it correctly; this is a known Safari button+flexbox
-   quirk Chromium doesn't reproduce, not a CSS logic bug). */
+   class (found 2026-09-30: a <button> with justify-content:space-between
+   rendered its two child spans jammed together on a real iPhone Safari,
+   while Chromium rendered it correctly -- a known Safari button+flexbox
+   quirk Chromium doesn't reproduce). */
 button { font:inherit; appearance:none; -webkit-appearance:none; }
-.share-page { min-height:100vh; display:flex; justify-content:center; background:var(--bg); }
-.share-shell { width:100%; max-width:430px; display:flex; flex-direction:column; gap:16.8px; padding:18px 18px 28px; }
-.venue-header { display:flex; align-items:center; gap:11px; }
-/* min-width:0 is load-bearing, not decorative -- a flex item's default
-   min-width is its unwrapped content width, so without this a long venue
-   name (e.g. "Pickle Day Social Club") refuses to truncate and instead
-   squeezes the lang-switch pill next to it until its own text wraps. */
-.venue-header>span { font-size:17px; font-weight:500; min-width:0; flex:1 1 auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.venue-mark { width:44px; height:44px; display:grid; place-items:center; flex:none; border:1px solid var(--divider); border-radius:8px; color:#e7e5fe; font-size:18px; font-weight:500; }
-/* Uploaded logo: a plate with a fixed colour, not the page background. A
-   transparent logo only reads on one kind of ground, and a venue uploads
-   whatever is on their letterhead -- dark ink for white paper -- which
-   would be invisible on this dark page. .venue-plate--light is for the
-   rarer light-ink artwork, measured at upload time. Off-white rather than
-   pure white, with an inset ring instead of a hard edge, so it reads as a
-   contained object rather than a sticker. */
-.venue-plate { display:grid; place-items:center; flex:none; padding:8px; border-radius:8px; background:#fff; box-shadow:inset 0 0 0 1px rgba(0,0,0,.10); }
-.venue-plate--light { background:#1b1c26; box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); }
+:focus-visible { outline:3px solid var(--court); outline-offset:3px; }
+.theme-night :focus-visible { outline-color:var(--ball); }
+h1 { margin:0; font-size:28px; line-height:1.05; font-weight:800; font-stretch:82%; letter-spacing:-.01em; }
+h2 { margin:0; }
+
+/* Consent checkbox a signup button tried to proceed without (see
+   components/signup-consent-gate.tsx): outline flashes red and the box
+   shakes once. Re-triggerable -- the component remounts the element on
+   every blocked attempt, which restarts the animation. Outline rather than
+   border: it draws outside the native checkbox without touching it. */
+@keyframes consent-shake { 0%, 100% { transform:translateX(0); } 20%, 60% { transform:translateX(-4px); } 40%, 80% { transform:translateX(4px); } }
+.consent-box--needed { outline:2px solid var(--error); outline-offset:0; animation:consent-shake .4s ease-in-out; }
+
+/* ---------- Page frame ---------- */
+.share-page { min-height:100vh; min-height:100dvh; display:flex; justify-content:center; background:var(--bg); color:var(--text); }
+.share-shell { width:100%; max-width:440px; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; gap:22px; padding:18px 20px 28px; }
+@media (max-width:360px) { .share-shell { padding-inline:16px; } }
+
+.venue-header { position:relative; display:flex; align-items:center; gap:12px; min-height:48px; }
+/* min-width:0 is load-bearing -- a flex item's default min-width is its
+   unwrapped content width, so without this a long venue name (e.g. "Pickle
+   Day Social Club") refuses to truncate and squeezes the lang switch. */
+.venue-header>span { min-width:0; flex:1 1 auto; font-size:17px; font-weight:700; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.venue-mark { width:44px; height:44px; flex:none; display:grid; place-items:center; border-radius:8px; background:var(--court); color:var(--paper); font-size:20px; font-weight:800; font-stretch:80%; }
+.theme-night .venue-mark { background:var(--ball); color:var(--ball-ink); }
+/* Uploaded logo: a plate with a fixed colour, not the page background -- a
+   venue uploads whatever is on its letterhead, so a transparent logo needs
+   its own ground. .venue-plate--light is for light-ink artwork, measured at
+   upload time. */
+.venue-plate { flex:none; display:grid; place-items:center; padding:8px; border-radius:8px; background:#fff; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08); }
+.venue-plate--light { background:var(--night-2); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
 .venue-plate img { height:28px; width:auto; max-width:168px; object-fit:contain; display:block; }
-/* Bigger, rounder version of venue-plate/venue-mark for /login and
-   /signup's main logo -- an app-icon-style rounded tile, not a small logo
-   floating inside a bigger plate: the image fills the whole square
-   (object-fit:cover) and overflow:hidden on the container is what
-   actually makes the corners read as rounded, since an edge-to-edge image
-   with square corners of its own would otherwise sit on top of and hide
-   the parent's border-radius. */
-/* -webkit-transform: translateZ(0) forces its own compositing layer --
-   without it, Safari's overflow:hidden + border-radius sometimes fails to
-   clip a child image cleanly (a sliver of its square corner shows through,
-   worst at the top edge). border-radius on the img itself is a second,
-   redundant safety net for the same Safari quirk. Confirmed necessary on
-   a real iPhone (Safari) 2026-09-29 -- Chromium clipped correctly without
-   either fix, so don't remove them just because a Chromium screenshot
-   looks fine. No box-shadow ring here (unlike .venue-plate, the small
-   header badge this was scaled up from): on a real iPhone the 1px inset
-   ring read as a visible grey outline round the top edge at this size,
-   not a subtle contained-object cue -- dropped rather than chased with
-   more compositing hacks. */
-.auth-venue-plate { display:grid; place-items:center; flex:none; width:88px; height:88px; border-radius:22px; overflow:hidden; background:#fff; -webkit-transform:translateZ(0); transform:translateZ(0); }
-.auth-venue-plate--light { background:#1b1c26; }
-.auth-venue-plate img { width:100%; height:100%; object-fit:cover; display:block; border-radius:22px; }
-.auth-venue-mark { width:88px; height:88px; display:grid; place-items:center; flex:none; border:1px solid var(--divider); border-radius:22px; color:#e7e5fe; font-size:32px; font-weight:500; }
-.video-carousel-wrap { display:flex; flex-direction:column; gap:10px; }
-.video-carousel { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; border-radius:14px; box-shadow:0 0 0 1px var(--divider),0 18px 44px rgba(0,0,0,.55); }
-.video-carousel::-webkit-scrollbar { display:none; }
-.video-slide { position:relative; flex:0 0 100%; scroll-snap-align:center; scroll-snap-stop:always; aspect-ratio:16/9; overflow:hidden; background:#292b31; }
-.slide-badge { position:absolute; top:10px; left:10px; z-index:1; padding:4px 9px; border-radius:999px; background:rgba(22,24,38,.72); backdrop-filter:blur(6px); color:#e7e5fe; font-size:11px; font-weight:500; letter-spacing:.01em; }
-.carousel-dots { display:flex; justify-content:center; gap:6px; }
-.dot { width:6px; height:6px; border-radius:50%; background:var(--divider); transition:background .15s ease,transform .15s ease; }
-.dot-active { background:var(--accent); transform:scale(1.3); }
-h1 { margin:0 0 2px; font-size:17px; line-height:1.12; font-weight:500; letter-spacing:-.015em; }
-.repost-section>p { margin:0 0 12px; color:rgba(233,233,237,.5); font-size:12.5px; }
-.share-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-.share-tile { min-height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:8px 4px; border:1px solid var(--divider); border-radius:8px; background:transparent; text-decoration:none; transition:background .15s ease,border-color .15s ease; }
-.share-tile:hover { background:rgba(145,132,217,.1); border-color:rgba(145,132,217,.55); }
-.share-tile strong { color:rgba(233,233,237,.72); font-size:21px; line-height:1; font-weight:500; }
-.share-tile span { color:rgba(233,233,237,.55); font-size:11px; }
-.share-tile-strong { min-height:78px; gap:7px; border-color:rgba(145,132,217,.6); }
-.share-tile-strong strong { color:var(--accent); font-size:27px; }
-.share-tile-strong span { color:#e7e5fe; font-size:11px; }
-.eyebrow { margin-bottom:10px; color:rgba(233,233,237,.45); font-size:11px; letter-spacing:.1em; text-transform:uppercase; }
-.actions { display:flex; align-items:center; flex-wrap:wrap; gap:11.2px; }
-.text-action { display:inline-flex; align-items:center; gap:6px; padding:5.6px 2.8px; border:0; border-radius:8px; background:transparent; color:rgba(233,233,237,.62); cursor:pointer; font-size:13px; text-decoration:none; }
-.text-action:disabled { opacity:.45; cursor:default; }
-.text-action:hover { background:rgba(145,132,217,.1); }
-.text-action span { color:var(--accent); font-size:16px; }
-.powered-by { display:flex; align-items:center; gap:6px; margin-top:auto; padding-top:16.8px; border-top:1px solid transparent; background:linear-gradient(to right,transparent,var(--divider) 48px,var(--divider) calc(100% - 48px),transparent) no-repeat top / 100% 1px; color:rgba(233,233,237,.42); font-size:11px; }
-.powered-by img { width:14px; height:14px; object-fit:contain; opacity:.75; }
-@media (max-width:360px) { .share-shell { padding-inline:14px; } .share-grid { gap:6px; } }
-.tile-spinner { display:inline-block; width:22px; height:22px; border-radius:50%; border:2.5px solid rgba(145,132,217,.25); border-top-color:var(--accent); animation:tile-spin .7s linear infinite; }
-.text-action-spinner { display:inline-block; width:13px; height:13px; border-radius:50%; border:2px solid rgba(145,132,217,.25); border-top-color:var(--accent); animation:tile-spin .7s linear infinite; }
-@keyframes tile-spin { to { transform:rotate(360deg); } }
-.feedback-fab { position:fixed; right:16px; bottom:16px; z-index:20; padding:10px 16px; border:1px solid var(--divider); border-radius:999px; background:var(--surface); color:var(--text); font-size:12.5px; font-weight:500; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.45); }
-.feedback-fab:hover { border-color:rgba(145,132,217,.6); }
 
-/* Demo-admin mode (app/[slug]/[code]/demo-admin-panel.tsx) -- deliberately
-   as quiet as .text-action, not meant to invite a player's attention. */
-.demo-admin { margin-top:10px; }
-.demo-admin-trigger { border:0; background:transparent; color:rgba(233,233,237,.3); font-size:11px; cursor:pointer; padding:4px 0; }
-.demo-admin-trigger:hover { color:rgba(233,233,237,.55); }
-.demo-admin-form, .demo-admin-picker { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-/* font-size 16px, not 12.5px -- below 16px, iOS Safari auto-zooms the
-   page on focus and the zoom sticks through later navigation. */
-.demo-admin-input { background:var(--surface); border:1px solid var(--divider); border-radius:6px; color:var(--text); font-size:16px; padding:5px 8px; }
-.demo-admin-error { color:var(--muted); font-size:11px; }
-.demo-admin-list { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; width:100%; }
-.demo-admin-list a { color:var(--text); font-size:12.5px; text-decoration:none; opacity:.8; }
-.demo-admin-list a:hover { opacity:1; color:var(--accent); }
+/* EN / 中文 */
+.lang-switch { margin-left:auto; flex:none; display:flex; padding:3px; border-radius:8px; background:var(--paper-2); }
+.theme-night .lang-switch { background:rgba(243,241,233,.08); }
+/* white-space:nowrap is load-bearing: under space pressure the browser
+   would otherwise break "中文" between its two characters. 13px because CJK
+   glyphs read smaller than Latin at the same size. */
+.lang-switch button { min-height:32px; padding:0 10px; border:0; border-radius:6px; background:transparent; color:var(--muted); font-size:13px; font-weight:600; white-space:nowrap; cursor:pointer; }
+.lang-switch button.active { background:var(--card); color:var(--ink); box-shadow:0 1px 2px rgba(19,32,26,.12); }
+.theme-night .lang-switch button.active { background:var(--on-night); color:var(--night); }
 
-/* Bottom tab bar (/<slug>/<code>) -- fixed, same max-width as .share-shell
-   so it stays aligned with the card on wide screens instead of spanning
-   the full viewport. calendar-tabs.tsx adds a spacer div of matching
-   height before this so fixed positioning never covers scrolled content. */
-.bottom-nav { position:fixed; left:50%; bottom:0; transform:translateX(-50%); width:100%; max-width:430px; display:flex; background:var(--surface); border-top:1px solid var(--divider); padding:7px 6px calc(7px + env(safe-area-inset-bottom)); z-index:30; }
-.bottom-nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:5px 0; color:var(--muted); text-decoration:none; background:transparent; border:0; font-size:11px; cursor:pointer; }
-.bottom-nav-item.active { color:var(--accent); }
+/* PicVision mark (components/wordmark.tsx) */
+.wordmark { display:inline-flex; align-items:center; gap:6px; font-weight:800; font-stretch:85%; letter-spacing:-.005em; white-space:nowrap; }
+.wordmark-ball { flex:none; }
+.wordmark--sm { font-size:12px; } .wordmark--sm .wordmark-ball { width:14px; height:14px; }
+.wordmark--md { font-size:16px; } .wordmark--md .wordmark-ball { width:20px; height:20px; }
+.wordmark--lg { font-size:24px; } .wordmark--lg .wordmark-ball { width:30px; height:30px; }
+.wordmark--paper { color:var(--ink); }
+.wordmark--paper .wordmark-ball-body { fill:var(--ball); stroke:var(--ink); stroke-width:1.2; }
+.wordmark--paper .wordmark-ball-hole { fill:var(--ink); }
+.wordmark--night { color:var(--on-night); }
+.wordmark--night .wordmark-ball-body { fill:var(--ball); }
+.wordmark--night .wordmark-ball-hole { fill:var(--night); }
 
-/* Public game calendar (/<slug>/<code>) */
-.calendar-court { margin-bottom:18px; }
-.calendar-court h2 { margin:0 0 8px; font-size:14px; font-weight:500; color:var(--text); }
-.calendar-slot { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; margin-bottom:8px; border:1px solid var(--divider); border-radius:8px; color:var(--text); text-decoration:none; font-size:14px; }
-a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,132,217,.55); }
-.calendar-slot-go { color:var(--accent); font-size:13px; }
-.calendar-slot--pending { color:var(--muted); }
-.calendar-slot--pending span:last-child { font-size:12.5px; }
+.powered-by { display:flex; align-items:center; gap:8px; margin-top:auto; padding-top:18px; border-top:1px solid var(--divider); color:var(--muted); font-size:12px; }
 
-/* Check-in court cards (app/[slug]/[code]/checkin-panel.tsx) -- a real
-   component system (header/body/action areas), not .calendar-slot with a
-   color bar layered on. Each card is its own elevated surface, state read
-   from a top-right status badge rather than a thin edge accent. */
+/* ---------- Buttons ---------- */
+.btn { min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:0 18px; border:0; border-radius:8px; font-size:15px; font-weight:700; line-height:1.2; text-align:center; text-decoration:none; cursor:pointer; transition:background .12s ease, box-shadow .12s ease; }
+.btn:disabled { opacity:.5; cursor:default; }
+.btn--primary { background:var(--court); color:var(--paper); }
+.btn--primary:not(:disabled):hover { background:var(--court-deep); }
+.btn--secondary { background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--ink); }
+.btn--secondary:not(:disabled):hover { background:var(--paper-2); }
+.btn--quiet { background:var(--paper-2); color:var(--ink); }
+.btn--danger { background:transparent; color:var(--signal); box-shadow:inset 0 0 0 1.5px var(--signal); }
+.btn--danger:not(:disabled):hover { background:var(--signal-tint); }
+.btn--block { width:100%; }
+.btn--line { width:100%; background:#06c755; color:#fff; }
+.btn--google { width:100%; background:#fff; color:#1f1f1f; box-shadow:inset 0 0 0 1.5px var(--rule-strong); }
+.btn-logo { width:20px; height:20px; flex:none; }
+.button-row { display:flex; gap:8px; }
+.button-row .btn { flex:1; min-width:0; }
+.link-button { min-height:44px; padding:0; border:0; background:none; color:var(--muted); font-size:14px; font-weight:600; text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1px; cursor:pointer; }
+
+/* ---------- Fields ---------- */
+.field-group { display:flex; flex-direction:column; gap:8px; }
+.field-label, .account-field-label { font-size:13px; font-weight:700; color:var(--ink-2); }
+.field-current { margin:0; font-size:14px; color:var(--ink); }
+/* font-size 16px is load-bearing: below 16px iOS Safari zooms the page on
+   focus and the zoom sticks through later navigation. */
+.field-input { min-height:48px; width:100%; padding:0 14px; border:0; border-radius:8px; background:var(--card); color:var(--ink); font-size:16px; box-shadow:inset 0 0 0 1.5px var(--rule-strong); }
+.field-input:focus { outline:none; box-shadow:inset 0 0 0 2px var(--court); }
+.field-input::placeholder { color:var(--ink-3); }
+.form-note { margin:0; font-size:13px; color:var(--ink-2); }
+.form-note--error { color:var(--signal); }
+.or-divider { display:flex; align-items:center; gap:12px; margin:0; color:var(--ink-3); font-size:13px; }
+.or-divider::before, .or-divider::after { content:''; flex:1; height:1px; background:var(--rule); }
+
+/* Tags and switches */
+.tag { display:inline-flex; align-items:center; padding:3px 8px; border-radius:4px; background:var(--court-tint); color:var(--court-deep); font-size:12px; font-weight:700; }
+/* A real switch, not a checkbox -- the training consent reads as a setting
+   (operator, 2026-10-07). A plain checkbox underneath, visually hidden but
+   focusable, keeps keyboard and screen-reader semantics. */
+.switch { position:relative; display:inline-block; width:48px; height:28px; flex:none; }
+.switch input { position:absolute; inset:0; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+.switch-track { position:absolute; inset:0; border-radius:6px; background:var(--rule-strong); transition:background .15s ease; pointer-events:none; }
+.switch-track::before { content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:4px; background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.2); transition:transform .15s ease; }
+.switch input:checked + .switch-track { background:var(--court); }
+.switch input:checked + .switch-track::before { transform:translateX(20px); }
+.switch input:focus-visible + .switch-track { outline:3px solid var(--court); outline-offset:2px; }
+
+/* ---------- Panels (account, settings) ---------- */
+.panel { display:flex; flex-direction:column; gap:16px; padding:18px; border-radius:10px; background:var(--card); box-shadow:inset 0 0 0 1px var(--rule); }
+.panel-title { font-size:13px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); }
+.setting-row { display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer; }
+.setting-text { font-size:15px; line-height:1.45; color:var(--ink); }
+
+/* ---------- Account ---------- */
+.account-layout { display:flex; flex-direction:column; gap:16px; }
+.account-header { display:flex; align-items:center; gap:14px; padding:4px 0 6px; }
+.account-avatar { width:56px; height:56px; flex:none; display:grid; place-items:center; border-radius:10px; background:var(--court); color:var(--paper); font-size:24px; font-weight:800; font-stretch:80%; }
+.account-identity { min-width:0; flex:1; display:flex; flex-direction:column; gap:2px; }
+.account-name-button { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px; padding:0; border:0; background:transparent; color:var(--ink); text-align:left; cursor:pointer; }
+.account-header-name { font-size:24px; line-height:1.1; font-weight:800; font-stretch:82%; }
+.account-header-name--empty { color:var(--ink-3); }
+.account-edit-hint { font-size:13px; font-weight:700; color:var(--court); text-decoration:underline; text-underline-offset:3px; }
+.account-header-meta { font-size:13px; color:var(--ink-2); }
+.account-name-edit { display:flex; flex-direction:column; gap:8px; width:100%; }
+.account-footer-actions { display:flex; gap:20px; }
+
+/* ---------- Bottom tab bar (/<slug>/<code>) ----------
+   Fixed, same max width as .share-shell so it lines up on wide screens;
+   calendar-tabs.tsx adds a matching spacer so it never covers content. */
+.bottom-nav { position:fixed; left:50%; bottom:0; z-index:30; transform:translateX(-50%); width:100%; max-width:440px; display:flex; padding:0 8px env(safe-area-inset-bottom); background:var(--card); box-shadow:0 -1px 0 var(--rule); }
+.bottom-nav-item { position:relative; flex:1; min-height:60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; background:transparent; color:var(--ink-3); font-size:12px; font-weight:700; cursor:pointer; }
+.bottom-nav-item::before { content:''; position:absolute; top:0; left:28%; right:28%; height:3px; border-radius:0 0 3px 3px; background:transparent; }
+.bottom-nav-item.active { color:var(--court-deep); }
+.bottom-nav-item.active::before { background:var(--court); }
+
+/* ---------- Check-in (checkin-panel.tsx) ---------- */
+.checkin-panel { display:flex; flex-direction:column; gap:16px; }
+.your-session { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 18px; border-radius:10px; background:var(--court); color:var(--paper); }
+.your-session div { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.your-session span { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:rgba(243,241,233,.7); }
+.your-session strong { font-size:30px; line-height:1; font-weight:800; font-stretch:78%; }
+.your-session p { margin:0; padding:6px 9px; border-radius:6px; background:rgba(0,0,0,.18); font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.your-session p::before { content:''; display:inline-block; width:8px; height:8px; margin-right:7px; border-radius:50%; background:#ff6b57; box-shadow:0 0 0 3px rgba(255,107,87,.25); vertical-align:1px; }
 .checkin-grid { display:flex; flex-direction:column; gap:10px; }
-.checkin-card { display:flex; flex-direction:column; gap:10px; padding:14px 16px; border-radius:14px; background:var(--surface); border:1px solid var(--divider); box-shadow:0 1px 0 rgba(0,0,0,.12); }
-.checkin-card--free { border-color:rgba(145,132,217,.35); }
-.checkin-card--recording { border-color:rgba(192,57,43,.3); }
-.checkin-card--joinable { border-color:rgba(217,164,65,.4); }
-
+.checkin-card { display:flex; flex-direction:column; gap:12px; padding:16px; border-radius:10px; background:var(--card); box-shadow:inset 0 0 0 1px var(--rule); }
 .checkin-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.checkin-name { font-size:15px; font-weight:500; }
-.checkin-badge { flex:none; font-size:11px; font-weight:500; padding:3px 9px; border-radius:999px; }
-.checkin-badge--free { color:var(--accent); background:var(--accent-soft); }
-.checkin-badge--recording { color:#ff8f82; background:rgba(192,57,43,.16); }
-.checkin-badge--joinable { color:#f0c479; background:rgba(217,164,65,.16); }
-
-.checkin-line { margin:0; color:var(--muted); font-size:12.5px; line-height:1.45; }
-.checkin-line--error { color:var(--error); }
-
-.checkin-field-label { display:block; margin-bottom:6px; font-size:11px; color:var(--muted); }
+.checkin-name { font-size:22px; line-height:1.1; font-weight:800; font-stretch:80%; }
+.checkin-badge { flex:none; display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:800; white-space:nowrap; }
+.checkin-badge--free { background:var(--court-tint); color:var(--court-deep); }
+.checkin-badge--recording { background:var(--signal-tint); color:var(--signal); }
+.checkin-badge--recording::before { content:''; width:7px; height:7px; border-radius:50%; background:currentColor; }
+.checkin-badge--joinable { background:#f3e9cf; color:var(--amber); font-variant-numeric:tabular-nums; }
+.checkin-line { margin:0; color:var(--ink-2); font-size:14px; line-height:1.45; }
+.checkin-line--error { color:var(--signal); }
+.checkin-owner-time { margin:0; font-size:14px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.checkin-field-label { display:block; margin-bottom:6px; font-size:13px; font-weight:700; color:var(--ink-2); }
 .checkin-timepicker { padding-top:2px; }
 .checkin-timepicker-row { display:flex; gap:8px; }
-.checkin-select { flex:1; padding:8px 10px; border:1px solid var(--divider); border-radius:8px; background:transparent; color:var(--text); font-size:16px; }
-
-/* Shared by account-form.tsx and email-auth-form.tsx, which each used to
-   carry an identical inline inputStyle object -- one definition instead
-   of two copies. font-size 16px is load-bearing (iOS Safari auto-zoom). */
-.field-input { padding:10px 12px; border:1px solid var(--divider); border-radius:8px; background:transparent; color:var(--text); font-size:16px; }
-
+.checkin-select { flex:1; min-height:48px; padding:0 36px 0 14px; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%2313201a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; border:0; border-radius:8px; background:var(--paper); color:var(--ink); font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; box-shadow:inset 0 0 0 1.5px var(--rule-strong); }
+.checkin-edit-end { display:flex; flex-direction:column; gap:10px; }
 .checkin-actions { display:flex; }
 .checkin-actions--split { gap:8px; }
-.checkin-btn { flex:1; padding:11px 14px; border-radius:10px; font-size:14px; font-weight:500; cursor:pointer; text-align:center; }
-.checkin-btn--primary { border:0; background:var(--accent); color:#1b1830; }
-.checkin-btn--primary:disabled { opacity:.5; cursor:default; }
-.checkin-btn--ghost { border:1px solid var(--divider); background:transparent; color:var(--text); }
-.checkin-btn--danger { border:1px solid rgba(192,57,43,.45); background:transparent; color:#ff8f82; }
-
-/* The "sure about this?" row a commit action (check-in/join/end) swaps in
-   for its normal button before anything actually happens -- a mis-tap on
-   the wrong court shouldn't be one click away from starting or stopping a
-   real recording. */
+/* checkin-btn variants are the .btn family, kept under their own names
+   because checkin-panel.tsx's state logic uses them. */
+.checkin-btn { flex:1; min-height:48px; padding:0 14px; border:0; border-radius:8px; font-size:15px; font-weight:700; text-align:center; cursor:pointer; }
+.checkin-btn:disabled { opacity:.5; cursor:default; }
+.checkin-btn--primary { background:var(--court); color:var(--paper); }
+.checkin-btn--ghost { background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--ink); }
+.checkin-btn--danger { background:transparent; color:var(--signal); box-shadow:inset 0 0 0 1.5px var(--signal); }
+/* The "sure about this?" row a commit action swaps in before anything
+   happens -- a mis-tap on the wrong court shouldn't be one click from
+   starting or stopping a real recording. */
 .checkin-confirm { display:flex; flex-direction:column; gap:8px; padding-top:2px; }
-.checkin-confirm-message { margin:0; font-size:13px; }
+.checkin-confirm-message { margin:0; font-size:14px; font-weight:600; }
 .checkin-confirm-actions { display:flex; gap:8px; }
 
-/* EN / 中文 switch (components/lang-switch.tsx) */
-.venue-header { position:relative; }
-.lang-switch { margin-left:auto; flex:none; display:flex; gap:2px; padding:2px; border:1px solid var(--divider); border-radius:999px; }
-/* white-space:nowrap is load-bearing -- without it, under space pressure
-   from a long venue name, the browser treats "中文" as breakable between
-   its two characters and wraps it onto two lines instead of just shrinking
-   the pill. font-size 13px (not 11.5px) because CJK glyphs read smaller
-   than Latin ones at the same size and looked undersized next to "EN". */
-.lang-switch button { padding:4px 10px; border:0; border-radius:999px; background:transparent; color:var(--muted); font-size:13px; white-space:nowrap; cursor:pointer; }
-.lang-switch button.active { background:var(--accent-soft); color:#e7e5fe; }
+/* ---------- Today's highlights (sessions tab) ---------- */
+.sessions-view { display:flex; flex-direction:column; gap:22px; }
+.sessions-heading { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.sessions-heading p { margin:0; color:var(--ink-2); font-size:14px; font-weight:600; white-space:nowrap; }
+.sessions-empty { margin:0; padding:18px; border-radius:10px; background:var(--paper-2); color:var(--ink-2); font-size:15px; }
+.calendar-court { display:flex; flex-direction:column; gap:8px; }
+.calendar-court h2 { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:13px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); }
+.session-current-tag { padding:2px 7px; border-radius:4px; background:var(--court); color:var(--paper); font-size:11px; letter-spacing:.04em; }
+.calendar-slot { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:72px; padding:14px 16px; border-radius:10px; background:var(--card); color:var(--ink); text-decoration:none; box-shadow:inset 0 0 0 1px var(--rule); }
+a.calendar-slot:hover { box-shadow:inset 0 0 0 1.5px var(--court); }
+.session-row-copy { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.session-row-copy strong { font-size:24px; line-height:1.05; font-weight:800; font-stretch:76%; font-variant-numeric:tabular-nums; }
+.session-row-copy small { font-size:13px; font-weight:600; color:var(--ink-2); }
+.calendar-slot--ready .session-row-copy small { color:var(--court); }
+.calendar-slot-go { flex:none; display:inline-flex; align-items:center; gap:8px; color:var(--court-deep); font-size:14px; font-weight:800; }
+.play-tile { width:44px; height:44px; display:grid; place-items:center; border-radius:8px; background:var(--court); }
+.play-tile svg { width:22px; height:22px; fill:var(--ball); }
+a.calendar-slot:hover .play-tile { background:var(--court-deep); }
+.calendar-slot--pending { background:transparent; box-shadow:none; border:1.5px dashed var(--rule-strong); color:var(--ink-2); }
+.calendar-slot--pending .session-row-copy strong { color:var(--ink-2); }
 
-/* Account page (app/account/account-form.tsx, also embedded as the
-   calendar page's 帳號 tab) -- a profile header plus content grouped into
-   labeled sections, instead of one flat stacked form. */
-.account-header { display:flex; align-items:center; gap:14px; padding-bottom:4px; }
-.account-avatar { width:52px; height:52px; border-radius:50%; flex:none; display:grid; place-items:center; background:var(--accent-soft); color:#e7e5fe; font-size:20px; font-weight:600; }
-.account-header-name { font-size:17px; font-weight:500; }
-.account-header-meta { color:var(--muted); font-size:12.5px; margin-top:2px; }
-.account-section { display:flex; flex-direction:column; gap:10px; padding-top:16px; border-top:1px solid var(--divider); }
-.account-section-title { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:rgba(233,233,237,.45); }
-.account-field-label { font-size:12.5px; color:var(--muted); }
-.account-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.account-row-text { font-size:13px; }
-.account-row-sub { color:var(--muted); font-size:12.5px; margin-top:1px; }
-.account-badge { display:inline-flex; align-items:center; font-size:11px; color:var(--accent); background:var(--accent-soft); padding:2px 8px; border-radius:999px; }
+/* ---------- Consent (/consent) ---------- */
+.consent-page .share-shell { gap:0; }
+.consent-topbar { display:flex; justify-content:flex-end; }
+.consent-content { flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px 0 48px; }
+.consent-content h1 { font-size:32px; }
+.consent-intro { margin:10px 0 26px; color:var(--ink-2); font-size:16px; line-height:1.5; }
+.consent-form { display:flex; flex-direction:column; gap:10px; }
+.consent-choice { padding:16px; border-radius:10px; background:var(--card); box-shadow:inset 0 0 0 1px var(--rule); }
+.consent-choice-tag { display:inline-block; margin-bottom:10px; padding:2px 7px; border-radius:4px; background:var(--paper-2); color:var(--ink-2); font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+.consent-choice:first-child .consent-choice-tag { background:var(--court); color:var(--paper); }
+.consent-choice-label { display:flex; align-items:flex-start; gap:12px; color:var(--ink); font-size:15px; line-height:1.48; cursor:pointer; }
+.consent-choice-label input { flex:none; width:22px; height:22px; margin:1px 0 0; accent-color:var(--court); cursor:pointer; }
+.consent-choice-label input[aria-invalid="true"] { outline:2px solid var(--signal); outline-offset:2px; }
+.consent-legal { margin:8px 0 0; color:var(--ink-2); font-size:13px; line-height:1.55; }
+.consent-legal a { color:var(--court); font-weight:700; text-underline-offset:3px; }
+.consent-error { margin:4px 0 0; color:var(--signal); font-size:14px; font-weight:600; }
+.consent-submit { min-height:52px; width:100%; margin-top:16px; border:0; border-radius:8px; background:var(--court); color:var(--paper); font-size:16px; font-weight:800; cursor:pointer; }
+.consent-submit:hover { background:var(--court-deep); }
+.consent-submit:disabled { opacity:.6; cursor:wait; }
+.consent-page .powered-by { margin-top:0; }
+@media (max-height:700px) { .consent-content { justify-content:flex-start; padding-top:28px; padding-bottom:36px; } }
 
-/* A real switch, not a native checkbox -- used for the training-consent
-   toggle specifically (operator request 2026-10-07: it reads as a
-   setting, not a form field to tick). Built on a plain checkbox input
-   for keyboard/screen-reader semantics, visually hidden rather than
-   display:none so it stays focusable. */
-.account-toggle { position:relative; display:inline-block; width:40px; height:24px; flex:none; }
-.account-toggle input { position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
-.account-toggle-track { position:absolute; inset:0; background:var(--divider); border-radius:999px; transition:background .15s ease; pointer-events:none; }
-.account-toggle-track::before { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#e9e9ed; transition:transform .15s ease; }
-.account-toggle input:checked + .account-toggle-track { background:var(--accent); }
-.account-toggle input:checked + .account-toggle-track::before { transform:translateX(16px); }
-.account-toggle input:focus-visible + .account-toggle-track { outline:2px solid var(--accent); outline-offset:2px; }
+/* ---------- Sign in / sign up ---------- */
+.auth-main { flex:1; display:flex; flex-direction:column; justify-content:center; gap:20px; padding:24px 0; }
+.auth-head { display:flex; flex-direction:column; align-items:flex-start; gap:16px; }
+.auth-head h1 { font-size:34px; }
+.auth-sub { margin:0; color:var(--ink-2); font-size:16px; }
+.auth-error { margin:0; padding:12px 14px; border-radius:8px; background:var(--signal-tint); color:var(--signal); font-size:14px; font-weight:600; }
+.auth-switch { margin:0; font-size:14px; color:var(--ink-2); }
+.auth-switch a { color:var(--court); font-weight:800; text-underline-offset:3px; }
+/* Venue logo on /login and /signup: an app-icon tile the image fills.
+   translateZ(0) gives it its own compositing layer -- without it Safari's
+   overflow:hidden + border-radius sometimes fails to clip the image (a
+   sliver of its square corner shows); the img's own radius is a second
+   safety net. Both confirmed necessary on a real iPhone 2026-09-29. */
+.auth-venue-plate { flex:none; display:grid; place-items:center; width:64px; height:64px; border-radius:14px; overflow:hidden; background:#fff; -webkit-transform:translateZ(0); transform:translateZ(0); }
+.auth-venue-plate--light { background:var(--night-2); }
+.auth-venue-plate img { width:100%; height:100%; object-fit:cover; display:block; border-radius:14px; }
+.auth-venue-mark { width:64px; height:64px; flex:none; display:grid; place-items:center; border-radius:14px; background:var(--court); color:var(--paper); font-size:30px; font-weight:800; font-stretch:80%; }
+
+/* ---------- Wide page (reel-share-client.tsx), night ---------- */
+.reel-wide .share-shell { gap:24px; }
+.video-carousel-wrap { display:flex; flex-direction:column; gap:12px; }
+.video-carousel { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; border-radius:10px; background:#000; }
+.video-carousel::-webkit-scrollbar { display:none; }
+.video-slide { position:relative; flex:0 0 100%; scroll-snap-align:center; scroll-snap-stop:always; aspect-ratio:16/9; overflow:hidden; background:#000; }
+.slide-badge { position:absolute; top:10px; left:10px; z-index:1; padding:3px 7px 2px; border-radius:3px; background:var(--ball); color:var(--ball-ink); font-size:11px; font-weight:800; letter-spacing:.06em; }
+.carousel-dots { display:flex; justify-content:center; gap:5px; }
+.dot { width:14px; height:3px; border-radius:2px; background:var(--divider); transition:background .15s ease, width .15s ease; }
+.dot-active { width:26px; background:var(--accent); }
+.repost-section { display:flex; flex-direction:column; gap:4px; }
+.repost-section h1 { font-size:26px; }
+.repost-section>p { margin:0 0 14px; color:var(--muted); font-size:14px; }
+.eyebrow { margin-bottom:12px; color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.share-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px 8px; }
+.share-tile { display:flex; flex-direction:column; align-items:center; gap:8px; padding:4px 0; border:0; background:transparent; color:var(--text); text-decoration:none; cursor:pointer; }
+.share-tile-icon { width:56px; height:56px; display:grid; place-items:center; border-radius:15px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
+.share-tile span:last-child { font-size:12px; font-weight:600; color:var(--muted); }
+.actions { display:flex; flex-wrap:wrap; gap:8px; }
+.text-action { min-height:44px; display:inline-flex; align-items:center; gap:8px; padding:0 14px; border:0; border-radius:8px; background:rgba(243,241,233,.08); color:var(--text); font-size:14px; font-weight:700; text-decoration:none; cursor:pointer; }
+.text-action:disabled { opacity:.45; cursor:default; }
+.text-action svg { color:var(--accent); }
+.tile-spinner, .text-action-spinner { display:inline-block; border-radius:50%; border:2.5px solid rgba(215,238,60,.25); border-top-color:var(--ball); animation:tile-spin .7s linear infinite; }
+.tile-spinner { width:22px; height:22px; }
+.text-action-spinner { width:16px; height:16px; border-width:2px; }
+@keyframes tile-spin { to { transform:rotate(360deg); } }
+.feedback-fab { position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:20; min-height:44px; padding:0 16px; border:0; border-radius:8px; background:var(--surface); color:var(--text); font-size:13px; font-weight:700; box-shadow:inset 0 0 0 1px var(--divider), 0 8px 24px rgba(0,0,0,.35); cursor:pointer; }
+
+/* ---------- Demo-admin mode (demo-admin-panel.tsx) ----------
+   Deliberately quiet: not meant to invite a player's attention. */
+.demo-admin { margin-top:10px; }
+.demo-admin-trigger { border:0; background:transparent; color:var(--ink-3); font-size:11px; cursor:pointer; padding:4px 0; }
+.demo-admin-form, .demo-admin-picker { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+/* 16px, not smaller: iOS Safari auto-zoom (see .field-input). */
+.demo-admin-input { min-height:40px; padding:0 10px; border:0; border-radius:6px; background:var(--card); color:var(--ink); font-size:16px; box-shadow:inset 0 0 0 1px var(--rule-strong); }
+.demo-admin-error { color:var(--muted); font-size:11px; }
+.demo-admin-list { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; width:100%; }
+.demo-admin-list a { color:var(--ink); font-size:13px; text-decoration:none; }
+.demo-admin-list a:hover { color:var(--court); }
+
+/* ---------- Design preview (/preview/court-club) ---------- */
+.preview-note { margin:-10px 0 0; padding:8px 10px; border-radius:6px; background:var(--paper-2); color:var(--ink-2); font-size:12px; font-weight:700; }
+.court-club-preview button:disabled { opacity:1; cursor:default; }
+
+@media (prefers-reduced-motion: reduce) { .tile-spinner, .text-action-spinner { animation-duration:2s; } .dot, .switch-track, .switch-track::before { transition:none; } }

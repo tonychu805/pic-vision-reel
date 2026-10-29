@@ -37,19 +37,19 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           also use top-anchored) is what gives the middle block's flex:1
           actual room to center within -- justify-content alone does
           nothing on a container that's only ever as tall as its content. */}
-      <div className="share-shell" style={{ minHeight: '100vh' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="share-shell">
+        <div className="consent-topbar">
           <LangSwitch lang={lang} />
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 22 }}>
-          <AuthHeader lang={lang} next={safeNext} subtitleKey="signInSubtitle" />
-          {auth_error && <p style={{ textAlign: 'center', color: 'var(--error, #c0392b)', fontSize: 13 }}>{t(lang, 'authErrorMessage')}</p>}
+        <div className="auth-main">
+          <AuthHeader lang={lang} next={safeNext} titleKey="signInTitle" subtitleKey="signInSubtitle" />
+          {auth_error && <p className="auth-error" role="alert">{t(lang, 'authErrorMessage')}</p>}
           <SignInButtons lang={lang} next={safeNext} />
-          <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12.5 }}>{t(lang, 'orDivider')}</p>
+          <p className="or-divider">{t(lang, 'orDivider')}</p>
           <EmailAuthForm lang={lang} mode="login" next={safeNext} />
-          <p style={{ textAlign: 'center', fontSize: 13 }}>
+          <p className="auth-switch">
             {t(lang, 'noAccountYet')}{' '}
-            <Link href={`/signup?next=${encodeURIComponent(safeNext)}`} style={{ color: 'var(--accent)' }}>{t(lang, 'goToSignUp')}</Link>
+            <Link href={`/signup?next=${encodeURIComponent(safeNext)}`}>{t(lang, 'goToSignUp')}</Link>
           </p>
         </div>
         <PoweredByFooter lang={lang} />
