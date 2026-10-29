@@ -341,3 +341,24 @@ a.calendar-slot:hover { background:rgba(145,132,217,.1); border-color:rgba(145,1
 .venue-page .checkin-owner-time { margin:-3px 0 0; font-size:13px; font-weight:600; color:#3f584b; }
 .venue-page .checkin-edit-end { display:flex; flex-direction:column; gap:10px; }
 .venue-page .session-current-tag { margin:0; padding:0; border-radius:0; background:transparent; color:#195b40; font-size:12px; font-weight:600; }
+
+/* First-login consent uses the same daylight surface as the venue journey. */
+.consent-page .share-shell { min-height:100vh; min-height:100dvh; padding-bottom:max(28px, env(safe-area-inset-bottom)); gap:0; }
+.consent-topbar { display:flex; justify-content:flex-end; }
+.consent-content { flex:1; display:flex; flex-direction:column; justify-content:center; padding:48px 0 56px; }
+.consent-content h1 { margin:0; color:#16392d; font-size:26px; line-height:1.15; font-weight:700; letter-spacing:-.035em; }
+.consent-intro { margin:9px 0 29px; color:#50645a; font-size:15px; line-height:1.5; }
+.consent-form { display:flex; flex-direction:column; }
+.consent-choice { padding:18px 0 20px; border-top:1px solid #c6d5c9; }
+.consent-choice-tag { display:block; margin-bottom:11px; color:#3f584b; font-size:12px; font-weight:700; }
+.consent-choice-label { display:flex; align-items:flex-start; gap:13px; color:#16392d; font-size:15px; line-height:1.48; cursor:pointer; }
+.consent-choice-label input { flex:none; width:22px; height:22px; margin:1px 0 0; accent-color:#237653; cursor:pointer; }
+.consent-choice-label input[aria-invalid="true"] { outline:2px solid #ad3a31; outline-offset:2px; }
+.consent-legal { margin:21px 0 0; color:#50645a; font-size:13px; line-height:1.55; }
+.consent-legal a { color:#195b40; text-decoration:underline; text-underline-offset:3px; }
+.consent-error { margin:16px 0 0; color:#96382f; font-size:13px; line-height:1.4; }
+.consent-submit { min-height:48px; width:100%; margin-top:28px; padding:11px 18px; border:0; border-radius:10px; background:#237653; color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+.consent-submit:hover { background:#195b40; }
+.consent-submit:disabled { opacity:.65; cursor:wait; }
+.consent-page .powered-by { margin-top:0; }
+@media (max-height:700px) { .consent-content { justify-content:flex-start; padding-top:32px; padding-bottom:40px; } }
