@@ -17,3 +17,19 @@ test('download returns the video bytes on success and rejects HTTP error bodies'
     globalThis.fetch = original
   }
 })
+
+// Paired with the test above: the prefetch must bypass the HTTP cache, or a
+// response the <video> element cached without CORS headers is reused for
+// this CORS fetch and fails (2026-10-29).
+test('download bypasses the HTTP cache and keeps the caller\'s other options', async () => {
+  const original = globalThis.fetch
+  try {
+    let seen: RequestInit | undefined
+    globalThis.fetch = async (_url, init) => { seen = init; return new Response('v', { headers: { 'Content-Type': 'video/mp4' } }) }
+    await fetchVideoBlob('https://example.com/clip.mp4', { priority: 'high' } as RequestInit)
+    assert.equal(seen?.cache, 'no-store')
+    assert.equal((seen as RequestInit & { priority?: string }).priority, 'high')
+  } finally {
+    globalThis.fetch = original
+  }
+})
