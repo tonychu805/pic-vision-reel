@@ -1,6 +1,7 @@
 'use client'
 
 import Wordmark from '@/components/wordmark'
+import { useCanGoBack } from '@/lib/useCanGoBack'
 import { BRAND_ICONS, type BrandIcon } from './brandIcons'
 import Script from 'next/script'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -130,6 +131,7 @@ export default function ReelShareClient({
   createdAt: string
   lang: Lang
 }) {
+  const canGoBack = useCanGoBack()
   const [copied, setCopied] = useState(false)
   const [copyFailed, setCopyFailed] = useState(false)
   const [appShareState, setAppShareState] = useState<Record<string, 'idle' | 'working'>>({})
@@ -390,6 +392,11 @@ export default function ReelShareClient({
     <main className="share-page theme-night reel-wide">
       <div className="share-shell">
         <header className="venue-header">
+          {canGoBack && (
+            <button type="button" className="back-button" onClick={() => window.history.back()} aria-label={t(lang, 'backLabel')}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7" /></svg>
+            </button>
+          )}
           {logoKey ? (
             <div className={`venue-plate${logoInk === 'light' ? ' venue-plate--light' : ''}`}>
               <img src={brandLogoUrl(logoKey)} alt={venueName} />

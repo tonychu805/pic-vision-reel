@@ -7,6 +7,7 @@ import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
 import { clip, type Addresses, type FeedClip, type FeedReel } from '@/lib/verticalFeed'
 import { fetchVideoBlob } from '@/lib/videoDownload'
 import Wordmark from '@/components/wordmark'
+import { useCanGoBack } from '@/lib/useCanGoBack'
 import s from './vertical.module.css'
 import { BRAND_ICONS, type BrandIcon } from './brandIcons'
 
@@ -90,6 +91,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
   const rallyName = (c: FeedClip) => t(lang, 'rally', { n: c.rallyRank ?? '' })
   const label = (c: FeedClip) => badgeName(c) ?? rallyName(c)
   const [active, setActive] = useState(0)
+  const canGoBack = useCanGoBack()
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [toast, setToast] = useState('')
   const [soundOn, setSoundOn] = useState(false)
@@ -403,6 +405,11 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
       )}
 
       <header className={s.top}>
+        {canGoBack && (
+          <button type="button" className={s.backBtn} onClick={() => window.history.back()} aria-label={t(lang, 'backLabel')}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7" /></svg>
+          </button>
+        )}
         <div className={s.venue}>
           <span className={s.venueName}>{venueName}</span>
           <span className={s.position} aria-label={t(lang, 'vPosition', { n: active + 1, total: slides.length })}>

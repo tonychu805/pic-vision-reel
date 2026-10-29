@@ -25,6 +25,8 @@
 
 /* Top bar */
 .top { position: absolute; top: 0; left: 0; right: 0; z-index: 4; display: flex; align-items: center; gap: 8px; padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 34px 18px; background: linear-gradient(to bottom, rgba(10,15,12,.7), rgba(10,15,12,0)); }
+/* Back: deliberately quiet -- just the chevron, no tile. */
+.backBtn { flex: none; width: 36px; height: 40px; margin-left: -10px; padding: 0; border: 0; background: transparent; color: var(--on-night); display: grid; place-items: center; cursor: pointer; filter: drop-shadow(0 1px 4px rgba(0,0,0,.5)); }
 .venue { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .venueName { font-size: 13px; line-height: 1.25; font-weight: 600; color: var(--on-night-2); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; word-break: keep-all; overflow-wrap: anywhere; }
 .position { font-size: 22px; line-height: 1; font-weight: 800; font-stretch: 75%; font-variant-numeric: tabular-nums; color: var(--on-night); }

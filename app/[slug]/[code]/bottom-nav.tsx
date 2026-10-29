@@ -12,7 +12,8 @@
 import type { JSX } from 'react'
 import { t, type Lang } from '@/lib/i18n'
 
-export type CalendarTab = 'checkin' | 'sessions' | 'account'
+import type { CalendarTab } from '@/lib/venueTab'
+export type { CalendarTab }
 
 // Clubhouse (2026-10-29): three equal tabs, the active one marked by a
 // court-green bar on top. No raised centre button and no sparkle -- the

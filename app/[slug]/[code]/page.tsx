@@ -12,6 +12,7 @@ import AccountForm from '@/app/account/account-form'
 import CheckinPanel, { type CheckInOption } from './checkin-panel'
 import DemoAdminPanel from './demo-admin-panel'
 import CalendarTabs from './calendar-tabs'
+import { tabFromParam } from '@/lib/venueTab'
 
 // A venue's public game calendar, opened by QR code at the venue: today's
 // games on the courts the venue chose, each linking to its reels page.
@@ -28,8 +29,9 @@ type Calendar = { brand_name: string; logo_key: string | null; logo_ink: LogoInk
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,31}$/i
 const CODE_RE = /^[a-z0-9]{8,64}$/i
 
-export default async function CalendarPage({ params }: { params: Promise<{ slug: string; code: string }> }) {
+export default async function CalendarPage({ params, searchParams }: { params: Promise<{ slug: string; code: string }>; searchParams: Promise<{ tab?: string | string[] }> }) {
   const { slug, code } = await params
+  const initialTab = tabFromParam((await searchParams).tab)
   const validSlugCode = SLUG_RE.test(slug) && CODE_RE.test(code)
   const lang = await currentLang()
 
@@ -111,6 +113,7 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
 
         <CalendarTabs
           lang={lang}
+          initialTab={initialTab}
           checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={checkInOptions} />}
           sessions={
             <div className="sessions-view">

@@ -98,6 +98,8 @@ h2 { margin:0; }
 /* Long names ("Pickle Day Social Club 匹克日俱樂部") wrap to two lines
    before they are cut, so the whole name usually shows (2026-10-29). */
 .venue-header>span { min-width:0; flex:1 1 auto; font-size:17px; font-weight:700; line-height:1.2; letter-spacing:-.01em; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; word-break:keep-all; overflow-wrap:anywhere; }
+/* Back to the previous page of the site (reel pages; lib/useCanGoBack.ts). Quiet: a chevron, no tile. */
+.back-button { flex:none; width:32px; height:44px; margin-left:-8px; padding:0; border:0; background:transparent; color:var(--text); display:grid; place-items:center; cursor:pointer; }
 .venue-mark { width:44px; height:44px; flex:none; display:grid; place-items:center; border-radius:8px; background:var(--court); color:var(--paper); font-size:20px; font-weight:800; font-stretch:80%; }
 .theme-night .venue-mark { background:var(--ball); color:var(--ball-ink); }
 /* Uploaded logo: a plate with a fixed colour, not the page background -- a
