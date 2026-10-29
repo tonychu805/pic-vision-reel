@@ -7,12 +7,12 @@ import { byCourt, dateLabel, slotLabel, type CalendarGame } from '@/lib/calendar
 import { t } from '@/lib/i18n'
 import { currentLang } from '@/lib/lang-server'
 import LangSwitch from '@/components/lang-switch'
-import PoweredByFooter from '@/components/powered-by-footer'
 import { getAccountData } from '@/lib/accountData'
 import AccountForm from '@/app/account/account-form'
 import CheckinPanel, { type CheckInOption } from './checkin-panel'
 import DemoAdminPanel from './demo-admin-panel'
 import CalendarTabs from './calendar-tabs'
+import { tabFromParam } from '@/lib/venueTab'
 
 // A venue's public game calendar, opened by QR code at the venue: today's
 // games on the courts the venue chose, each linking to its reels page.
@@ -29,8 +29,9 @@ type Calendar = { brand_name: string; logo_key: string | null; logo_ink: LogoInk
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,31}$/i
 const CODE_RE = /^[a-z0-9]{8,64}$/i
 
-export default async function CalendarPage({ params }: { params: Promise<{ slug: string; code: string }> }) {
+export default async function CalendarPage({ params, searchParams }: { params: Promise<{ slug: string; code: string }>; searchParams: Promise<{ tab?: string | string[] }> }) {
   const { slug, code } = await params
+  const initialTab = tabFromParam((await searchParams).tab)
   const validSlugCode = SLUG_RE.test(slug) && CODE_RE.test(code)
   const lang = await currentLang()
 
@@ -92,8 +93,9 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
   }
 
   const courts = byCourt(cal.games)
+  const currentCourts = new Set(checkInOptions.filter((option) => option.is_busy && (option.is_owner || option.already_joined)).map((option) => option.camera_label))
   return (
-    <main className="share-page">
+    <main className="share-page venue-page">
       <div className="share-shell">
         <header className="venue-header">
           {cal.logo_key ? (
@@ -111,23 +113,26 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
 
         <CalendarTabs
           lang={lang}
+          initialTab={initialTab}
           checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={checkInOptions} />}
           sessions={
-            <div>
-              <div className="eyebrow">{t(lang, 'todaysGames')} · {dateLabel(new Date(), cal.timezone, lang)}</div>
-              {courts.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{t(lang, 'noGamesYet')}</p>}
+            <div className="sessions-view">
+              <div className="sessions-heading">
+                <h1>{t(lang, 'sessionsTitle')}</h1>
+                <p>{dateLabel(new Date(), cal.timezone, lang)}</p>
+              </div>
+              {courts.length === 0 && <p className="sessions-empty">{t(lang, 'noGamesYet')}</p>}
               {courts.map((c) => (
                 <section key={c.court} className="calendar-court">
-                  <h2>{c.court}</h2>
+                  <h2>{c.court}{currentCourts.has(c.court) && <span className="session-current-tag">{t(lang, 'yourCurrentCourt')}</span>}</h2>
                   {c.games.map((g) => g.share_id ? (
-                    <a key={g.started_at} className="calendar-slot" href={`/r/${g.share_id}`}>
-                      <span>{slotLabel(g, cal.timezone)}</span>
-                      <span className="calendar-slot-go">{t(lang, 'watch')}</span>
+                    <a key={g.started_at} className="calendar-slot calendar-slot--ready" href={`/r/${g.share_id}`}>
+                      <span className="session-row-copy"><strong>{slotLabel(g, cal.timezone)}</strong><small>{t(lang, 'sessionReady')}</small></span>
+                      <span className="calendar-slot-go"><span>{t(lang, 'watch')}</span><span className="play-tile" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6.5v11a.8.8 0 0 0 1.2.7l8.6-5.5a.8.8 0 0 0 0-1.4L10.2 5.8A.8.8 0 0 0 9 6.5Z" /></svg></span></span>
                     </a>
                   ) : (
                     <div key={g.started_at} className="calendar-slot calendar-slot--pending">
-                      <span>{slotLabel(g, cal.timezone)}</span>
-                      <span>{t(lang, 'reelsOnTheWay')}</span>
+                      <span className="session-row-copy"><strong>{slotLabel(g, cal.timezone)}</strong><small>{t(lang, 'reelsOnTheWay')}</small></span>
                     </div>
                   ))}
                 </section>
@@ -136,19 +141,16 @@ export default async function CalendarPage({ params }: { params: Promise<{ slug:
             </div>
           }
           account={
-            <div>
-              <AccountForm
-                lang={lang}
-                initialName={account.displayName}
-                initialTraining={account.trainingConsented}
-                isLineAccount={account.isLineAccount}
-                initialEmail={account.email}
-                hasPassword={account.hasPassword}
-                memberSince={account.memberSince}
-                showBackLink={false}
-              />
-              <PoweredByFooter lang={lang} />
-            </div>
+            <AccountForm
+              lang={lang}
+              initialName={account.displayName}
+              initialTraining={account.trainingConsented}
+              isLineAccount={account.isLineAccount}
+              initialEmail={account.email}
+              hasPassword={account.hasPassword}
+              memberSince={account.memberSince}
+              showBackLink={false}
+            />
           }
         />
       </div>

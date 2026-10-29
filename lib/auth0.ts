@@ -17,6 +17,7 @@ export type Auth0Tokens = {
 // (proxy.ts), which is why this lives here instead of inline in either.
 export async function exchangeAuth0Token(
   body: Record<string, string>,
+  onFailure?: (status: number, error: string | null) => void,
 ): Promise<Auth0Tokens | null> {
   const res = await fetch(`https://${process.env.AUTH0_DOMAIN}/oauth/token`, {
     method: 'POST',
@@ -27,7 +28,11 @@ export async function exchangeAuth0Token(
       ...body,
     }),
   })
-  if (!res.ok) return null
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null) as { error?: unknown } | null
+    onFailure?.(res.status, typeof payload?.error === 'string' ? payload.error : null)
+    return null
+  }
   return res.json() as Promise<Auth0Tokens>
 }
 

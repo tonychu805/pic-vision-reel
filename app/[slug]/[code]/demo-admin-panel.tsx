@@ -24,6 +24,14 @@ const VERTICAL_TEST_SHARE_IDS = new Set([
   '596d42d4-15b5-4a2c-b558-923d78b2efd6',
 ])
 
+function adminRequested(): boolean {
+  try {
+    return new URL(window.location.href).searchParams.has('admin')
+  } catch {
+    return false
+  }
+}
+
 export default function DemoAdminPanel({ slug, code }: { slug: string; code: string }) {
   const [checkingSession, setCheckingSession] = useState(true)
   const [open, setOpen] = useState(false)
@@ -95,7 +103,12 @@ export default function DemoAdminPanel({ slug, code }: { slug: string; code: str
     setSessionsLoading(false)
   }
 
-  if (checkingSession) return <div className="demo-admin" />
+  // Hidden from players (operator, 2026-10-29: an "Admin login" box under
+  // today's highlights made no sense to them). It shows only to someone
+  // already signed in as admin (the 8h cookie above) or who opened the page
+  // with ?admin in the address -- how the operator signs in on demo day.
+  if (checkingSession) return null
+  if (!authed && !adminRequested()) return null
 
   return (
     <div className="demo-admin">

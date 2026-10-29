@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-29T00:00:00+08:00",
+  "title": "Design System: PicVision player web",
+  "extensions": {
+    "colorMeta": {
+      "court-green": { "role": "primary", "displayName": "Court Green", "canonical": "#237653", "tonalRamp": ["#e4eee3", "#237653", "#16392d"] },
+      "court-paper": { "role": "neutral", "displayName": "Court Paper", "canonical": "#f4f6f0", "tonalRamp": ["#ffffff", "#f4f6f0", "#d3dfd6"] }
+    },
+    "shadows": [
+      { "name": "card-ambient", "value": "0 3px 10px rgba(22,57,45,.06)", "purpose": "Separate court cards from the paper background." },
+      { "name": "session-anchor", "value": "0 8px 20px rgba(22,57,45,.16)", "purpose": "Anchor the player’s current session status." }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "150ms ease", "purpose": "Small control-state transitions only." }
+    ],
+    "breakpoints": [
+      { "name": "venue-max", "value": "430px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Your session",
+      "kind": "custom",
+      "description": "The player-first recording summary shown before the complete court list.",
+      "html": "<section class=\"your-session\"><div><span>Your session</span><strong>Court 2</strong></div><p>Recording until 20:00</p></section>",
+      "css": ".your-session { display:flex; justify-content:space-between; gap:16px; padding:15px 16px; border-radius:14px; color:#fff; background:#16392d; box-shadow:0 8px 20px rgba(22,57,45,.16); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Court Club",
+    "overview": "A practical, daylight-readable venue system that makes the player’s own recording unmistakable before handing off to the dark reel viewer.",
+    "keyCharacteristics": ["player-first status", "paper and green hierarchy", "explicit controls"],
+    "rules": [
+      { "name": "The Current Session Rule", "body": "Show court and end time before the full list whenever the player owns a live session.", "section": "components" }
+    ],
+    "dos": ["Use Court Green for primary action and active navigation.", "Use text together with every status color."],
+    "donts": ["Do not use low-contrast metadata for primary task cues.", "Do not make sensitive settings look auto-saved when they are not."]
+  }
+}

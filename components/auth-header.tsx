@@ -1,6 +1,7 @@
 import { brandLogoUrl } from '@/lib/brandLogo'
 import { venueFromNext } from '@/lib/venueFromNext'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
+import Wordmark from '@/components/wordmark'
 
 // Shared by /login and /signup: the venue's own logo when `next` points
 // back to one (the normal case, since app/[slug]/[code]/page.tsx's
@@ -8,11 +9,11 @@ import { t, type Lang, type StringKey } from '@/lib/i18n'
 // generic PicVision AI mark otherwise. Async server component: the venue
 // lookup is a plain public RPC (get_public_calendar via venueFromNext),
 // same anonymous read app/[slug]/[code]/page.tsx already does.
-export default async function AuthHeader({ lang, next, subtitleKey }: { lang: Lang; next: string; subtitleKey: StringKey }) {
+export default async function AuthHeader({ lang, next, titleKey, subtitleKey }: { lang: Lang; next: string; titleKey: StringKey; subtitleKey: StringKey }) {
   const venue = await venueFromNext(next)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+    <div className="auth-head">
       {venue ? (
         venue.logo_key ? (
           <div className={`auth-venue-plate${venue.logo_ink === 'light' ? ' auth-venue-plate--light' : ''}`}>
@@ -22,9 +23,12 @@ export default async function AuthHeader({ lang, next, subtitleKey }: { lang: La
           <div className="auth-venue-mark" aria-hidden="true">{venue.brand_name.charAt(0).toUpperCase()}</div>
         )
       ) : (
-        <img src="/pic-vision-logo-white.png" alt="PicVision AI" style={{ height: 32, width: 'auto' }} />
+        <Wordmark size="lg" />
       )}
-      <p style={{ color: 'var(--muted)', fontSize: 13.5, textAlign: 'center' }}>{t(lang, subtitleKey)}</p>
+      <div>
+        <h1>{t(lang, titleKey)}</h1>
+        <p className="auth-sub">{t(lang, subtitleKey)}</p>
+      </div>
     </div>
   )
 }

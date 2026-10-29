@@ -5,6 +5,7 @@
 // there is exactly one place that knows how to start a player OAuth flow.
 import { useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
+import { BRAND_ICONS } from '@/app/r/[shareId]/brandIcons'
 import { t, type Lang } from '@/lib/i18n'
 
 export default function SignInButtons({
@@ -97,25 +98,18 @@ export default function SignInButtons({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <button
-        onClick={signInWithLine}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          padding: '12px 16px', border: 'none', borderRadius: 8,
-          background: '#06C755', color: '#fff', fontSize: 14.5, fontWeight: 500, cursor: 'pointer',
-        }}
-      >
+    <div className="field-group">
+      <button type="button" className="btn btn--line" onClick={signInWithLine}>
+        <svg className="btn-logo" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d={BRAND_ICONS.line.path} /></svg>
         {t(lang, mode === 'signup' ? 'signUpWithLine' : 'signInWithLine')}
       </button>
-      <button
-        onClick={signInWithGoogle}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          padding: '12px 16px', border: '1px solid var(--divider)', borderRadius: 8,
-          background: '#fff', color: '#1f1f1f', fontSize: 14.5, fontWeight: 500, cursor: 'pointer',
-        }}
-      >
+      <button type="button" className="btn btn--google" onClick={signInWithGoogle}>
+        <svg className="btn-logo" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.63h6.45a5.52 5.52 0 0 1-2.39 3.62v3h3.87c2.26-2.09 3.57-5.16 3.57-8.8Z" />
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.9l-3.87-3a7.16 7.16 0 0 1-10.67-3.77h-4v3.1A12 12 0 0 0 12 24Z" />
+          <path fill="#FBBC05" d="M5.39 14.33a7.2 7.2 0 0 1 0-4.66v-3.1h-4a12 12 0 0 0 0 10.86l4-3.1Z" />
+          <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.6 4.58 1.8l3.43-3.43A11.5 11.5 0 0 0 12 0 12 12 0 0 0 1.39 6.57l4 3.1A7.16 7.16 0 0 1 12 4.77Z" />
+        </svg>
         {t(lang, mode === 'signup' ? 'signUpWithGoogle' : 'signInWithGoogle')}
       </button>
     </div>

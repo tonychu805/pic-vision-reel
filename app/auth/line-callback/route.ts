@@ -40,12 +40,19 @@ export async function GET(request: Request) {
   const next = state.next && state.next.startsWith('/') && !state.next.startsWith('//') ? state.next : '/'
   const failure = NextResponse.redirect(`${origin}/login?next=${encodeURIComponent(next)}&auth_error=1`)
 
-  if (!code) return failure
+  if (!code) {
+    console.error('line-callback: missing_code', { hasError: url.searchParams.has('error') })
+    return failure
+  }
 
   const tokens = await exchangeAuth0Token({
     grant_type: 'authorization_code',
     code,
     redirect_uri: `${origin}/auth/line-callback`,
+  }, (status, error) => {
+    // Log only the OAuth error category. Never log the code, token, state,
+    // response body, or player identity.
+    console.error('line-callback: token_exchange_failed', { status, error, originHost: new URL(origin).host })
   })
   if (!tokens) return failure
 
@@ -61,11 +68,14 @@ export async function GET(request: Request) {
     { accessToken: async () => tokens.id_token },
   )
 
-  const { error: ensureError } = await supabase.rpc('ensure_line_player', {
+  const { error: ensureError, status: ensureStatus } = await supabase.rpc('ensure_line_player', {
     p_auth0_sub: sub,
     p_display_name: name?.trim() || null,
   })
-  if (ensureError) return failure
+  if (ensureError) {
+    console.error('line-callback: ensure_player_failed', { status: ensureStatus, code: ensureError.code })
+    return failure
+  }
 
   // Mirrors app/auth/callback/route.ts's consent/training handling: these
   // query params are only ever set by components/sign-in-buttons.tsx's

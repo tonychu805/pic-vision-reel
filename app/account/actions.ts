@@ -15,8 +15,16 @@ export async function updateDisplayName(name: string) {
   // current_player_id(), not auth.getUser() -- see app/account/page.tsx.
   const { data: playerId } = await supabase.rpc('current_player_id')
   if (!playerId) return { error: 'not signed in' }
-  const { error } = await supabase.from('players').update({ display_name: trimmed || null }).eq('id', playerId)
-  return { error: error?.message ?? null }
+  // .select() so a blocked update is visible: RLS that matches no row is not
+  // an error to PostgREST, just 0 rows and a 204. That is exactly what a LINE
+  // session did while its Auth0 token had no `role: authenticated` claim --
+  // the request ran as anon, saved nothing, and the page said "saved"
+  // (2026-10-29). Fixed upstream by the Auth0 Action; this keeps any
+  // repeat from failing silently.
+  const { data, error } = await supabase.from('players').update({ display_name: trimmed || null }).eq('id', playerId).select('id')
+  if (error) return { error: error.message }
+  if (!data || data.length === 0) return { error: 'not saved' }
+  return { error: null }
 }
 
 // Email/password only apply to a GoTrue (Google/email) session -- there's

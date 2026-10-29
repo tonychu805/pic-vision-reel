@@ -55,6 +55,9 @@
 const isDev = process.env.NODE_ENV === 'development'
 const r2 = 'https://*.a4990d92f47faeb0b0d0cbc35e64da92.r2.cloudflarestorage.com'
 const consoleOrigin = new URL(process.env.NEXT_PUBLIC_CONSOLE_URL || 'https://console.picvisionai.com').origin
+// Public assets (venue logos): the production CDN unless this deploy points
+// elsewhere -- staging's public bucket has its own address (lib/brandLogo.ts).
+const assetOrigin = `https://${process.env.NEXT_PUBLIC_ASSET_CDN_HOST || 'cdn.picvisionai.com'}`
 const supabaseOrigin = (() => {
   try {
     return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
@@ -67,7 +70,7 @@ const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' https://tally.so${isDev ? " 'unsafe-eval'" : ''};
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    img-src 'self' blob: data: https://cdn.picvisionai.com;
+    img-src 'self' blob: data: https://cdn.picvisionai.com ${assetOrigin};
     media-src 'self' https://cdn.picvisionai.com ${r2};
     connect-src 'self' https://cdn.picvisionai.com ${r2} ${consoleOrigin} ${supabaseOrigin};
     font-src 'self' https://fonts.gstatic.com;

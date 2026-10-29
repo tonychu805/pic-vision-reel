@@ -9,7 +9,7 @@ import { updateDisplayName, updateEmail, updatePassword } from './actions'
 
 
 export default function AccountForm({
-  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword, memberSince, showBackLink = true,
+  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword, showBackLink = true,
 }: {
   lang: Lang
   initialName: string
@@ -26,10 +26,11 @@ export default function AccountForm({
   const router = useRouter()
   const [name, setName] = useState(initialName)
   const [savedName, setSavedName] = useState(initialName)
+  const [editingName, setEditingName] = useState(false)
   const [training, setTraining] = useState(initialTraining)
   const [busy, setBusy] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [nameMessage, setNameMessage] = useState<string | null>(null)
+  const [trainingMessage, setTrainingMessage] = useState<{ text: string; failed: boolean } | null>(null)
 
   const [newEmail, setNewEmail] = useState('')
   const [emailBusy, setEmailBusy] = useState(false)
@@ -39,29 +40,32 @@ export default function AccountForm({
   const [passwordBusy, setPasswordBusy] = useState(false)
   const [passwordResult, setPasswordResult] = useState<string | null>(null)
 
-  async function save() {
+  // Name and the training toggle save separately (Court Club, 2026-10-28):
+  // the toggle saves the moment it moves and flips back if that fails.
+  async function saveName() {
     setBusy(true)
-    setSaved(false)
-    setSaveError(null)
+    setNameMessage(null)
     try {
-      const [nameResult, trainingResult] = await Promise.allSettled([
-        updateDisplayName(name),
-        setTrainingConsent(training),
-      ])
-      const nameSaved = nameResult.status === 'fulfilled' && !nameResult.value.error
-      const trainingSaved = trainingResult.status === 'fulfilled' && !trainingResult.value.error
-      if (nameSaved) setSavedName(name.trim())
-      const errors = [
-        !nameSaved && t(lang, 'nameSaveFailed'),
-        !trainingSaved && t(lang, 'trainingSaveFailed'),
-      ].filter(Boolean)
-      setSaveError(errors.length ? errors.join(' ') : null)
-      setSaved(nameSaved && trainingSaved)
+      const { error } = await updateDisplayName(name)
+      if (error) { setNameMessage(t(lang, 'nameSaveFailed')); return }
+      setSavedName(name.trim())
+      setEditingName(false)
+    } catch { setNameMessage(t(lang, 'nameSaveFailed')) }
+    finally { setBusy(false) }
+  }
+
+  async function changeTraining(value: boolean) {
+    setTraining(value)
+    setBusy(true)
+    setTrainingMessage(null)
+    try {
+      const { error } = await setTrainingConsent(value)
+      if (error) throw new Error(error)
+      setTrainingMessage({ text: t(lang, 'savedMessage'), failed: false })
     } catch {
-      setSaveError(t(lang, 'genericError'))
-    } finally {
-      setBusy(false)
-    }
+      setTraining(!value)
+      setTrainingMessage({ text: t(lang, 'trainingSaveFailed'), failed: true })
+    } finally { setBusy(false) }
   }
 
   async function changeEmail() {
@@ -99,113 +103,103 @@ export default function AccountForm({
       await signOutEverywhere()
       window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`
     } catch {
-      setSaveError(t(lang, 'genericError'))
+      setNameMessage(t(lang, 'genericError'))
     }
   }
 
   const initial = (savedName || initialEmail || '?').trim().charAt(0).toUpperCase()
   const signInMethod = isLineAccount ? 'LINE' : hasPassword ? t(lang, 'signInMethodEmail') : t(lang, 'signInMethodGoogle')
-  const memberSinceText = memberSince
-    ? t(lang, 'memberSinceLabel', {
-        date: new Date(memberSince).toLocaleDateString(lang === 'zh-TW' ? 'zh-TW' : 'en-US', { year: 'numeric', month: 'long' }),
-      })
-    : null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div className="account-layout">
       <div className="account-header">
-        <div className="account-avatar">{initial}</div>
-        <div>
-          <div className="account-header-name" style={savedName ? undefined : { color: 'var(--muted)', fontWeight: 400, fontStyle: 'italic' }}>
-            {savedName || t(lang, 'nameNotSet')}
-          </div>
-          <div className="account-header-meta">
-            {signInMethod}
-            {memberSinceText && ` · ${memberSinceText}`}
-          </div>
+        <div className="account-avatar" aria-hidden="true">{initial}</div>
+        {/* Edited in place (operator, 2026-10-29): the name becomes the field
+            at the same size and position, with ✓ / ✕ beside it, so nothing
+            in the header moves when editing starts or ends. */}
+        <div className="account-identity">
+          {editingName ? (
+            <div className="account-name-row">
+              <label className="sr-only" htmlFor="account-name">{t(lang, 'nameLabel')}</label>
+              <input id="account-name" autoFocus className="account-name-input" value={name} disabled={busy} placeholder={t(lang, 'nameLabel')}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') void saveName(); if (e.key === 'Escape') { setName(savedName); setEditingName(false); setNameMessage(null) } }} />
+              <button type="button" className="icon-btn icon-btn--primary" disabled={busy} onClick={saveName} aria-label={t(lang, 'saveButton')}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+              </button>
+              <button type="button" className="icon-btn" disabled={busy} onClick={() => { setName(savedName); setEditingName(false); setNameMessage(null) }} aria-label={t(lang, 'cancel')}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="account-name-row account-name-button" onClick={() => setEditingName(true)} aria-label={t(lang, 'editName')}>
+              <span className={`account-header-name${savedName ? '' : ' account-header-name--empty'}`}>{savedName || t(lang, 'nameNotSet')}</span>
+              <svg className="account-edit-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z" /><path d="m14 6 4 4" /></svg>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="account-section">
-        <div className="account-section-title">{t(lang, 'sectionProfile')}</div>
-        <label className="account-field-label">{t(lang, 'nameLabel')}</label>
-        <input type="text" value={name} disabled={busy} onChange={(e) => { setName(e.target.value); setSaved(false) }} className="field-input" />
-        <button className="calendar-slot" style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }} disabled={busy} onClick={save}>
-          {t(lang, 'saveButton')}
-        </button>
-        {saved && <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>{t(lang, 'savedMessage')}</p>}
-        {saveError && <p role="alert" style={{ color: 'var(--error)', fontSize: 12.5, margin: 0 }}>{saveError}</p>}
-      </div>
+      {nameMessage && <p role="alert" className="form-note form-note--error">{nameMessage}</p>}
 
-      <div className="account-section">
-        <div className="account-section-title">{t(lang, 'sectionPrivacy')}</div>
-        <label className="account-row" style={{ cursor: 'pointer' }}>
-          <span className="account-row-text">{t(lang, 'consentTraining')}</span>
-          <span className="account-toggle">
-            <input type="checkbox" checked={training} disabled={busy} onChange={(e) => { setTraining(e.target.checked); setSaved(false) }} />
-            <span className="account-toggle-track" />
+      <section className="panel">
+        <h2 className="panel-title">{t(lang, 'sectionPrivacy')}</h2>
+        <label className="setting-row">
+          <span className="setting-text">{t(lang, 'consentTraining')}</span>
+          <span className="switch">
+            <input type="checkbox" checked={training} disabled={busy} onChange={(e) => void changeTraining(e.target.checked)} />
+            <span className="switch-track" />
           </span>
         </label>
-      </div>
+        {trainingMessage && <p role={trainingMessage.failed ? 'alert' : 'status'} className={trainingMessage.failed ? 'form-note form-note--error' : 'form-note'}>{trainingMessage.text}</p>}
+      </section>
 
-      <div className="account-section">
-        <div className="account-section-title">{t(lang, 'sectionSecurity')}</div>
-        <div className="account-row">
-          <span className="account-row-text">{t(lang, 'signInMethodLabel')}</span>
-          <span className="account-badge">{signInMethod}</span>
+      <section className="panel">
+        <h2 className="panel-title">{t(lang, 'sectionSecurity')}</h2>
+        <div className="setting-row">
+          <span className="setting-text">{t(lang, 'signInMethodLabel')}</span>
+          <span className="tag">{signInMethod}</span>
         </div>
 
         {!isLineAccount && (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 6 }}>
-              <label className="account-field-label">{t(lang, 'emailLabel')}</label>
-              {initialEmail && <p style={{ fontSize: 13, margin: 0 }}>{initialEmail}</p>}
+            <div className="field-group">
+              <label className="field-label" htmlFor="account-email">{t(lang, 'emailLabel')}</label>
+              {initialEmail && <p className="field-current">{initialEmail}</p>}
               <input
-                type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                id="account-email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
                 placeholder={t(lang, 'newEmailLabel')} className="field-input"
               />
-              <button
-                className="calendar-slot" style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
-                disabled={emailBusy || !newEmail.trim()} onClick={changeEmail}
-              >
+              <button type="button" className="btn btn--secondary" disabled={emailBusy || !newEmail.trim()} onClick={changeEmail}>
                 {t(lang, 'changeEmailButton')}
               </button>
-              {emailResult && <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>{emailResult}</p>}
+              {emailResult && <p className="form-note">{emailResult}</p>}
             </div>
 
             {hasPassword && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 10 }}>
-                <label className="account-field-label">{t(lang, 'newPasswordLabel')}</label>
+              <div className="field-group">
+                <label className="field-label" htmlFor="account-password">{t(lang, 'newPasswordLabel')}</label>
                 <input
-                  type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                  id="account-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
                   className="field-input"
                 />
-                <button
-                  className="calendar-slot" style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }}
-                  disabled={passwordBusy || !newPassword} onClick={changePassword}
-                >
+                <button type="button" className="btn btn--secondary" disabled={passwordBusy || !newPassword} onClick={changePassword}>
                   {t(lang, 'changePasswordButton')}
                 </button>
-                {passwordResult && <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>{passwordResult}</p>}
+                {passwordResult && <p className="form-note">{passwordResult}</p>}
               </div>
             )}
           </>
         )}
-      </div>
+      </section>
 
-      <div className="account-section" style={{ flexDirection: 'row', gap: 16 }}>
-        <button
-          onClick={signOut}
-          style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer', textAlign: 'left' }}
-        >
+      <div className="account-footer-actions">
+        <button type="button" onClick={signOut} className="link-button">
           {t(lang, 'signOut')}
         </button>
         {showBackLink && (
-          <button
-            onClick={() => router.back()}
-            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer', textAlign: 'left' }}
-          >
-            ← {t(lang, 'backLabel')}
+          <button type="button" onClick={() => router.back()} className="link-button">
+            {t(lang, 'backLabel')}
           </button>
         )}
       </div>
