@@ -114,20 +114,27 @@ export default function AccountForm({
     <div className="account-layout">
       <div className="account-header">
         <div className="account-avatar" aria-hidden="true">{initial}</div>
+        {/* Edited in place (operator, 2026-10-29): the name becomes the field
+            at the same size and position, with ✓ / ✕ beside it, so nothing
+            in the header moves when editing starts or ends. */}
         <div className="account-identity">
           {editingName ? (
-            <div className="account-name-edit">
-              <label className="field-label" htmlFor="account-name">{t(lang, 'nameLabel')}</label>
-              <input id="account-name" autoFocus className="field-input" value={name} disabled={busy} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void saveName(); if (e.key === 'Escape') { setName(savedName); setEditingName(false) } }} />
-              <div className="button-row">
-                <button type="button" className="btn btn--primary" disabled={busy} onClick={saveName}>{t(lang, 'saveButton')}</button>
-                <button type="button" className="btn btn--quiet" disabled={busy} onClick={() => { setName(savedName); setEditingName(false); setNameMessage(null) }}>{t(lang, 'cancel')}</button>
-              </div>
+            <div className="account-name-row">
+              <label className="sr-only" htmlFor="account-name">{t(lang, 'nameLabel')}</label>
+              <input id="account-name" autoFocus className="account-name-input" value={name} disabled={busy} placeholder={t(lang, 'nameLabel')}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') void saveName(); if (e.key === 'Escape') { setName(savedName); setEditingName(false); setNameMessage(null) } }} />
+              <button type="button" className="icon-btn icon-btn--primary" disabled={busy} onClick={saveName} aria-label={t(lang, 'saveButton')}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+              </button>
+              <button type="button" className="icon-btn" disabled={busy} onClick={() => { setName(savedName); setEditingName(false); setNameMessage(null) }} aria-label={t(lang, 'cancel')}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </button>
             </div>
           ) : (
-            <button type="button" className="account-name-button" onClick={() => setEditingName(true)} aria-label={t(lang, 'editName')}>
+            <button type="button" className="account-name-row account-name-button" onClick={() => setEditingName(true)} aria-label={t(lang, 'editName')}>
               <span className={`account-header-name${savedName ? '' : ' account-header-name--empty'}`}>{savedName || t(lang, 'nameNotSet')}</span>
-              <span className="account-edit-hint">{t(lang, 'editName')}</span>
+              <svg className="account-edit-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z" /><path d="m14 6 4 4" /></svg>
             </button>
           )}
         </div>

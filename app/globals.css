@@ -187,11 +187,22 @@ h2 { margin:0; }
 .account-header { display:flex; align-items:center; gap:14px; padding:4px 0 6px; }
 .account-avatar { width:56px; height:56px; flex:none; display:grid; place-items:center; border-radius:10px; background:var(--court); color:var(--paper); font-size:24px; font-weight:800; font-stretch:80%; }
 .account-identity { min-width:0; flex:1; display:flex; flex-direction:column; gap:2px; }
-.account-name-button { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px; padding:0; border:0; background:transparent; color:var(--ink); text-align:left; cursor:pointer; }
-.account-header-name { font-size:24px; line-height:1.1; font-weight:800; font-stretch:82%; }
+.account-header { min-height:64px; }
+/* Name row: identical box in view and edit, so nothing moves on edit. */
+.account-name-row { display:flex; align-items:center; gap:6px; height:44px; width:100%; min-width:0; }
+.account-name-button { padding:0; border:0; background:transparent; color:var(--ink); text-align:left; cursor:pointer; }
+.account-header-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:24px; line-height:1.1; font-weight:800; font-stretch:82%; }
 .account-header-name--empty { color:var(--ink-3); }
-.account-edit-hint { font-size:13px; font-weight:700; color:var(--court); text-decoration:underline; text-underline-offset:3px; }
-.account-name-edit { display:flex; flex-direction:column; gap:8px; width:100%; }
+.account-edit-icon { flex:none; color:var(--ink-3); }
+.account-name-button:hover .account-edit-icon { color:var(--court); }
+/* Same type as the name; only a court underline says "editing". */
+.account-name-input { flex:1; min-width:0; height:40px; padding:0; border:0; border-bottom:2px solid var(--court); border-radius:0; background:transparent; color:var(--ink); font:inherit; font-size:24px; font-weight:800; font-stretch:82%; }
+.account-name-input:focus { outline:none; }
+.account-name-input::placeholder { color:var(--ink-3); }
+.icon-btn { flex:none; width:36px; height:36px; display:grid; place-items:center; padding:0; border:0; border-radius:8px; background:var(--paper-2); color:var(--ink); cursor:pointer; }
+.icon-btn--primary { background:var(--court); color:var(--paper); }
+.icon-btn:disabled { opacity:.5; cursor:default; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .account-footer-actions { display:flex; gap:20px; }
 
 /* ---------- Bottom tab bar (/<slug>/<code>) ----------
