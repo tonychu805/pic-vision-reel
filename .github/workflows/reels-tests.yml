@@ -1,0 +1,24 @@
+name: Reels checks
+on: [push, pull_request]
+jobs:
+  reels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec next typegen
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm test
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:browser
+      - run: pnpm test:preview
+        if: github.event_name == 'pull_request'
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--picvision-reel-share.netlify.app

@@ -5,5 +5,10 @@
   command = "pnpm build"
   publish = ".next"
 
+# Keep the Netlify Drawer disabled in this site's Collaboration tools
+# settings (cdp_enabled_contexts = []). Its preview-only injected iframe
+# is blocked by our CSP and otherwise leaves a blank fixed bar on mobile.
+# CI checks the deployed preview with test:preview, not just local markup.
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"

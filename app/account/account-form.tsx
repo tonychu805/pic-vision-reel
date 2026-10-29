@@ -25,9 +25,11 @@ export default function AccountForm({
 }) {
   const router = useRouter()
   const [name, setName] = useState(initialName)
+  const [savedName, setSavedName] = useState(initialName)
   const [training, setTraining] = useState(initialTraining)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const [newEmail, setNewEmail] = useState('')
   const [emailBusy, setEmailBusy] = useState(false)
@@ -40,40 +42,68 @@ export default function AccountForm({
   async function save() {
     setBusy(true)
     setSaved(false)
-    const [{ error: nameError }] = await Promise.all([
-      updateDisplayName(name),
-      setTrainingConsent(training),
-    ])
-    setBusy(false)
-    if (!nameError) setSaved(true)
+    setSaveError(null)
+    try {
+      const [nameResult, trainingResult] = await Promise.allSettled([
+        updateDisplayName(name),
+        setTrainingConsent(training),
+      ])
+      const nameSaved = nameResult.status === 'fulfilled' && !nameResult.value.error
+      const trainingSaved = trainingResult.status === 'fulfilled' && !trainingResult.value.error
+      if (nameSaved) setSavedName(name.trim())
+      const errors = [
+        !nameSaved && t(lang, 'nameSaveFailed'),
+        !trainingSaved && t(lang, 'trainingSaveFailed'),
+      ].filter(Boolean)
+      setSaveError(errors.length ? errors.join(' ') : null)
+      setSaved(nameSaved && trainingSaved)
+    } catch {
+      setSaveError(t(lang, 'genericError'))
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function changeEmail() {
     if (!newEmail.trim()) return
     setEmailBusy(true)
     setEmailResult(null)
-    const { error } = await updateEmail(newEmail)
-    setEmailBusy(false)
-    setEmailResult(error ?? t(lang, 'emailChangePending'))
-    if (!error) setNewEmail('')
+    try {
+      const { error } = await updateEmail(newEmail)
+      setEmailResult(error ?? t(lang, 'emailChangePending'))
+      if (!error) setNewEmail('')
+    } catch {
+      setEmailResult(t(lang, 'genericError'))
+    } finally {
+      setEmailBusy(false)
+    }
   }
 
   async function changePassword() {
     if (!newPassword) return
     setPasswordBusy(true)
     setPasswordResult(null)
-    const { error } = await updatePassword(newPassword)
-    setPasswordBusy(false)
-    setPasswordResult(error ?? t(lang, 'passwordChanged'))
-    if (!error) setNewPassword('')
+    try {
+      const { error } = await updatePassword(newPassword)
+      setPasswordResult(error ?? t(lang, 'passwordChanged'))
+      if (!error) setNewPassword('')
+    } catch {
+      setPasswordResult(t(lang, 'genericError'))
+    } finally {
+      setPasswordBusy(false)
+    }
   }
 
   async function signOut() {
-    await signOutEverywhere()
-    window.location.href = '/login'
+    try {
+      await signOutEverywhere()
+      window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`
+    } catch {
+      setSaveError(t(lang, 'genericError'))
+    }
   }
 
-  const initial = (initialName || initialEmail || '?').trim().charAt(0).toUpperCase()
+  const initial = (savedName || initialEmail || '?').trim().charAt(0).toUpperCase()
   const signInMethod = isLineAccount ? 'LINE' : hasPassword ? t(lang, 'signInMethodEmail') : t(lang, 'signInMethodGoogle')
   const memberSinceText = memberSince
     ? t(lang, 'memberSinceLabel', {
@@ -86,8 +116,8 @@ export default function AccountForm({
       <div className="account-header">
         <div className="account-avatar">{initial}</div>
         <div>
-          <div className="account-header-name" style={initialName ? undefined : { color: 'var(--muted)', fontWeight: 400, fontStyle: 'italic' }}>
-            {initialName || t(lang, 'nameNotSet')}
+          <div className="account-header-name" style={savedName ? undefined : { color: 'var(--muted)', fontWeight: 400, fontStyle: 'italic' }}>
+            {savedName || t(lang, 'nameNotSet')}
           </div>
           <div className="account-header-meta">
             {signInMethod}
@@ -99,11 +129,12 @@ export default function AccountForm({
       <div className="account-section">
         <div className="account-section-title">{t(lang, 'sectionProfile')}</div>
         <label className="account-field-label">{t(lang, 'nameLabel')}</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="field-input" />
+        <input type="text" value={name} disabled={busy} onChange={(e) => { setName(e.target.value); setSaved(false) }} className="field-input" />
         <button className="calendar-slot" style={{ width: '100%', boxSizing: 'border-box', justifyContent: 'center' }} disabled={busy} onClick={save}>
           {t(lang, 'saveButton')}
         </button>
         {saved && <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: 0 }}>{t(lang, 'savedMessage')}</p>}
+        {saveError && <p role="alert" style={{ color: 'var(--error)', fontSize: 12.5, margin: 0 }}>{saveError}</p>}
       </div>
 
       <div className="account-section">
@@ -111,7 +142,7 @@ export default function AccountForm({
         <label className="account-row" style={{ cursor: 'pointer' }}>
           <span className="account-row-text">{t(lang, 'consentTraining')}</span>
           <span className="account-toggle">
-            <input type="checkbox" checked={training} onChange={(e) => setTraining(e.target.checked)} />
+            <input type="checkbox" checked={training} disabled={busy} onChange={(e) => { setTraining(e.target.checked); setSaved(false) }} />
             <span className="account-toggle-track" />
           </span>
         </label>
