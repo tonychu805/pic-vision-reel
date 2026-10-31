@@ -24,8 +24,8 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
   const when = new Intl.DateTimeFormat(lang, { timeZone: 'Asia/Taipei', weekday: 'short', month: 'short', day: 'numeric' }).format(played)
   const court = (first.camera_label ?? '').replace(/^.*?-\s*/, '') || 'Court'
   const cdnOrigin = new URL(feed[0].videoUrl).origin
-  // Staging audio trial: expose the control for this branch's test reels.
-  // Production still uses the PostHog flag and stays unchanged.
+  // Show the sound control on vertical reels. Playback stays muted until
+  // the viewer taps it, as required for autoplay on mobile browsers.
   const soundButton = true
 
   return (
