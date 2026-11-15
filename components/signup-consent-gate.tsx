@@ -1,6 +1,6 @@
 'use client'
-// The signup screen's consent (operator 2026-11-16): the one required filming
-// box plus the sentence linking the filming notice and the privacy policy,
+// The signup screen's consent (operator 2026-11-16): one required box whose
+// label is the sentence linking the filming notice and the privacy policy,
 // placed under the email field and above 建立帳號. LINE and Google sign-up stay
 // above it; every signup button stays clickable, and clicking one without the
 // box ticked doesn't proceed but shakes the box red (handleBlocked). Training
@@ -17,6 +17,10 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
   // remounts and the shake restarts even mid-animation.
   const [shakeToken, setShakeToken] = useState(0)
   const handleBlocked = () => setShakeToken((k) => k + 1)
+  // Opening a policy link must not tick the box on the way.
+  const link = (href: string, text: string) => (
+    <a href={href} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{text}</a>
+  )
   const notice = (
     <div className="consent-choice">
       <label className="consent-choice-label">
@@ -25,15 +29,14 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
           type="checkbox" checked={essentialBox} onChange={(e) => setEssentialBox(e.target.checked)}
           className={!essentialBox && shakeToken > 0 ? 'consent-box--needed' : ''}
         />
-        <span>{t(lang, 'consentEssential')}</span>
+        <span>
+          {t(lang, 'consentPrefix')}{' '}
+          {link('https://picvisionai.com/privacy', t(lang, 'consentNoticeLink'))}
+          {' '}{t(lang, 'consentMiddle')}{' '}
+          {link('https://picvisionai.com/privacy', t(lang, 'consentPrivacyLink'))}
+          {t(lang, 'consentSuffix')}
+        </span>
       </label>
-      <p className="consent-legal">
-        {t(lang, 'consentPrefix')}{' '}
-        <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer">{t(lang, 'consentNoticeLink')}</a>
-        {' '}{t(lang, 'consentMiddle')}{' '}
-        <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer">{t(lang, 'consentPrivacyLink')}</a>
-        {t(lang, 'consentSuffix')}
-      </p>
     </div>
   )
   return (

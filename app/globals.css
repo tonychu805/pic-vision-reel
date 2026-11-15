@@ -295,7 +295,7 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .consent-choice-label input { flex:none; width:22px; height:22px; margin:1px 0 0; accent-color:var(--court); cursor:pointer; }
 .consent-choice-label input[aria-invalid="true"] { outline:2px solid var(--signal); outline-offset:2px; }
 .consent-legal { margin:8px 0 0; color:var(--ink-2); font-size:13px; line-height:1.55; }
-.consent-legal a { color:var(--court); font-weight:700; text-underline-offset:3px; }
+.consent-legal a, .consent-choice-label a { color:var(--court); font-weight:700; text-underline-offset:3px; }
 .consent-error { margin:4px 0 0; color:var(--signal); font-size:14px; font-weight:600; }
 .consent-submit { min-height:52px; width:100%; margin-top:16px; border:0; border-radius:8px; background:var(--court); color:var(--paper); font-size:16px; font-weight:800; cursor:pointer; }
 .consent-submit:hover { background:var(--court-deep); }
