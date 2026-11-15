@@ -77,7 +77,10 @@ export default async function CalendarPage({ params, searchParams }: { params: P
   // camera to read has_current_consent off of; an empty/unavailable
   // calendar has nothing to check in on anyway.
   if (checkInOptions.length > 0 && !checkInOptions[0].has_current_consent) {
-    redirect(`/consent?next=${encodeURIComponent(`/${slug}/${code}`)}`)
+    // Every signup records consent (the box on /signup); only an account that
+    // predates the current consent version lands here. Signing in again
+    // through /signup ticks the box and records it on the same account.
+    redirect(`/signup?next=${encodeURIComponent(`/${slug}/${code}`)}`)
   }
   // Basic information, asked once after signup (operator 2026-11-16).
   if (!account.profileComplete) redirect(`/signup/profile?next=${encodeURIComponent(`/${slug}/${code}`)}`)

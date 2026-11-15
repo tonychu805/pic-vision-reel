@@ -32,15 +32,10 @@ export async function GET(request: Request) {
   const origin = trustedOrigin(request, url.origin)
   const code = url.searchParams.get('code')
   const next = url.searchParams.get('next') ?? '/'
-  // Set by components/sign-in-buttons.tsx only when launched from
-  // /signup's consent gate (components/signup-consent-gate.tsx) with both
-  // boxes already ticked -- there's no session to record consent against
-  // until this exact point, so this is where that earlier tick actually
-  // gets written.
+  // Set by /signup's consent box (components/signup-consent-gate.tsx), on
+  // the LINE/Google round trip and on the email confirmation link -- there's
+  // no session to record consent against until this exact point.
   const consentGiven = url.searchParams.get('consent') === '1'
-  // The optional training checkbox's actual state -- present (0 or 1)
-  // whenever consent is, absent for a plain /login (not applicable there).
-  const trainingParam = url.searchParams.get('training')
 
   if (code) {
     const supabase = await createClient()
@@ -55,9 +50,6 @@ export async function GET(request: Request) {
           p_ip_address: clientIp(h),
           p_user_agent: h.get('user-agent'),
         })
-      }
-      if (trainingParam !== null) {
-        await supabase.rpc('set_training_consent', { p_consented: trainingParam === '1' })
       }
       return NextResponse.redirect(`${origin}${next}`)
     }

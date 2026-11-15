@@ -67,9 +67,7 @@ export default function EmailAuthForm({
     }
 
     // Only the actual signUp() submit (details step) needs the gate --
-    // sign-in has nothing to gate. A pre-2026-09-30 email account that
-    // never went through /signup's gate falls through to /consent's own
-    // page-level gate on app/[slug]/[code]/page.tsx as a fallback.
+    // sign-in has nothing to gate.
     if (mode === 'signup' && step === 'details' && !consentGiven) {
       onBlocked?.()
       return
@@ -80,7 +78,15 @@ export default function EmailAuthForm({
 
     const { data, error: authError } =
       mode === 'signup'
-        ? await supabase.auth.signUp({ email, password, options: { data: { name: name.trim() || undefined } } })
+        ? await supabase.auth.signUp({
+          email, password,
+          options: {
+            data: { name: name.trim() || undefined },
+            // The ticked box rides the confirmation link: app/auth/callback records consent when it
+            // arrives with consent=1, as it does for LINE and Google.
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}&consent=1`,
+          },
+        })
         : await supabase.auth.signInWithPassword({ email, password })
 
     if (authError) {
@@ -93,9 +99,8 @@ export default function EmailAuthForm({
       // Email confirmation is on for this project (same setting
       // pic-vision-cloud-console's sign-up already relies on) -- signUp
       // succeeds but returns no session until the link is clicked, so
-      // there's no auth.uid() yet to record consent against. Recorded
-      // instead the first time they actually get a session (after
-      // confirming and logging in), via /consent's fallback gate.
+      // there's no auth.uid() yet to record consent against. It is recorded
+      // when the confirmation link reaches app/auth/callback (consent=1).
       setBusy(false)
       setCheckEmail(true)
       return

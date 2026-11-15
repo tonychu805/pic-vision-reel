@@ -14,7 +14,7 @@ export type AccountData = {
 }
 
 // Shared by /account (the standalone fallback landing page after
-// login/signup/consent when there's no venue `next` to return to) and the
+// login/signup when there's no venue `next` to return to) and the
 // calendar page's 帳號 tab (app/[slug]/[code]) -- same account, same
 // fetch either way, written once rather than drifting into two copies.
 export async function getAccountData(supabase: Awaited<ReturnType<typeof createClient>>, playerId: string): Promise<AccountData> {
