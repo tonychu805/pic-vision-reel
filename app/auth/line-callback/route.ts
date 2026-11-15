@@ -7,10 +7,8 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { AUTH0_ID_TOKEN_COOKIE, AUTH0_REFRESH_TOKEN_COOKIE, exchangeAuth0Token, decodeAuth0IdToken } from '@/lib/auth0'
+import { clientIp } from '@/lib/clientIp'
 
-function clientIp(h: Headers): string | null {
-  return h.get('cf-connecting-ip') ?? h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
-}
 
 // Same reverse-proxy caveat as app/auth/callback/route.ts: request.url's
 // origin isn't trustworthy behind Tailscale's proxy, so prefer what the

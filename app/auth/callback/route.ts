@@ -4,14 +4,8 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabaseServer'
-import { ensurePlayer } from '@/lib/player'
-
-// Same helper as app/[slug]/[code]/actions.ts's recordConsent -- IP/UA
-// read server-side, never trusted from anything the client could have
-// put in the URL itself.
-function clientIp(h: Headers): string | null {
-  return h.get('cf-connecting-ip') ?? h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
-}
+import { ensurePlayer, recordSignupConsent } from '@/lib/player'
+import { clientIp } from '@/lib/clientIp'
 
 // request.url's origin cannot be trusted behind a reverse proxy (found via
 // a real tailscale-serve test 2026-09-29: the browser hit
@@ -42,15 +36,8 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.user) {
       await ensurePlayer(supabase, data.user)
-      if (consentGiven) {
-        const h = await headers()
-        await supabase.rpc('record_player_consent', {
-          p_filming_consent: true,
-          p_retention_policy_accepted: true,
-          p_ip_address: clientIp(h),
-          p_user_agent: h.get('user-agent'),
-        })
-      }
+      const h = await headers()
+      await recordSignupConsent(supabase, data.user, { ticked: consentGiven, ip: clientIp(h), userAgent: h.get('user-agent') })
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

@@ -23,7 +23,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { t, type Lang } from '@/lib/i18n'
 import { ensurePlayerAfterEmailAuth } from '@/app/login/actions'
-import { recordConsent } from '@/app/[slug]/[code]/actions'
+import { CONSENT_VERSION } from '@/lib/consent'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -81,10 +81,11 @@ export default function EmailAuthForm({
         ? await supabase.auth.signUp({
           email, password,
           options: {
-            data: { name: name.trim() || undefined },
-            // The ticked box rides the confirmation link: app/auth/callback records consent when it
-            // arrives with consent=1, as it does for LINE and Google.
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}&consent=1`,
+            // The ticked box is kept on the account (consent_version) and recorded the first time it has a
+            // session on any device (lib/player.ts recordSignupConsent), since the confirmation link may be
+            // opened elsewhere.
+            data: { name: name.trim() || undefined, consent_version: CONSENT_VERSION, consent_ticked_at: new Date().toISOString() },
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
           },
         })
         : await supabase.auth.signInWithPassword({ email, password })
@@ -100,19 +101,10 @@ export default function EmailAuthForm({
       // pic-vision-cloud-console's sign-up already relies on) -- signUp
       // succeeds but returns no session until the link is clicked, so
       // there's no auth.uid() yet to record consent against. It is recorded
-      // when the confirmation link reaches app/auth/callback (consent=1).
+      // the first time the account has a session (recordSignupConsent).
       setBusy(false)
       setCheckEmail(true)
       return
-    }
-
-    if (mode === 'signup') {
-      const { error: consentError } = await recordConsent(true, true)
-      if (consentError) {
-        setBusy(false)
-        setError(consentError)
-        return
-      }
     }
 
     await ensurePlayerAfterEmailAuth()

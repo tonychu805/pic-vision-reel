@@ -13,6 +13,7 @@
 // ... ON CONFLICT DO NOTHING), matching the same do-nothing pattern
 // record_player_consent()'s SQL already uses for this table.
 import type { SupabaseClient, User } from '@supabase/supabase-js'
+import { CONSENT_VERSION } from '@/lib/consent'
 
 export async function ensurePlayer(supabase: SupabaseClient, user: User): Promise<void> {
   const metadata = user.user_metadata as { name?: string; full_name?: string } | null
@@ -21,4 +22,29 @@ export async function ensurePlayer(supabase: SupabaseClient, user: User): Promis
   await supabase
     .from('players')
     .upsert({ id: user.id, display_name: displayName }, { onConflict: 'id', ignoreDuplicates: true })
+}
+
+/**
+ * Records filming consent for a player who ticked the signup box, once.
+ *
+ * Email signup has no session when the box is ticked (email confirmation is
+ * on), and the confirmation link may be opened on another device or land on
+ * another site, so the tick is kept on the account itself
+ * (user_metadata.consent_version, set by components/email-auth-form.tsx) and
+ * written here the first time the account has a session anywhere. `ticked`
+ * covers the LINE/Google round trip (consent=1). record_player_consent()
+ * inserts a row per call, so this skips a player already holding consent for
+ * the current version.
+ */
+export async function recordSignupConsent(
+  supabase: SupabaseClient, user: User, { ticked, ip, userAgent }: { ticked: boolean; ip: string | null; userAgent: string | null },
+): Promise<void> {
+  const fromSignup = (user.user_metadata as { consent_version?: string } | null)?.consent_version === CONSENT_VERSION
+  if (!ticked && !fromSignup) return
+  const { data: existing } = await supabase
+    .from('player_consents').select('consent_version').eq('player_id', user.id).eq('consent_version', CONSENT_VERSION).limit(1)
+  if (existing?.length) return
+  await supabase.rpc('record_player_consent', {
+    p_filming_consent: true, p_retention_policy_accepted: true, p_ip_address: ip, p_user_agent: userAgent,
+  })
 }
