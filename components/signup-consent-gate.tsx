@@ -24,13 +24,6 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
   // previous shake hasn't finished playing.
   const [shakeToken, setShakeToken] = useState(0)
   const consentGiven = essentialBox
-  // AI-training consent: optional, shown and ticked by default (operator
-  // decision 2026-10-29, against the recommendation logged in
-  // progress/10.29 and Linear PIC-190 -- Taiwan PDPA Art. 7(4) wants a
-  // standalone expression of consent, and pre-ticked boxes are doubtful
-  // there). Before this the box was not shown at signup at all and every
-  // signup recorded "no" without asking.
-  const [trainingBox, setTrainingBox] = useState(true)
 
   function handleBlocked() {
     setShakeToken((k) => k + 1)
@@ -49,22 +42,16 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
         </label>
         <p className="consent-legal">
           {t(lang, 'consentPrefix')}{' '}
-          <a href="https://picvisionai.com/venue-player-notice-template" target="_blank" rel="noreferrer">{t(lang, 'consentNoticeLink')}</a>
+          <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer">{t(lang, 'consentNoticeLink')}</a>
           {' '}{t(lang, 'consentMiddle')}{' '}
           <a href="https://picvisionai.com/privacy" target="_blank" rel="noreferrer">{t(lang, 'consentPrivacyLink')}</a>
           {t(lang, 'consentSuffix')}
         </p>
+        <p className="consent-legal">{t(lang, 'consentTrainingNote')}</p>
       </div>
-      <div className="consent-choice">
-        <span className="consent-choice-tag">{t(lang, 'consentOptionalLabel')}</span>
-        <label className="consent-choice-label">
-          <input type="checkbox" checked={trainingBox} onChange={(e) => setTrainingBox(e.target.checked)} />
-          <span>{t(lang, 'consentTraining')}</span>
-        </label>
-      </div>
-      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={consentGiven} trainingConsent={trainingBox} onBlocked={handleBlocked} />
+      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={consentGiven} onBlocked={handleBlocked} />
       <p className="or-divider">{t(lang, 'orDivider')}</p>
-      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={consentGiven} trainingConsent={trainingBox} onBlocked={handleBlocked} />
+      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={consentGiven} onBlocked={handleBlocked} />
     </>
   )
 }

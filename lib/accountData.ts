@@ -43,7 +43,8 @@ export async function getAccountData(supabase: Awaited<ReturnType<typeof createC
 
   return {
     displayName: player?.display_name ?? '',
-    trainingConsented: training?.consented ?? false,
+    // Opt-out (operator 2026-11-16): never answered means on, as the archive rule reads it.
+    trainingConsented: training?.consented ?? true,
     isLineAccount,
     email,
     hasPassword,

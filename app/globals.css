@@ -185,6 +185,7 @@ h2 { margin:0; }
 .panel-title { font-size:13px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); }
 .setting-row { display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer; }
 .setting-text { font-size:15px; line-height:1.45; color:var(--ink); }
+.setting-hint { display:block; margin-top:4px; font-size:13px; line-height:1.45; color:var(--muted, rgba(127,127,127,.9)); }
 
 /* ---------- Account ---------- */
 .account-layout { display:flex; flex-direction:column; gap:16px; }

@@ -37,7 +37,7 @@ export default function CourtClubPreview() {
   const [tab, setTab] = useState<CalendarTab>('checkin')
   const [lang, setLang] = useState<Lang>('en')
   const [editing, setEditing] = useState(false)
-  const [training, setTraining] = useState(false)
+  const [training, setTraining] = useState(true)
   const zh = lang === 'zh-TW'
   const court = (n: number) => (zh ? `${n} 號球場` : `Court ${n}`)
 
@@ -110,7 +110,7 @@ export default function CourtClubPreview() {
           <section className="panel">
             <h2 className="panel-title">{t(lang, 'sectionPrivacy')}</h2>
             <label className="setting-row">
-              <span className="setting-text">{t(lang, 'consentTraining')}</span>
+              <span className="setting-text">{t(lang, 'trainingSettingTitle')}<span className="setting-hint">{t(lang, 'trainingSettingBody')}</span></span>
               <span className="switch"><input type="checkbox" checked={training} onChange={(e) => setTraining(e.target.checked)} /><span className="switch-track" /></span>
             </label>
           </section>

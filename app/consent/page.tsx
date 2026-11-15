@@ -52,12 +52,6 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
     redirect(safeNext)
   }
 
-  const { data: training } = await supabase
-    .from('player_training_consents')
-    .select('consented')
-    .eq('player_id', playerId)
-    .maybeSingle()
-
   return (
     <main className="share-page venue-page consent-page">
       <div className="share-shell">
@@ -70,7 +64,7 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
           {/* Ticked by default for a player who has not chosen yet (operator,
               2026-10-29; see components/signup-consent-gate.tsx). An earlier
               explicit choice, yes or no, is kept. */}
-          <ConsentForm lang={lang} next={safeNext} initialTraining={training?.consented ?? true} />
+          <ConsentForm lang={lang} next={safeNext} />
         </section>
         <PoweredByFooter lang={lang} />
       </div>

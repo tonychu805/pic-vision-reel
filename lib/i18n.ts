@@ -89,7 +89,6 @@ const en = {
   consentPageTitle: 'Before you continue',
   consentIntro: 'Review how your court footage may be used.',
   consentRequiredLabel: 'Required',
-  consentOptionalLabel: 'Optional',
   consentMissingRequired: 'Please agree to filming and recording retention to continue.',
   consentSaving: 'Saving…',
   consentPrefix: 'By agreeing, you confirm you have read and understood the',
@@ -103,7 +102,11 @@ const en = {
   // click without adding any real choice. record_player_consent still
   // takes two separate booleans; the UI just sends the same value to both.
   consentEssential: 'I consent to being filmed while I play and accept the recording retention policy.',
-  consentTraining: 'I agree that footage of me may be used to help train or improve PicVision’s AI models.',
+  // Service improvement and AI training are opt-out (operator 2026-11-16, Anthropic-style): stated here and in
+  // the privacy policy, switched off in Account settings. No checkbox at signup or consent.
+  consentTrainingNote: 'We keep some footage for 30 days, with faces and everything off the court blurred, to improve the service and train AI. It records no time or session, so it can’t be traced back to you. You can turn this off any time in Account settings.',
+  trainingSettingTitle: 'Help improve PicVision',
+  trainingSettingBody: 'When on, footage of your sessions may be kept for 30 days (faces and off-court blurred, no time or session recorded) to improve the service and train AI. Turn it off and no copy is made of your future sessions.',
   consentSubmit: 'Continue',
   checkInNoneFree: 'Every court is recording right now.',
   checkInNoCameras: 'No courts are set up for check-in here yet.',
@@ -264,7 +267,6 @@ const zhTW: Record<StringKey, string> = {
   consentPageTitle: '繼續之前',
   consentIntro: '請先了解您的球場影像可能如何被使用。',
   consentRequiredLabel: '必須同意',
-  consentOptionalLabel: '自行選擇',
   consentMissingRequired: '請先同意錄影及錄影保存政策，才能繼續。',
   consentSaving: '儲存中…',
   consentPrefix: '同意即表示您已閱讀並理解',
@@ -273,7 +275,9 @@ const zhTW: Record<StringKey, string> = {
   consentPrivacyLink: '隱私權政策',
   consentSuffix: '，並確認您已年滿 18 歲或已取得法定代理人同意使用本服務。',
   consentEssential: '我同意在場上被錄影，並接受錄影保存政策。',
-  consentTraining: '我同意我的影像可被用於協助訓練或改善 PicVision 的 AI 模型。',
+  consentTrainingNote: '我們會將臉部與球場外區域模糊處理後，保留部分錄影 30 天，用於改善服務與訓練 AI；副本不記錄時間或場次，無法對應到你本人。你可隨時在「帳號設定」關閉。',
+  trainingSettingTitle: '協助改善 PicVision',
+  trainingSettingBody: '開啟時，你所在場次的錄影可保留 30 天（臉部與場外模糊、不記錄時間或場次），用於改善服務與訓練 AI。關閉後，之後的場次不會再製作副本。',
   consentSubmit: '繼續',
   checkInNoneFree: '目前所有球場都在錄影中。',
   checkInNoCameras: '這裡還沒有設定可報到的球場。',

@@ -14,4 +14,4 @@
 // treated a player's outdated consent as current while get_check_in_options
 // correctly said otherwise -- the two disagreeing rather than either
 // failing loudly.
-export const CONSENT_VERSION = '2026-09-30'
+export const CONSENT_VERSION = '2026-11-16'
