@@ -29,6 +29,8 @@ export default async function AccountPage() {
   }
 
   const account = await getAccountData(supabase, playerId)
+  // Basic information, asked once after signup (operator 2026-11-16).
+  if (!account.profileComplete) redirect('/signup/profile?next=%2Faccount')
 
   return (
     <main className="share-page venue-page">

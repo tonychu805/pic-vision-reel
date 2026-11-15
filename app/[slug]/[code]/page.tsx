@@ -79,6 +79,8 @@ export default async function CalendarPage({ params, searchParams }: { params: P
   if (checkInOptions.length > 0 && !checkInOptions[0].has_current_consent) {
     redirect(`/consent?next=${encodeURIComponent(`/${slug}/${code}`)}`)
   }
+  // Basic information, asked once after signup (operator 2026-11-16).
+  if (!account.profileComplete) redirect(`/signup/profile?next=${encodeURIComponent(`/${slug}/${code}`)}`)
 
   if (!cal) {
     // Same answer for a wrong code, a switched-off calendar and an unknown

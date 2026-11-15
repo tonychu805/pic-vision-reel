@@ -9,6 +9,8 @@ export type AccountData = {
   email: string | null
   hasPassword: boolean
   memberSince: string | null
+  // The one-time basic-information page (app/signup/profile) has been filled in.
+  profileComplete: boolean
 }
 
 // Shared by /account (the standalone fallback landing page after
@@ -17,7 +19,7 @@ export type AccountData = {
 // fetch either way, written once rather than drifting into two copies.
 export async function getAccountData(supabase: Awaited<ReturnType<typeof createClient>>, playerId: string): Promise<AccountData> {
   const [{ data: player }, { data: training }] = await Promise.all([
-    supabase.from('players').select('display_name, created_at').eq('id', playerId).maybeSingle(),
+    supabase.from('players').select('display_name, created_at, profile_completed_at').eq('id', playerId).maybeSingle(),
     supabase.from('player_training_consents').select('consented').eq('player_id', playerId).maybeSingle(),
   ])
 
@@ -43,6 +45,7 @@ export async function getAccountData(supabase: Awaited<ReturnType<typeof createC
 
   return {
     displayName: player?.display_name ?? '',
+    profileComplete: Boolean(player?.profile_completed_at),
     // Opt-out (operator 2026-11-16): never answered means on, as the archive rule reads it.
     trainingConsented: training?.consented ?? true,
     isLineAccount,

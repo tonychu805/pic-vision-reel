@@ -366,3 +366,16 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .court-club-preview button:disabled { opacity:1; cursor:default; }
 
 @media (prefers-reduced-motion: reduce) { .tile-spinner, .text-action-spinner { animation-duration:2s; } .dot, .switch-track, .switch-track::before { transition:none; } }
+
+/* The one-time basic-information page (app/signup/profile). */
+.profile-form { display:flex; flex-direction:column; gap:16px; }
+.profile-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.profile-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.profile-label { font-size:14px; font-weight:700; color:var(--ink); }
+.profile-optional { font-weight:400; color:var(--ink-3); }
+.profile-phone { display:grid; grid-template-columns:104px 1fr; gap:8px; }
+.profile-dial { padding:0 10px; }
+.profile-segmented { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.profile-segment { min-height:48px; border:0; border-radius:8px; background:var(--card); color:var(--ink); font-size:15px; font-weight:700; box-shadow:inset 0 0 0 1.5px var(--rule-strong); cursor:pointer; }
+.profile-segment--on { background:var(--court); color:var(--paper); box-shadow:none; }
+.profile-marketing { font-size:13.5px; color:var(--ink-2); line-height:1.5; }
