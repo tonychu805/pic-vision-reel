@@ -2,7 +2,7 @@
 
 // Self-serve check-in UI, shown on the venue QR-code page above the
 // read-only games calendar. The page above this (page.tsx) redirects to
-// /login (not signed in) or /consent (no current-version consent) before
+// /login (not signed in) or /signup (no current-version consent) before
 // ever rendering this component, so there is nothing to gate on here --
 // just per-camera Check in / Join / status, driven by server-provided
 // initial props.

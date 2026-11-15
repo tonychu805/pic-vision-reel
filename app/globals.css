@@ -185,6 +185,7 @@ h2 { margin:0; }
 .panel-title { font-size:13px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); }
 .setting-row { display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer; }
 .setting-text { font-size:15px; line-height:1.45; color:var(--ink); }
+.setting-hint { display:block; margin-top:4px; font-size:13px; line-height:1.45; color:var(--muted, rgba(127,127,127,.9)); }
 
 /* ---------- Account ---------- */
 .account-layout { display:flex; flex-direction:column; gap:16px; }
@@ -281,26 +282,13 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .calendar-slot--pending .session-row-copy strong { color:var(--ink-2); }
 
 /* ---------- Consent (/consent) ---------- */
-.consent-page .share-shell { gap:0; }
 .consent-topbar { display:flex; justify-content:flex-end; }
-.consent-content { flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px 0 48px; }
-.consent-content h1 { font-size:32px; }
-.consent-intro { margin:10px 0 26px; color:var(--ink-2); font-size:16px; line-height:1.5; }
-.consent-form { display:flex; flex-direction:column; gap:10px; }
 .consent-choice { padding:16px; border-radius:10px; background:var(--card); box-shadow:inset 0 0 0 1px var(--rule); }
-.consent-choice-tag { display:inline-block; margin-bottom:10px; padding:2px 7px; border-radius:4px; background:var(--paper-2); color:var(--ink-2); font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
-.consent-choice:first-child .consent-choice-tag { background:var(--court); color:var(--paper); }
 .consent-choice-label { display:flex; align-items:flex-start; gap:12px; color:var(--ink); font-size:15px; line-height:1.48; cursor:pointer; }
 .consent-choice-label input { flex:none; width:22px; height:22px; margin:1px 0 0; accent-color:var(--court); cursor:pointer; }
 .consent-choice-label input[aria-invalid="true"] { outline:2px solid var(--signal); outline-offset:2px; }
 .consent-legal { margin:8px 0 0; color:var(--ink-2); font-size:13px; line-height:1.55; }
-.consent-legal a { color:var(--court); font-weight:700; text-underline-offset:3px; }
-.consent-error { margin:4px 0 0; color:var(--signal); font-size:14px; font-weight:600; }
-.consent-submit { min-height:52px; width:100%; margin-top:16px; border:0; border-radius:8px; background:var(--court); color:var(--paper); font-size:16px; font-weight:800; cursor:pointer; }
-.consent-submit:hover { background:var(--court-deep); }
-.consent-submit:disabled { opacity:.6; cursor:wait; }
-.consent-page .powered-by { margin-top:0; }
-@media (max-height:700px) { .consent-content { justify-content:flex-start; padding-top:28px; padding-bottom:36px; } }
+.consent-legal a, .consent-choice-label a { color:var(--court); font-weight:700; text-underline-offset:3px; }
 
 /* ---------- Sign in / sign up ---------- */
 .auth-main { flex:1; display:flex; flex-direction:column; justify-content:center; gap:20px; padding:24px 0; }
@@ -365,3 +353,16 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .court-club-preview button:disabled { opacity:1; cursor:default; }
 
 @media (prefers-reduced-motion: reduce) { .tile-spinner, .text-action-spinner { animation-duration:2s; } .dot, .switch-track, .switch-track::before { transition:none; } }
+
+/* The one-time basic-information page (app/signup/profile). */
+.profile-form { display:flex; flex-direction:column; gap:16px; }
+.profile-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.profile-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.profile-label { font-size:14px; font-weight:700; color:var(--ink); }
+.profile-optional { font-weight:400; color:var(--ink-3); }
+.profile-phone { display:grid; grid-template-columns:104px 1fr; gap:8px; }
+.profile-dial { padding:0 10px; }
+.profile-segmented { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.profile-segment { min-height:48px; border:0; border-radius:8px; background:var(--card); color:var(--ink); font-size:15px; font-weight:700; box-shadow:inset 0 0 0 1.5px var(--rule-strong); cursor:pointer; }
+.profile-segment--on { background:var(--court); color:var(--paper); box-shadow:none; }
+.profile-marketing { font-size:13.5px; color:var(--ink-2); line-height:1.5; }

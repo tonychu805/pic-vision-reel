@@ -7,10 +7,8 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { AUTH0_ID_TOKEN_COOKIE, AUTH0_REFRESH_TOKEN_COOKIE, exchangeAuth0Token, decodeAuth0IdToken } from '@/lib/auth0'
+import { clientIp } from '@/lib/clientIp'
 
-function clientIp(h: Headers): string | null {
-  return h.get('cf-connecting-ip') ?? h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
-}
 
 // Same reverse-proxy caveat as app/auth/callback/route.ts: request.url's
 // origin isn't trustworthy behind Tailscale's proxy, so prefer what the
@@ -21,7 +19,7 @@ function trustedOrigin(request: Request, fallback: string): string {
   return proto && host ? `${proto}://${host}` : fallback
 }
 
-type LineState = { next?: string; consent?: string; training?: string }
+type LineState = { next?: string; consent?: string }
 
 function decodeState(raw: string | null): LineState {
   if (!raw) return {}
@@ -77,11 +75,9 @@ export async function GET(request: Request) {
     return failure
   }
 
-  // Mirrors app/auth/callback/route.ts's consent/training handling: these
-  // query params are only ever set by components/sign-in-buttons.tsx's
-  // signup path, carrying the just-ticked checkboxes across the redirect
-  // round-trip since there's no player row to record them against before
-  // this point.
+  // Mirrors app/auth/callback/route.ts: consent is only ever set by
+  // components/sign-in-buttons.tsx's signup path, carrying the ticked box
+  // across the round trip since there's no player row before this point.
   if (state.consent === '1') {
     const h = await headers()
     await supabase.rpc('record_player_consent', {
@@ -90,9 +86,6 @@ export async function GET(request: Request) {
       p_ip_address: clientIp(h),
       p_user_agent: h.get('user-agent'),
     })
-  }
-  if (state.training !== undefined) {
-    await supabase.rpc('set_training_consent', { p_consented: state.training === '1' })
   }
 
   const response = NextResponse.redirect(`${origin}${next}`)

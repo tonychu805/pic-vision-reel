@@ -9,7 +9,7 @@ import { BRAND_ICONS } from '@/app/r/[shareId]/brandIcons'
 import { t, type Lang } from '@/lib/i18n'
 
 export default function SignInButtons({
-  lang, next, mode = 'login', consentGiven = true, trainingConsent = false, onBlocked,
+  lang, next, mode = 'login', consentGiven = true, onBlocked,
 }: {
   lang: Lang
   next: string
@@ -23,10 +23,6 @@ export default function SignInButtons({
   // shake its checkboxes red rather than the button silently doing
   // nothing.
   consentGiven?: boolean
-  // The optional AI-training checkbox's current state, carried across the
-  // OAuth round-trip the same way consentGiven is -- there's no session
-  // to write it against until app/auth/callback/route.ts.
-  trainingConsent?: boolean
   onBlocked?: () => void
 }) {
   // Guards against a second tap starting a second signInWithOAuth() call
@@ -54,11 +50,11 @@ export default function SignInButtons({
     if (submitting.current) return
     submitting.current = true
     // btoa(), not Buffer -- this runs in the browser. The payload is
-    // always plain ASCII (a path plus two single-digit flags), so the
+    // always plain ASCII (a path plus a single-digit flag), so the
     // usual btoa() unicode caveat doesn't apply here.
     const stateJson = JSON.stringify({
       next,
-      ...(mode === 'signup' ? { consent: '1', training: trainingConsent ? '1' : '0' } : {}),
+      ...(mode === 'signup' ? { consent: '1' } : {}),
     })
     const state = btoa(stateJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
     const params = new URLSearchParams({
@@ -92,7 +88,7 @@ export default function SignInButtons({
         // record consent against (auth.uid() doesn't exist until the
         // callback exchanges the code), so app/auth/callback/route.ts is
         // where it actually gets written, once one does.
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${mode === 'signup' ? `&consent=1&training=${trainingConsent ? '1' : '0'}` : ''}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${mode === 'signup' ? '&consent=1' : ''}`,
       },
     })
   }

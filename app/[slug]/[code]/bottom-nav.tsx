@@ -5,7 +5,7 @@
 // page.tsx (via CalendarTabs, which just toggles visibility client-side
 // between the three) -- this bar only switches which one shows, same as
 // any other tab bar. (The standalone /account page still exists
-// separately -- it's the fallback landing page for login/signup/consent
+// separately -- it's the fallback landing page for login/signup
 // when there's no venue `next` to return to -- this tab just means a
 // visitor who got here via a venue's QR code never has to leave this
 // page to see it.)

@@ -145,7 +145,7 @@ export default function AccountForm({
       <section className="panel">
         <h2 className="panel-title">{t(lang, 'sectionPrivacy')}</h2>
         <label className="setting-row">
-          <span className="setting-text">{t(lang, 'consentTraining')}</span>
+          <span className="setting-text">{t(lang, 'trainingSettingTitle')}<span className="setting-hint">{t(lang, 'trainingSettingBody')}</span></span>
           <span className="switch">
             <input type="checkbox" checked={training} disabled={busy} onChange={(e) => void changeTraining(e.target.checked)} />
             <span className="switch-track" />

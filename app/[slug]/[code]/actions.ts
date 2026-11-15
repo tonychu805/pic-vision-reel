@@ -3,30 +3,11 @@
 // Server Actions for the self-serve check-in flow on this page. Each uses
 // the cookie-authenticated server client (lib/supabaseServer.ts), so
 // auth.uid() inside the RPCs is enforced by the real session, never by
-// anything the client claims. IP/user-agent for the consent record are
-// read from request headers here -- server-side, never trusted from the
-// browser -- per the plan's evidentiary-strength requirement.
-import { headers } from 'next/headers'
+// anything the client claims. Filming consent is recorded at signup
+// (lib/player.ts recordSignupConsent), not here.
 import { createClient } from '@/lib/supabaseServer'
 
-function clientIp(h: Headers): string | null {
-  return h.get('cf-connecting-ip') ?? h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
-}
-
-export async function recordConsent(filmingConsent: boolean, retentionPolicyAccepted: boolean) {
-  const h = await headers()
-  const supabase = await createClient()
-  const { error } = await supabase.rpc('record_player_consent', {
-    p_filming_consent: filmingConsent,
-    p_retention_policy_accepted: retentionPolicyAccepted,
-    p_ip_address: clientIp(h),
-    p_user_agent: h.get('user-agent'),
-  })
-  return { error: error?.message ?? null }
-}
-
-// Separate from recordConsent on purpose: training consent is optional and
-// never gates check-in, unlike filming/retention. Always called with the
+// Training consent is opt-out and never gates check-in. Always called with the
 // checkbox's actual state (true or false), not skipped when unchecked --
 // an explicit "no" on record is more useful than no row existing at all.
 export async function setTrainingConsent(consented: boolean) {

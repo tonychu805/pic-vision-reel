@@ -18,17 +18,17 @@
 // checkbox pair at the top of /signup gates every signup method (LINE,
 // Google, email) at once, rather than each method asking separately.
 // consentGiven is that gate's current state, passed down.
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { t, type Lang } from '@/lib/i18n'
 import { ensurePlayerAfterEmailAuth } from '@/app/login/actions'
-import { recordConsent, setTrainingConsent } from '@/app/[slug]/[code]/actions'
+import { CONSENT_VERSION } from '@/lib/consent'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function EmailAuthForm({
-  lang, mode, next, consentGiven = true, trainingConsent = false, onBlocked,
+  lang, mode, next, consentGiven = true, onBlocked, notice,
 }: {
   lang: Lang
   mode: 'login' | 'signup'
@@ -41,12 +41,9 @@ export default function EmailAuthForm({
   // onBlocked() instead of signing up, so the parent
   // (components/signup-consent-gate.tsx) can shake its checkboxes red.
   consentGiven?: boolean
-  // The optional AI-training checkbox's current state. Not part of the
-  // gate above -- recorded alongside consent when there's an immediate
-  // session; if signUp() defers to email confirmation instead, it's asked
-  // again on /consent's own fallback form once they actually log in.
-  trainingConsent?: boolean
   onBlocked?: () => void
+  // Shown between the fields and the submit button (signup's legal line, operator 2026-11-16).
+  notice?: ReactNode
 }) {
   const router = useRouter()
   const [step, setStep] = useState<'email' | 'details'>('email')
@@ -70,9 +67,7 @@ export default function EmailAuthForm({
     }
 
     // Only the actual signUp() submit (details step) needs the gate --
-    // sign-in has nothing to gate. A pre-2026-09-30 email account that
-    // never went through /signup's gate falls through to /consent's own
-    // page-level gate on app/[slug]/[code]/page.tsx as a fallback.
+    // sign-in has nothing to gate.
     if (mode === 'signup' && step === 'details' && !consentGiven) {
       onBlocked?.()
       return
@@ -83,7 +78,16 @@ export default function EmailAuthForm({
 
     const { data, error: authError } =
       mode === 'signup'
-        ? await supabase.auth.signUp({ email, password, options: { data: { name: name.trim() || undefined } } })
+        ? await supabase.auth.signUp({
+          email, password,
+          options: {
+            // The ticked box is kept on the account (consent_version) and recorded the first time it has a
+            // session on any device (lib/player.ts recordSignupConsent), since the confirmation link may be
+            // opened elsewhere.
+            data: { name: name.trim() || undefined, consent_version: CONSENT_VERSION, consent_ticked_at: new Date().toISOString() },
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          },
+        })
         : await supabase.auth.signInWithPassword({ email, password })
 
     if (authError) {
@@ -96,22 +100,11 @@ export default function EmailAuthForm({
       // Email confirmation is on for this project (same setting
       // pic-vision-cloud-console's sign-up already relies on) -- signUp
       // succeeds but returns no session until the link is clicked, so
-      // there's no auth.uid() yet to record consent against. Recorded
-      // instead the first time they actually get a session (after
-      // confirming and logging in), via /consent's fallback gate.
+      // there's no auth.uid() yet to record consent against. It is recorded
+      // the first time the account has a session (recordSignupConsent).
       setBusy(false)
       setCheckEmail(true)
       return
-    }
-
-    if (mode === 'signup') {
-      const { error: consentError } = await recordConsent(true, true)
-      if (consentError) {
-        setBusy(false)
-        setError(consentError)
-        return
-      }
-      await setTrainingConsent(trainingConsent)
     }
 
     await ensurePlayerAfterEmailAuth()
@@ -146,6 +139,7 @@ export default function EmailAuthForm({
           className="field-input"
         />
       )}
+      {notice}
       <button
         type="submit" disabled={busy} className="btn btn--secondary btn--block"
       >
