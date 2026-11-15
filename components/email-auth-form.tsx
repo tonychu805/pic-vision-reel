@@ -18,7 +18,7 @@
 // checkbox pair at the top of /signup gates every signup method (LINE,
 // Google, email) at once, rather than each method asking separately.
 // consentGiven is that gate's current state, passed down.
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { t, type Lang } from '@/lib/i18n'
@@ -28,7 +28,7 @@ import { recordConsent } from '@/app/[slug]/[code]/actions'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function EmailAuthForm({
-  lang, mode, next, consentGiven = true, onBlocked,
+  lang, mode, next, consentGiven = true, onBlocked, notice,
 }: {
   lang: Lang
   mode: 'login' | 'signup'
@@ -42,6 +42,8 @@ export default function EmailAuthForm({
   // (components/signup-consent-gate.tsx) can shake its checkboxes red.
   consentGiven?: boolean
   onBlocked?: () => void
+  // Shown between the fields and the submit button (signup's legal line, operator 2026-11-16).
+  notice?: ReactNode
 }) {
   const router = useRouter()
   const [step, setStep] = useState<'email' | 'details'>('email')
@@ -140,6 +142,7 @@ export default function EmailAuthForm({
           className="field-input"
         />
       )}
+      {notice}
       <button
         type="submit" disabled={busy} className="btn btn--secondary btn--block"
       >
