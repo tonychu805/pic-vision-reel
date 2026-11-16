@@ -14,6 +14,7 @@ import CheckinPanel, { type CheckInOption } from './checkin-panel'
 import DemoAdminPanel from './demo-admin-panel'
 import CalendarTabs from './calendar-tabs'
 import { tabFromParam } from '@/lib/venueTab'
+import { courtFromParam } from '@/lib/venueCourt'
 
 // A venue's public game calendar, opened by QR code at the venue: today's
 // games on the courts the venue chose, each linking to its reels page.
@@ -30,9 +31,13 @@ type Calendar = { brand_name: string; logo_key: string | null; logo_ink: LogoInk
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,31}$/i
 const CODE_RE = /^[a-z0-9]{8,64}$/i
 
-export default async function CalendarPage({ params, searchParams }: { params: Promise<{ slug: string; code: string }>; searchParams: Promise<{ tab?: string | string[] }> }) {
+export default async function CalendarPage({ params, searchParams }: { params: Promise<{ slug: string; code: string }>; searchParams: Promise<{ tab?: string | string[]; court?: string | string[] }> }) {
   const { slug, code } = await params
-  const initialTab = tabFromParam((await searchParams).tab)
+  const query = await searchParams
+  const initialTab = tabFromParam(query.tab)
+  // A court's own QR code (?court=<camera id>, operator 2026-11-16): check-in shows only that court.
+  const court = courtFromParam(query.court)
+  const venuePath = `/${slug}/${code}${court ? `?court=${court}` : ''}`
   const validSlugCode = SLUG_RE.test(slug) && CODE_RE.test(code)
   const lang = await currentLang()
 
@@ -53,7 +58,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
   // 20260930130000).
   const { data: playerId } = await authedSupabase.rpc('current_player_id')
   if (!playerId) {
-    redirect(`/login?next=${encodeURIComponent(`/${slug}/${code}`)}`)
+    redirect(`/login?next=${encodeURIComponent(venuePath)}`)
   }
 
   // Same fetch the standalone /account page makes -- the 帳號 tab below
@@ -70,6 +75,9 @@ export default async function CalendarPage({ params, searchParams }: { params: P
     const { data: options } = await authedSupabase.rpc('get_check_in_options', { p_slug: slug, p_code: code })
     checkInOptions = (options ?? []) as CheckInOption[]
   }
+  // An unknown court (camera since removed from the calendar) falls back to every court rather than an empty page.
+  const courtOptions = checkInOptions.filter((o) => o.camera_row_id === court)
+  const shownOptions = courtOptions.length > 0 ? courtOptions : checkInOptions
 
   // Consent is a step in getting a player's account working (2026-09-30
   // operator decision), not something to ask for after landing on a
@@ -81,10 +89,10 @@ export default async function CalendarPage({ params, searchParams }: { params: P
     // Every signup records consent (the box on /signup); only an account that
     // predates the current consent version lands here. Signing in again
     // through /signup ticks the box and records it on the same account.
-    redirect(`/signup?next=${encodeURIComponent(`/${slug}/${code}`)}`)
+    redirect(`/signup?next=${encodeURIComponent(venuePath)}`)
   }
   // Basic information, asked once after signup (operator 2026-11-16).
-  if (!account.profileComplete) redirect(`/signup/profile?next=${encodeURIComponent(`/${slug}/${code}`)}`)
+  if (!account.profileComplete) redirect(`/signup/profile?next=${encodeURIComponent(venuePath)}`)
 
   if (!cal) {
     // Same answer for a wrong code, a switched-off calendar and an unknown
@@ -122,7 +130,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
         <CalendarTabs
           lang={lang}
           initialTab={initialTab}
-          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={checkInOptions} />}
+          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={shownOptions} />}
           sessions={
             <div className="sessions-view">
               <div className="sessions-heading">

@@ -66,7 +66,11 @@ export function AccountBottomNav({ lang }: { lang: Lang }) {
         if (tab === 'account') return <span key={tab} className="bottom-nav-item active" aria-current="page">{body}</span>
         if (!venue) return <span key={tab} className="bottom-nav-item bottom-nav-item--off" aria-disabled="true">{body}</span>
         const param = tabParam(tab)
-        return <a key={tab} className="bottom-nav-item" href={param ? `${venue}?tab=${param}` : venue}>{body}</a>
+        const [path, query] = venue.split('?')
+        const search = new URLSearchParams(query)
+        if (param) search.set('tab', param)
+        const href = search.size ? `${path}?${search}` : path
+        return <a key={tab} className="bottom-nav-item" href={href}>{body}</a>
       })}
     </nav>
   )

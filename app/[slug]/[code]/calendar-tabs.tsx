@@ -21,7 +21,10 @@ import { rememberVenue } from '@/lib/lastVenue'
 export default function CalendarTabs({ lang, checkin, sessions, account, initialTab = 'checkin' }: { lang: Lang; checkin: ReactNode; sessions: ReactNode; account: ReactNode; initialTab?: CalendarTab }) {
   const [tab, setTabState] = useState<CalendarTab>(initialTab)
   // Lets /account's bottom bar open this venue's 報到 and 精華 tabs.
-  useEffect(() => rememberVenue(window.location.pathname), [])
+  useEffect(() => {
+    const court = new URLSearchParams(window.location.search).get('court')
+    rememberVenue(window.location.pathname + (court ? `?court=${court}` : ''))
+  }, [])
   const setTab = (next: CalendarTab) => {
     setTabState(next)
     const url = new URL(window.location.href)
