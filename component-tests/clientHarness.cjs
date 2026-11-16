@@ -21,6 +21,7 @@ exports.bundleClients = function bundleClients() {
       exports.updateEmail=(value)=>window.runAccountAction('email',value);
       exports.updatePassword=(value)=>window.runAccountAction('password',value);`
     else if (file === 'trainingAction') code = "exports.setTrainingConsent=(value)=>window.runAccountAction('training',value)"
+    else if (file === 'profileAction') code = "exports.saveSignupProfile=(value)=>window.runAccountAction('profile',value)"
     else if (file === 'signOutAction') code = "exports.signOutEverywhere=()=>window.runAccountAction('signout')"
     else if (file.endsWith('.css')) {
       const names = [...fs.readFileSync(file, 'utf8').matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => [m[1], m[1]])
@@ -35,6 +36,7 @@ exports.bundleClients = function bundleClients() {
         if (name === 'next/navigation') next = 'router'
         else if (name === 'next/script') next = 'script'
         else if (name === '@/lib/auth-actions') next = 'signOutAction'
+        else if (name === '@/app/signup/profile/actions') next = 'profileAction'
         else if (name === '@/app/[slug]/[code]/actions') next = 'trainingAction'
         else if (name === './actions' && file.endsWith('/account/account-form.tsx')) next = 'accountActions'
         else {
