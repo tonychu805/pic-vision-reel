@@ -30,8 +30,8 @@ export async function joinCheckIn(scheduleSessionId: string) {
   return { error: error?.message ?? null }
 }
 
-// Only the player who originally checked in may end it early (enforced by
-// player_end_check_in itself, not just this action) -- frees the camera
+// Any player in a walk-up session may end it early (operator 2026-11-16;
+// enforced by player_end_check_in itself, not just this action) -- frees the camera
 // immediately for the next check-in instead of leaving it falsely "busy"
 // until whatever end time was originally picked.
 export async function endCheckIn(scheduleSessionId: string) {
@@ -50,5 +50,14 @@ export async function updateCheckInEnd(scheduleSessionId: string, newEndsAtISO: 
     p_schedule_session_id: scheduleSessionId,
     p_new_ends_at: newEndsAtISO,
   })
+  return { error: error?.message ?? null }
+}
+
+// Leaves a session the player joined by mistake (operator 2026-11-16). The
+// database refuses it for the last player of a walk-up session still
+// recording ('last_player'): they end it instead.
+export async function leaveCheckIn(scheduleSessionId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('player_leave_check_in', { p_schedule_session_id: scheduleSessionId })
   return { error: error?.message ?? null }
 }

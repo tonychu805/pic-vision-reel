@@ -16,7 +16,7 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import { clockLabel } from '@/lib/calendar'
-import { checkIn, joinCheckIn, endCheckIn, updateCheckInEnd } from './actions'
+import { checkIn, joinCheckIn, endCheckIn, leaveCheckIn, updateCheckInEnd } from './actions'
 
 export type CheckInOption = {
   camera_row_id: string
@@ -83,6 +83,7 @@ const ERROR_KEYS: Record<string, StringKey> = {
   session_not_active: 'sessionNotActiveError',
   session_full: 'sessionFullError',
   booked_soon: 'bookedSoonError',
+  last_player: 'lastPlayerError',
 }
 
 // A commit action pending the player's explicit confirmation -- check-in,
@@ -204,7 +205,7 @@ export default function CheckinPanel({
 
   // Frees the camera immediately (real stop command, not just a database
   // flag) rather than leaving it falsely "busy" until whatever end time
-  // was originally picked -- only the player who checked in sees this,
+  // was originally picked -- any player in a walk-up session sees this,
   // enforced by player_end_check_in itself.
   async function doEnd(sessionId: string) {
     setBusy(sessionId)
@@ -213,6 +214,26 @@ export default function CheckinPanel({
     setBusy(null)
     if (error) { showError(error); return }
     router.refresh()
+  }
+
+  async function doLeave(sessionId: string) {
+    setBusy(sessionId)
+    setError(null)
+    const { error } = await leaveCheckIn(sessionId)
+    setBusy(null)
+    if (error) { showError(error); return }
+    router.refresh()
+  }
+
+  // A secondary "leave" link under a session the player is in.
+  function leaveRow(sessionId: string, court: string) {
+    const confirmKey = `leave-${sessionId}`
+    return confirmBar(confirmKey) ?? (
+      <button type="button" className="link-button checkin-leave" disabled={busy === sessionId}
+        onClick={() => askToConfirm(confirmKey, t(lang, 'confirmLeaveMessage', { court }), () => doLeave(sessionId))}>
+        {t(lang, 'checkInLeave')}
+      </button>
+    )
   }
 
   // Unlike doEnd, this has to reach the venue machine for real -- the
@@ -320,6 +341,7 @@ export default function CheckinPanel({
           {cardHead(o.camera_label, { text: t(lang, 'checkInBusy'), tone: 'recording' })}
           {tag && <p className="checkin-line">{tag}</p>}
           <p className="checkin-line">{t(lang, 'checkInClaimedRecent', times)}</p>
+          {leaveRow(o.recent_session_id, o.camera_label)}
         </div>
       )
     }
@@ -398,6 +420,7 @@ export default function CheckinPanel({
             )}
           </div>
           {confirmBar(confirmKey)}
+          {o.participant_count > 1 && leaveRow(o.busy_session_id, o.camera_label)}
         </div>
       )
     }
@@ -409,6 +432,7 @@ export default function CheckinPanel({
           <p className="checkin-line">{t(lang, 'checkInAlreadyJoined')}</p>
           {bookedUntil && <p className="checkin-line">{bookedUntil}</p>}
           {recordingStatusLine(o)}
+          {leaveRow(o.busy_session_id, o.camera_label)}
         </div>
       )
     }

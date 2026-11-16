@@ -375,3 +375,6 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .profile-summary-row dt { color:var(--ink-2); }
 .profile-summary-row dd { margin:0; color:var(--ink); text-align:right; }
 .profile-summary-empty { color:var(--ink-3) !important; }
+
+/* Leave a session: secondary, under the card's actions. */
+.checkin-leave { margin-top:10px; align-self:flex-start; font-size:13px; }
