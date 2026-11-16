@@ -189,7 +189,7 @@ test('vertical Send shares the page link, Share still attaches the clip', async 
 const accountProps = {
   lang: 'en', initialName: 'Old name', initialTraining: false,
   isLineAccount: true, initialEmail: null, hasPassword: false, memberSince: null,
-  profile: { firstName: 'Old', lastName: '', birthDate: null, phoneCountry: '+886', phone: '912345678', gender: null, location: null, marketingOptIn: false },
+  profile: { firstName: 'Old', lastName: '', birthDate: null, phoneCountry: '+886', phone: '955809317', gender: null, location: null, marketingOptIn: false },
 }
 async function accountPage(overrides = {}) {
   const page = await setup()
@@ -229,7 +229,7 @@ test('basic information shows what signup collected, and Edit saves it in place'
   const page = await accountPage()
   const rows = async () => (await page.locator('.profile-summary').innerText()).replace(/\s+/g, ' ')
   assert.match(await rows(), /First name Old/)
-  assert.match(await rows(), /Phone \+886 912345678/)
+  assert.match(await rows(), /Phone \+886 955809317/)
   assert.match(await rows(), /City or area Not provided/)
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
   await page.locator('input[autocomplete=address-level2]').fill('Hsinchu')
