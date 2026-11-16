@@ -9,7 +9,7 @@ import { currentLang } from '@/lib/lang-server'
 import LangSwitch from '@/components/lang-switch'
 import { getAccountData } from '@/lib/accountData'
 import AccountForm from '@/app/account/account-form'
-import CheckinPanel, { type CheckInOption } from './checkin-panel'
+import CheckinPanel, { type CheckInOption, type RecentGame } from './checkin-panel'
 import DemoAdminPanel from './demo-admin-panel'
 import CalendarTabs from './calendar-tabs'
 import { tabFromParam } from '@/lib/venueTab'
@@ -72,9 +72,12 @@ export default async function CalendarPage({ params, searchParams }: { params: P
   const cal = data as Calendar | null
 
   let checkInOptions: CheckInOption[] = []
+  let recentGames: RecentGame[] = []
   if (validSlugCode) {
     const { data: options } = await authedSupabase.rpc('get_check_in_options', { p_slug: slug, p_code: code })
     checkInOptions = (options ?? []) as CheckInOption[]
+    const { data: recent } = await authedSupabase.rpc('get_recent_games', { p_slug: slug, p_code: code })
+    recentGames = (recent ?? []) as RecentGame[]
   }
   // An unknown court (camera since removed from the calendar) falls back to every court rather than an empty page.
   const courtOptions = checkInOptions.filter((o) => o.camera_row_id === court)
@@ -131,7 +134,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
         <CalendarTabs
           lang={lang}
           initialTab={initialTab}
-          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={shownOptions} />}
+          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={shownOptions} recentGames={recentGames} />}
           sessions={
             <div className="sessions-view">
               <div className="sessions-heading">
