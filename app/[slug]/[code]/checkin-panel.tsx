@@ -89,6 +89,7 @@ const ERROR_KEYS: Record<string, StringKey> = {
   session_full: 'sessionFullError',
   booked_soon: 'bookedSoonError',
   last_player: 'lastPlayerError',
+  desktop_update_required: 'desktopUpdateRequiredError',
 }
 
 // A commit action pending the player's explicit confirmation -- check-in,
