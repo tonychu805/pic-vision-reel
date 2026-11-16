@@ -157,7 +157,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
               initialEmail={account.email}
               hasPassword={account.hasPassword}
               memberSince={account.memberSince}
-              showBackLink={false}
+              profile={account.profile}
             />
           }
         />

@@ -9,8 +9,10 @@
 // when there's no venue `next` to return to -- this tab just means a
 // visitor who got here via a venue's QR code never has to leave this
 // page to see it.)
-import type { JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 import { t, type Lang } from '@/lib/i18n'
+import { tabParam } from '@/lib/venueTab'
+import { lastVenue } from '@/lib/lastVenue'
 
 import type { CalendarTab } from '@/lib/venueTab'
 export type { CalendarTab }
@@ -46,6 +48,26 @@ export default function BottomNav({ lang, active, onSelect }: { lang: Lang; acti
           <span>{t(lang, LABELS[tab])}</span>
         </button>
       ))}
+    </nav>
+  )
+}
+
+/**
+ * The same bar on the standalone /account page (operator 2026-11-16: no "back" link, the bar instead). 報到 and
+ * 精華 open the venue this player last opened; with none known in this browser they are shown off.
+ */
+export function AccountBottomNav({ lang }: { lang: Lang }) {
+  const [venue, setVenue] = useState<string | null>(null)
+  useEffect(() => setVenue(lastVenue()), [])
+  return (
+    <nav className="bottom-nav">
+      {(['checkin', 'sessions', 'account'] as const).map((tab) => {
+        const body = <>{ICONS[tab]}<span>{t(lang, LABELS[tab])}</span></>
+        if (tab === 'account') return <span key={tab} className="bottom-nav-item active" aria-current="page">{body}</span>
+        if (!venue) return <span key={tab} className="bottom-nav-item bottom-nav-item--off" aria-disabled="true">{body}</span>
+        const param = tabParam(tab)
+        return <a key={tab} className="bottom-nav-item" href={param ? `${venue}?tab=${param}` : venue}>{body}</a>
+      })}
     </nav>
   )
 }

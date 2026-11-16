@@ -7,6 +7,7 @@ import { getAccountData } from '@/lib/accountData'
 import LangSwitch from '@/components/lang-switch'
 import PoweredByFooter from '@/components/powered-by-footer'
 import AccountForm from './account-form'
+import { AccountBottomNav } from '@/app/[slug]/[code]/bottom-nav'
 
 export const dynamic = 'force-dynamic'
 export async function generateMetadata(): Promise<Metadata> {
@@ -47,9 +48,13 @@ export default async function AccountPage() {
             initialEmail={account.email}
             hasPassword={account.hasPassword}
             memberSince={account.memberSince}
+            profile={account.profile}
           />
         </div>
         <PoweredByFooter lang={lang} />
+        {/* Same bottom bar as the venue page's tabs; matches .bottom-nav's height so it never covers content. */}
+        <div style={{ height: 'calc(64px + env(safe-area-inset-bottom))', flex: 'none' }} aria-hidden="true" />
+        <AccountBottomNav lang={lang} />
       </div>
     </main>
   )

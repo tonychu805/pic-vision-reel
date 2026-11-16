@@ -6,10 +6,12 @@ import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang } from '@/lib/i18n'
 import { setTrainingConsent } from '@/app/[slug]/[code]/actions'
 import { updateDisplayName, updateEmail, updatePassword } from './actions'
+import SignupProfileForm from '@/components/signup-profile-form'
+import type { ProfileFields } from '@/lib/accountData'
 
 
 export default function AccountForm({
-  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword, showBackLink = true,
+  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword, profile,
 }: {
   lang: Lang
   initialName: string
@@ -21,9 +23,10 @@ export default function AccountForm({
   // false on the calendar page's 帳號 tab (app/[slug]/[code]) -- there's a
   // bottom nav to switch tabs with, so "← Back" would be a second, redundant
   // way to leave. Still true (default) on the standalone /account page.
-  showBackLink?: boolean
+  profile: ProfileFields
 }) {
   const router = useRouter()
+  const [editingProfile, setEditingProfile] = useState(false)
   const [name, setName] = useState(initialName)
   const [savedName, setSavedName] = useState(initialName)
   const [editingName, setEditingName] = useState(false)
@@ -143,6 +146,33 @@ export default function AccountForm({
       {nameMessage && <p role="alert" className="form-note form-note--error">{nameMessage}</p>}
 
       <section className="panel">
+        <h2 className="panel-title">{t(lang, 'sectionBasicInfo')}</h2>
+        {editingProfile ? (
+          <SignupProfileForm lang={lang} next="/account" initialName={initialName} initial={profile}
+            onSaved={() => setEditingProfile(false)} onCancel={() => setEditingProfile(false)} />
+        ) : (
+          <>
+            <dl className="profile-summary">
+              {([
+                ['firstNameLabel', profile.firstName],
+                ['lastNameLabel', profile.lastName],
+                ['birthDateLabel', profile.birthDate],
+                ['phoneLabel', profile.phone ? `${profile.phoneCountry ?? ''} ${profile.phone}`.trim() : null],
+                ['genderLabel', profile.gender ? t(lang, profile.gender === 'men' ? 'genderMen' : 'genderWomen') : null],
+                ['locationLabel', profile.location],
+                ['marketingLabel', t(lang, profile.marketingOptIn ? 'marketingOn' : 'marketingOff')],
+              ] as const).map(([label, value]) => (
+                <div key={label} className="profile-summary-row">
+                  <dt>{t(lang, label)}</dt>
+                  <dd className={value ? undefined : 'profile-summary-empty'}>{value || t(lang, 'notProvided')}</dd>
+                </div>
+              ))}
+            </dl>
+            <button type="button" className="btn btn--secondary" onClick={() => setEditingProfile(true)}>{t(lang, 'editLabel')}</button>
+          </>
+        )}
+      </section>
+      <section className="panel">
         <h2 className="panel-title">{t(lang, 'sectionPrivacy')}</h2>
         <label className="setting-row">
           <span className="setting-text">{t(lang, 'trainingSettingTitle')}<span className="setting-hint">{t(lang, 'trainingSettingBody')}</span></span>
@@ -197,11 +227,6 @@ export default function AccountForm({
         <button type="button" onClick={signOut} className="link-button">
           {t(lang, 'signOut')}
         </button>
-        {showBackLink && (
-          <button type="button" onClick={() => router.back()} className="link-button">
-            {t(lang, 'backLabel')}
-          </button>
-        )}
       </div>
     </div>
   )

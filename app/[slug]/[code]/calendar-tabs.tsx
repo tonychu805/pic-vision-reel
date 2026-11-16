@@ -6,11 +6,12 @@
 // CheckinPanel polls while a check-in is pending (see its own comment),
 // and that should keep running even while the visitor is on another tab,
 // not restart every time they switch back.
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { Lang } from '@/lib/i18n'
 import PoweredByFooter from '@/components/powered-by-footer'
 import BottomNav, { type CalendarTab } from './bottom-nav'
 import { tabParam } from '@/lib/venueTab'
+import { rememberVenue } from '@/lib/lastVenue'
 
 // The open tab is also kept in the address (?tab=highlights|account,
 // 2026-10-29): it used to live only in component state, so watching a reel
@@ -19,6 +20,8 @@ import { tabParam } from '@/lib/venueTab'
 // the server; page.tsx reads the parameter on the way back in.
 export default function CalendarTabs({ lang, checkin, sessions, account, initialTab = 'checkin' }: { lang: Lang; checkin: ReactNode; sessions: ReactNode; account: ReactNode; initialTab?: CalendarTab }) {
   const [tab, setTabState] = useState<CalendarTab>(initialTab)
+  // Lets /account's bottom bar open this venue's 報到 and 精華 tabs.
+  useEffect(() => rememberVenue(window.location.pathname), [])
   const setTab = (next: CalendarTab) => {
     setTabState(next)
     const url = new URL(window.location.href)

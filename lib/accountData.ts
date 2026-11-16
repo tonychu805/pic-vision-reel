@@ -2,6 +2,18 @@ import { cookies } from 'next/headers'
 import type { createClient } from '@/lib/supabaseServer'
 import { AUTH0_ID_TOKEN_COOKIE } from '@/lib/auth0'
 
+// What the one-time basic-information page (app/signup/profile) collected; shown and editable on the account page.
+export type ProfileFields = {
+  firstName: string
+  lastName: string
+  birthDate: string | null
+  phoneCountry: string | null
+  phone: string | null
+  gender: 'men' | 'women' | null
+  location: string | null
+  marketingOptIn: boolean
+}
+
 export type AccountData = {
   displayName: string
   trainingConsented: boolean
@@ -11,6 +23,7 @@ export type AccountData = {
   memberSince: string | null
   // The one-time basic-information page (app/signup/profile) has been filled in.
   profileComplete: boolean
+  profile: ProfileFields
 }
 
 // Shared by /account (the standalone fallback landing page after
@@ -19,7 +32,7 @@ export type AccountData = {
 // fetch either way, written once rather than drifting into two copies.
 export async function getAccountData(supabase: Awaited<ReturnType<typeof createClient>>, playerId: string): Promise<AccountData> {
   const [{ data: player }, { data: training }] = await Promise.all([
-    supabase.from('players').select('display_name, created_at, profile_completed_at').eq('id', playerId).maybeSingle(),
+    supabase.from('players').select('display_name, created_at, profile_completed_at, first_name, last_name, birth_date, phone_country, phone, gender, location, marketing_opt_in').eq('id', playerId).maybeSingle(),
     supabase.from('player_training_consents').select('consented').eq('player_id', playerId).maybeSingle(),
   ])
 
@@ -46,6 +59,16 @@ export async function getAccountData(supabase: Awaited<ReturnType<typeof createC
   return {
     displayName: player?.display_name ?? '',
     profileComplete: Boolean(player?.profile_completed_at),
+    profile: {
+      firstName: player?.first_name ?? '',
+      lastName: player?.last_name ?? '',
+      birthDate: player?.birth_date ?? null,
+      phoneCountry: player?.phone_country ?? null,
+      phone: player?.phone ?? null,
+      gender: player?.gender === 'men' || player?.gender === 'women' ? player.gender : null,
+      location: player?.location ?? null,
+      marketingOptIn: Boolean(player?.marketing_opt_in),
+    },
     // Opt-out (operator 2026-11-16): never answered means on, as the archive rule reads it.
     trainingConsented: training?.consented ?? true,
     isLineAccount,
