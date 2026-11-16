@@ -188,7 +188,8 @@ test('vertical Send shares the page link, Share still attaches the clip', async 
 
 const accountProps = {
   lang: 'en', initialName: 'Old name', initialTraining: false,
-  isLineAccount: true, initialEmail: null, hasPassword: false, memberSince: null, showBackLink: false,
+  isLineAccount: true, initialEmail: null, hasPassword: false, memberSince: null,
+  profile: { firstName: 'Old', lastName: '', birthDate: null, phoneCountry: '+886', phone: '955809317', gender: null, location: null, marketingOptIn: false },
 }
 async function accountPage(overrides = {}) {
   const page = await setup()
@@ -222,6 +223,21 @@ test('a failed privacy save flips the switch back with an alert, and a retry sav
   assert.equal(await page.getByRole('alert').count(), 0)
   assert.equal(await page.getByRole('checkbox').isChecked(), true)
   assert.equal(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'training').at(-1).value), true)
+})
+
+test('basic information shows what signup collected, and Edit saves it in place', async () => {
+  const page = await accountPage()
+  const rows = async () => (await page.locator('.profile-summary').innerText()).replace(/\s+/g, ' ')
+  assert.match(await rows(), /First name Old/)
+  assert.match(await rows(), /Phone \+886 955809317/)
+  assert.match(await rows(), /City or area Not provided/)
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  await page.locator('input[autocomplete=address-level2]').fill('Hsinchu')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.locator('.profile-summary').waitFor()
+  const saved = await page.evaluate(() => window.accountCalls.find((c) => c.action === 'profile').value)
+  assert.equal(saved.location, 'Hsinchu')
+  assert.equal(saved.firstName, 'Old')
 })
 
 test('failed name edits stay open with the reason, and exceptions never strand Save', async () => {
