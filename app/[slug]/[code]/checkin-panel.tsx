@@ -330,39 +330,33 @@ export default function CheckinPanel({
     )
   }
 
-  // "Get the reel from 19:00–20:00" for a booked session that just ended.
-  function claimRow(o: CheckInOption) {
+  // The court's game that just ended (up to 30 minutes after), inside the court's own card rather than as a
+  // second "Court 1" card (operator 2026-11-16): a player who was in it claims its video here.
+  function claimLine(o: CheckInOption) {
     if (!o.recent_session_id || !o.recent_starts_at || !o.recent_ends_at) return null
+    const sessionId = o.recent_session_id
     const times = { start: clockLabel(o.recent_starts_at, timeZone), end: clockLabel(o.recent_ends_at, timeZone) }
     const tag = bookingTag(o.recent_booking_number, o.recent_booker_masked)
-    const confirmKey = `claim-${o.recent_session_id}`
-    if (o.recent_already_joined) {
-      return (
-        <div className="checkin-card checkin-card--recording">
-          {cardHead(o.camera_label, { text: t(lang, 'checkInEnded'), tone: 'joinable' })}
-          {tag && <p className="checkin-line">{tag}</p>}
-          <p className="checkin-line">{t(lang, 'checkInClaimedRecent', times)}</p>
-          {leaveRow(o.recent_session_id, o.camera_label)}
-        </div>
-      )
-    }
-    const full = o.recent_participant_count >= 10
+    const confirmKey = `claim-${sessionId}`
     return (
-      <div className="checkin-card checkin-card--joinable">
-        {cardHead(o.camera_label, { text: `${o.recent_participant_count}/10`, tone: 'joinable' })}
-        {tag && <p className="checkin-line">{tag}</p>}
-        <p className="checkin-line">{t(lang, 'checkInClaimRecent', { ...times, count: o.recent_participant_count })}</p>
-        {confirmBar(confirmKey) ?? (
-          <div className="checkin-actions">
-            <button
-              type="button"
-              className="checkin-btn checkin-btn--primary"
-              disabled={full || busy === o.recent_session_id}
-              onClick={() => askToConfirm(confirmKey, t(lang, 'confirmJoinMessage', { court: o.camera_label }), () => doJoin(o.recent_session_id!))}
-            >
-              {full ? t(lang, 'checkInSessionFull') : t(lang, 'checkInJoin', { count: o.recent_participant_count })}
-            </button>
-          </div>
+      <div className="checkin-claim">
+        <p className="checkin-claim-when">
+          {t(lang, 'checkInJustEnded', { ...times, count: o.recent_participant_count })}{tag ? ` · ${tag}` : ''}
+        </p>
+        {o.recent_already_joined ? (
+          <>
+            <p className="checkin-claim-done">
+              {t(lang, 'checkInClaimed')}{' '}
+              <a href="?tab=highlights" className="link-button" onClick={(e) => { e.preventDefault(); const url = new URL(window.location.href); url.searchParams.set('tab', 'highlights'); window.location.assign(url) }}>{t(lang, 'goToHighlights')}</a>
+            </p>
+            {leaveRow(sessionId, o.camera_label)}
+          </>
+        ) : confirmBar(confirmKey) ?? (
+          <button type="button" className="link-button checkin-claim-action"
+            disabled={o.recent_participant_count >= 10 || busy === sessionId}
+            onClick={() => askToConfirm(confirmKey, t(lang, 'confirmClaimMessage', { court: o.camera_label, ...times }), () => doJoin(sessionId))}>
+            {o.recent_participant_count >= 10 ? t(lang, 'checkInSessionFull') : t(lang, 'checkInClaimAction')}
+          </button>
         )}
       </div>
     )
@@ -395,6 +389,7 @@ export default function CheckinPanel({
               </button>
             </div>
           )}
+          {claimLine(o)}
         </div>
       )
     }
@@ -422,6 +417,7 @@ export default function CheckinPanel({
           </div>
           {confirmBar(confirmKey)}
           {o.participant_count > 1 && leaveRow(o.busy_session_id, o.camera_label)}
+          {claimLine(o)}
         </div>
       )
     }
@@ -434,6 +430,7 @@ export default function CheckinPanel({
           {bookedUntil && <p className="checkin-line">{bookedUntil}</p>}
           {recordingStatusLine(o)}
           {leaveRow(o.busy_session_id, o.camera_label)}
+          {claimLine(o)}
         </div>
       )
     }
@@ -457,6 +454,7 @@ export default function CheckinPanel({
               </button>
             </div>
           )}
+          {claimLine(o)}
         </div>
       )
     }
@@ -464,6 +462,7 @@ export default function CheckinPanel({
     return (
       <div key={o.camera_row_id} className="checkin-card checkin-card--recording">
         {cardHead(o.camera_label, { text: t(lang, 'checkInStatusRecording'), tone: 'recording' })}
+        {claimLine(o)}
       </div>
     )
   }
@@ -493,7 +492,6 @@ export default function CheckinPanel({
       <div className="checkin-grid">
         {sortedOptions.map((o) => (
           <Fragment key={o.camera_row_id}>
-            {claimRow(o)}
             {courtRow(o)}
           </Fragment>
         ))}

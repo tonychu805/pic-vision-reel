@@ -378,3 +378,9 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 
 /* Leave a session: secondary, under the card's actions. */
 .checkin-leave { margin-top:10px; align-self:flex-start; font-size:13px; }
+
+/* The court's game that just ended, inside its card (claimLine in checkin-panel.tsx). */
+.checkin-claim { margin-top:14px; padding-top:12px; border-top:1px solid var(--rule); display:flex; flex-direction:column; gap:6px; }
+.checkin-claim-when { margin:0; font-size:13px; color:var(--ink-2); }
+.checkin-claim-done { margin:0; font-size:13.5px; color:var(--ink); }
+.checkin-claim-action { align-self:flex-start; font-size:14px; font-weight:700; color:var(--court); }
