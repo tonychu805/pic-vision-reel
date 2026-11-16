@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { supabasePublic } from '@/lib/supabase'
@@ -92,6 +93,8 @@ export default async function CalendarPage({ params, searchParams }: { params: P
       <main className="share-page">
         <div className="share-shell" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 80 }}>
           <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>{t(lang, 'calendarUnavailable')}</p>
+          {/* Never a dead end: a signed-in player can still reach Account (and 登出) from here. */}
+          <Link href="/account" className="btn btn--secondary" style={{ marginTop: 20 }}>{t(lang, 'goToAccount')}</Link>
         </div>
       </main>
     )
