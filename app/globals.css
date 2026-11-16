@@ -218,6 +218,8 @@ h2 { margin:0; }
 .bottom-nav-item::before { content:''; position:absolute; top:0; left:28%; right:28%; height:3px; border-radius:0 0 3px 3px; background:transparent; }
 .bottom-nav-item.active { color:var(--court-deep); }
 .bottom-nav-item.active::before { background:var(--court); }
+a.bottom-nav-item { text-decoration:none; }
+.bottom-nav-item--off { opacity:.4; cursor:default; }
 
 /* ---------- Check-in (checkin-panel.tsx) ---------- */
 .checkin-panel { display:flex; flex-direction:column; gap:16px; }
@@ -366,3 +368,10 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .profile-segment { min-height:48px; border:0; border-radius:8px; background:var(--card); color:var(--ink); font-size:15px; font-weight:700; box-shadow:inset 0 0 0 1.5px var(--rule-strong); cursor:pointer; }
 .profile-segment--on { background:var(--court); color:var(--paper); box-shadow:none; }
 .profile-marketing { font-size:13.5px; color:var(--ink-2); line-height:1.5; }
+
+/* Account page: the basic information collected at signup. */
+.profile-summary { display:flex; flex-direction:column; gap:10px; margin:0 0 14px; }
+.profile-summary-row { display:flex; justify-content:space-between; gap:16px; font-size:15px; }
+.profile-summary-row dt { color:var(--ink-2); }
+.profile-summary-row dd { margin:0; color:var(--ink); text-align:right; }
+.profile-summary-empty { color:var(--ink-3) !important; }

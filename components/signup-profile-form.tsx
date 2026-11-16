@@ -1,25 +1,35 @@
 'use client'
 
-// The one-time basic-information form (app/signup/profile). Only the first
+// The basic-information form: once after signup (app/signup/profile), and to
+// edit it later on the account page (`initial` + `onSaved`). Only the first
 // name is required, so a player who came to watch a highlight isn't held up.
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import { saveSignupProfile } from '@/app/signup/profile/actions'
+import type { ProfileFields } from '@/lib/accountData'
 
 // Taiwan first; a short list so a number reads back correctly.
 const DIAL_CODES = ['+886', '+1', '+81', '+82', '+852', '+65', '+86', '+44']
 
-export default function SignupProfileForm({ lang, next, initialName }: { lang: Lang; next: string; initialName: string }) {
+export default function SignupProfileForm({ lang, next, initialName, initial, onSaved, onCancel }: {
+  lang: Lang
+  next: string
+  initialName: string
+  initial?: ProfileFields
+  // Account page: called after a successful save instead of leaving the page.
+  onSaved?: () => void
+  onCancel?: () => void
+}) {
   const router = useRouter()
-  const [firstName, setFirstName] = useState(initialName.split(' ')[0] ?? '')
-  const [lastName, setLastName] = useState(initialName.split(' ').slice(1).join(' '))
-  const [birthDate, setBirthDate] = useState('')
-  const [dialCode, setDialCode] = useState(DIAL_CODES[0])
-  const [phone, setPhone] = useState('')
-  const [gender, setGender] = useState<'men' | 'women' | null>(null)
-  const [location, setLocation] = useState('')
-  const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [firstName, setFirstName] = useState(initial ? initial.firstName : initialName.split(' ')[0] ?? '')
+  const [lastName, setLastName] = useState(initial ? initial.lastName : initialName.split(' ').slice(1).join(' '))
+  const [birthDate, setBirthDate] = useState(initial?.birthDate ?? '')
+  const [dialCode, setDialCode] = useState(initial?.phoneCountry && DIAL_CODES.includes(initial.phoneCountry) ? initial.phoneCountry : DIAL_CODES[0])
+  const [phone, setPhone] = useState(initial?.phone ?? '')
+  const [gender, setGender] = useState<'men' | 'women' | null>(initial?.gender ?? null)
+  const [location, setLocation] = useState(initial?.location ?? '')
+  const [marketingOptIn, setMarketingOptIn] = useState(initial?.marketingOptIn ?? false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,6 +43,7 @@ export default function SignupProfileForm({ lang, next, initialName }: { lang: L
       gender, location: location || null, marketingOptIn,
     })
     if (saveError) { setBusy(false); setError(t(lang, saveError as StringKey)); return }
+    if (onSaved) { setBusy(false); onSaved(); router.refresh(); return }
     router.push(next)
     router.refresh()
   }
@@ -88,7 +99,8 @@ export default function SignupProfileForm({ lang, next, initialName }: { lang: L
         <span>{t(lang, 'marketingOptIn')}</span>
       </label>
       {error && <p className="form-note form-note--error" role="alert">{error}</p>}
-      <button type="submit" disabled={busy} className="btn btn--primary btn--block">{t(lang, 'continueLabel')}</button>
+      <button type="submit" disabled={busy} className="btn btn--primary btn--block">{t(lang, onSaved ? 'saveButton' : 'continueLabel')}</button>
+      {onCancel && <button type="button" className="link-button" onClick={onCancel}>{t(lang, 'cancel')}</button>}
     </form>
   )
 }
