@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { supabasePublic } from '@/lib/supabase'
 import { createClient as createServerSupabase } from '@/lib/supabaseServer'
 import { brandLogoUrl, type LogoInk } from '@/lib/brandLogo'
 import { byCourt, dateLabel, slotLabel, type CalendarGame } from '@/lib/calendar'
@@ -19,8 +18,10 @@ import { courtFromParam } from '@/lib/venueCourt'
 // A venue's public game calendar, opened by QR code at the venue: today's
 // games on the courts the venue chose, each linking to its reels page.
 // Everything that decides what's shown is in get_public_calendar (console
-// migration 20260924050000): nothing unless the venue switched it on today,
-// the code is right, and only the chosen cameras. Never cached, never indexed.
+// migrations 20260924050000, 20261116120000): nothing unless the venue switched
+// it on today, the code is right, only the chosen cameras, and only games the
+// signed-in player joined -- so it is called as the player, not anonymously.
+// Never cached, never indexed.
 export const dynamic = 'force-dynamic'
 export async function generateMetadata(): Promise<Metadata> {
   return { title: t(await currentLang(), 'todaysGames'), robots: { index: false, follow: false } }
@@ -66,7 +67,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
   const account = await getAccountData(authedSupabase, playerId)
 
   const { data } = validSlugCode
-    ? await supabasePublic().rpc('get_public_calendar', { p_slug: slug, p_code: code })
+    ? await authedSupabase.rpc('get_public_calendar', { p_slug: slug, p_code: code })
     : { data: null }
   const cal = data as Calendar | null
 
