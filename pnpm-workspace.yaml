@@ -1,3 +1,8 @@
 minimumReleaseAgeExclude:
   - '@next/*'
   - next
+# Security floors (2026-11-16 scan): a deep copy inside next's build tooling
+# (styled-jsx > @babel/core) stayed on releases with known advisories.
+overrides:
+  browserslist@<4.28.7: '>=4.28.7'
+  baseline-browser-mapping@<2.11.0: '>=2.11.0'
