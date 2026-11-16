@@ -249,6 +249,7 @@ export default function CheckinPanel({
     const { error } = await updateCheckInEnd(sessionId, endsAtISO)
     setBusy(null)
     if (error) { showError(error); return }
+    setEditingEndFor(null)
     router.refresh()
   }
 
@@ -338,7 +339,7 @@ export default function CheckinPanel({
     if (o.recent_already_joined) {
       return (
         <div className="checkin-card checkin-card--recording">
-          {cardHead(o.camera_label, { text: t(lang, 'checkInBusy'), tone: 'recording' })}
+          {cardHead(o.camera_label, { text: t(lang, 'checkInEnded'), tone: 'joinable' })}
           {tag && <p className="checkin-line">{tag}</p>}
           <p className="checkin-line">{t(lang, 'checkInClaimedRecent', times)}</p>
           {leaveRow(o.recent_session_id, o.camera_label)}
