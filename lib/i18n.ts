@@ -116,7 +116,7 @@ const en = {
   promoChangeToNo: 'Change to no',
   promoSaveFailed: "Couldn't save your choice. Try again.",
   promoSettingTitle: 'Let the venue share my highlights',
-  promoSettingBody: 'When on, the venue may use highlights from sessions you took part in to promote the venue. Turn it off any time; this does not recall anything already published.',
+  promoSettingBody: 'When on, the venue may use highlights from sessions you took part in to promote the venue. Turn it off any time; that also withdraws any yes you gave for individual games. It does not recall anything already published.',
   // --- basic information, asked once after signup (2026-11-16) ---
   profileTitle: 'About you',
   profileSubtitle: 'A few details for your account. Only your first name is needed.',
@@ -330,7 +330,7 @@ const zhTW: Record<StringKey, string> = {
   promoChangeToNo: '改為不可以',
   promoSaveFailed: '無法儲存你的選擇，請再試一次。',
   promoSettingTitle: '讓場館分享我的精彩時刻',
-  promoSettingBody: '開啟時，場館可將你參與場次的精華用於場館宣傳。可隨時關閉；已發布的內容不會因此收回。',
+  promoSettingBody: '開啟時，場館可將你參與場次的精華用於場館宣傳。可隨時關閉，關閉也會撤回你先前對個別場次的同意；已發布的內容不會因此收回。',
   profileTitle: '關於你',
   profileSubtitle: '填寫基本資料，只有名字是必填。',
   firstNameLabel: '名字',
