@@ -4,18 +4,19 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang } from '@/lib/i18n'
-import { setTrainingConsent } from '@/app/[slug]/[code]/actions'
+import { setTrainingConsent, setPromoConsent } from '@/app/[slug]/[code]/actions'
 import { updateDisplayName, updateEmail, updatePassword } from './actions'
 import SignupProfileForm from '@/components/signup-profile-form'
 import type { ProfileFields } from '@/lib/accountData'
 
 
 export default function AccountForm({
-  lang, initialName, initialTraining, isLineAccount, initialEmail, hasPassword, profile,
+  lang, initialName, initialTraining, initialPromo, isLineAccount, initialEmail, hasPassword, profile,
 }: {
   lang: Lang
   initialName: string
   initialTraining: boolean
+  initialPromo: boolean
   isLineAccount: boolean
   initialEmail: string | null
   hasPassword: boolean
@@ -31,6 +32,9 @@ export default function AccountForm({
   const [savedName, setSavedName] = useState(initialName)
   const [editingName, setEditingName] = useState(false)
   const [training, setTraining] = useState(initialTraining)
+  const [promo, setPromo] = useState(initialPromo)
+  const [promoBusy, setPromoBusy] = useState(false)
+  const [promoMessage, setPromoMessage] = useState<{ text: string; failed: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
   const [nameMessage, setNameMessage] = useState<string | null>(null)
   const [trainingMessage, setTrainingMessage] = useState<{ text: string; failed: boolean } | null>(null)
@@ -69,6 +73,20 @@ export default function AccountForm({
       setTraining(!value)
       setTrainingMessage({ text: t(lang, 'trainingSaveFailed'), failed: true })
     } finally { setBusy(false) }
+  }
+
+  async function changePromo(value: boolean) {
+    setPromo(value)
+    setPromoBusy(true)
+    setPromoMessage(null)
+    try {
+      const { error } = await setPromoConsent(value, 'account')
+      if (error) throw new Error(error)
+      setPromoMessage({ text: t(lang, 'savedMessage'), failed: false })
+    } catch {
+      setPromo(!value)
+      setPromoMessage({ text: t(lang, 'promoSaveFailed'), failed: true })
+    } finally { setPromoBusy(false) }
   }
 
   async function changeEmail() {
@@ -182,6 +200,14 @@ export default function AccountForm({
           </span>
         </label>
         {trainingMessage && <p role={trainingMessage.failed ? 'alert' : 'status'} className={trainingMessage.failed ? 'form-note form-note--error' : 'form-note'}>{trainingMessage.text}</p>}
+        <label className="setting-row">
+          <span className="setting-text">{t(lang, 'promoSettingTitle')}<span className="setting-hint">{t(lang, 'promoSettingBody')}</span></span>
+          <span className="switch">
+            <input type="checkbox" checked={promo} disabled={promoBusy} onChange={(e) => void changePromo(e.target.checked)} />
+            <span className="switch-track" />
+          </span>
+        </label>
+        {promoMessage && <p role={promoMessage.failed ? 'alert' : 'status'} className={promoMessage.failed ? 'form-note form-note--error' : 'form-note'}>{promoMessage.text}</p>}
       </section>
 
       <section className="panel">

@@ -16,6 +16,22 @@ export async function setTrainingConsent(consented: boolean) {
   return { error: error?.message ?? null }
 }
 
+// Promotion consent is opt-in: no row means off. The source says where the tick
+// came from ('account' here, 'claim' from the claim card; 'signup' is written
+// by lib/player.ts recordSignupPromoConsent).
+export async function setPromoConsent(consented: boolean, source: 'account' | 'claim') {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('set_promo_consent', { p_consented: consented, p_source: source })
+  return { error: error?.message ?? null }
+}
+
+// One game's answer; the database refuses a player who isn't in that game.
+export async function answerSessionPromo(scheduleSessionId: string, allowed: boolean) {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('answer_session_promo', { p_session_id: scheduleSessionId, p_allowed: allowed })
+  return { error: error?.message ?? null }
+}
+
 export async function checkIn(slug: string, code: string, cameraRowId: string, endsAtISO: string) {
   const supabase = await createClient()
   const { data, error } = await supabase

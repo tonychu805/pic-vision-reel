@@ -16,6 +16,8 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import { clockLabel } from '@/lib/calendar'
+import PromoCard from './promo-card'
+import { promoPrompt } from '@/lib/promoPrompt'
 import { checkIn, joinCheckIn, endCheckIn, leaveCheckIn, updateCheckInEnd } from './actions'
 
 export type CheckInOption = {
@@ -100,7 +102,7 @@ const ERROR_KEYS: Record<string, StringKey> = {
 type PendingAction = { key: string; message: string; run: () => void }
 
 export default function CheckinPanel({
-  lang, slug, code, timeZone, options, recentGames,
+  lang, slug, code, timeZone, options, recentGames, venueName, promoConsented, promoAnswers,
 }: {
   lang: Lang
   slug: string
@@ -110,6 +112,10 @@ export default function CheckinPanel({
   timeZone: string
   options: CheckInOption[]
   recentGames: RecentGame[]
+  venueName: string
+  // player_promo_consents (no row = false), and this player's session_promo_answers keyed by session id.
+  promoConsented: boolean
+  promoAnswers: Record<string, boolean>
 }) {
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
@@ -360,6 +366,7 @@ export default function CheckinPanel({
               {t(lang, 'checkInClaimed')}{' '}
               <a href="?tab=highlights" className="link-button" onClick={(e) => { e.preventDefault(); const url = new URL(window.location.href); url.searchParams.set('tab', 'highlights'); window.location.assign(url) }}>{t(lang, 'goToHighlights')}</a>
             </p>
+            <PromoCard lang={lang} venueName={venueName} sessionId={g.session_id} initial={promoPrompt(promoConsented, promoAnswers[g.session_id])} />
             {leaveRow(g.session_id, o.camera_label)}
           </>
         ) : confirmBar(confirmKey) ?? (
