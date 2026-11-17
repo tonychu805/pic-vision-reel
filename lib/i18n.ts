@@ -91,6 +91,8 @@ const en = {
   consentNoticeLink: 'Filming notice',
   consentMiddle: 'and',
   consentPrivacyLink: 'Privacy policy',
+  consentListSep: ', ',
+  consentTermsLink: 'Player terms',
   consentSuffix: ', and that you are 18 or older, or that a parent or legal guardian has agreed to your use of this service.',
   // Filming consent and the retention policy were two separate checkboxes
   // until 2026-09-30 -- merged into one since they were always required
@@ -296,6 +298,8 @@ const zhTW: Record<StringKey, string> = {
   consentNoticeLink: '錄影告知',
   consentMiddle: '與',
   consentPrivacyLink: '隱私權政策',
+  consentListSep: '、',
+  consentTermsLink: '球友使用條款',
   consentSuffix: '，並確認您已年滿 18 歲或已取得法定代理人同意使用本服務。',
   trainingSettingTitle: '協助改善 PicVision',
   trainingSettingBody: '開啟時，你所在場次的錄影可保留 30 天（臉部與場外模糊、不記錄時間或場次），用於改善服務與訓練 AI。關閉後，之後的場次不會再製作副本。',
