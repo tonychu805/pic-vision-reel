@@ -31,9 +31,11 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
         />
         <span>
           {t(lang, 'consentPrefix')}{' '}
-          {link('https://picvisionai.com/privacy', t(lang, 'consentNoticeLink'))}
-          {' '}{t(lang, 'consentMiddle')}{' '}
+          {link('https://picvisionai.com/venue-player-notice-template', t(lang, 'consentNoticeLink'))}
+          {t(lang, 'consentListSep')}
           {link('https://picvisionai.com/privacy', t(lang, 'consentPrivacyLink'))}
+          {' '}{t(lang, 'consentMiddle')}{' '}
+          {link('https://picvisionai.com/player-terms', t(lang, 'consentTermsLink'))}
           {t(lang, 'consentSuffix')}{t(lang, 'emailNotice')}
         </span>
       </label>

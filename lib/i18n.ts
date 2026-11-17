@@ -91,6 +91,8 @@ const en = {
   consentNoticeLink: 'Filming notice',
   consentMiddle: 'and',
   consentPrivacyLink: 'Privacy policy',
+  consentListSep: ', ',
+  consentTermsLink: 'Player terms',
   consentSuffix: ', and that you are 18 or older, or that a parent or legal guardian has agreed to your use of this service.',
   emailNotice: ' We email you when your highlights are ready; if you sign in with LINE, we get your email address from LINE.',
   // Filming consent and the retention policy were two separate checkboxes
@@ -298,6 +300,8 @@ const zhTW: Record<StringKey, string> = {
   consentNoticeLink: '錄影告知',
   consentMiddle: '與',
   consentPrivacyLink: '隱私權政策',
+  consentListSep: '、',
+  consentTermsLink: '球友使用條款',
   consentSuffix: '，並確認您已年滿 18 歲或已取得法定代理人同意使用本服務。',
   emailNotice: '我們會以您的電子郵件地址寄送精華影片完成通知；使用 LINE 登入時，會向 LINE 取得您的電子郵件地址。',
   trainingSettingTitle: '協助改善 PicVision',
