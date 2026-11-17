@@ -8,7 +8,7 @@
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabaseServer'
 import { clientIp } from '@/lib/clientIp'
-import { ensurePlayer, recordSignupConsent } from '@/lib/player'
+import { ensurePlayer, recordSignupConsent, recordSignupPromoConsent } from '@/lib/player'
 
 // Also records the signup box's consent the first time the account has a
 // session -- for email signup that is here, on whichever device signs in.
@@ -19,4 +19,5 @@ export async function ensurePlayerAfterEmailAuth() {
   await ensurePlayer(supabase, data.user)
   const h = await headers()
   await recordSignupConsent(supabase, data.user, { ticked: false, ip: clientIp(h), userAgent: h.get('user-agent') })
+  await recordSignupPromoConsent(supabase, data.user, { ticked: false })
 }
