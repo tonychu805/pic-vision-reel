@@ -100,7 +100,7 @@ const en = {
   // Service improvement and AI training are opt-out (operator 2026-11-16): stated in the privacy policy and
   // switched off in Account settings. No checkbox at signup.
   trainingSettingTitle: 'Help improve PicVision',
-  trainingSettingBody: 'When on, footage of your sessions may be kept for 30 days (faces and off-court blurred, no time or session recorded) to improve the service and train AI. Turn it off and no copy is made of your future sessions.',
+  trainingSettingBody: 'When on, footage of your sessions may be kept for up to 12 months (faces and off-court blurred, no time or session recorded) to improve the service and train AI. Turn it off and no copy is made of your future sessions.',
   // --- basic information, asked once after signup (2026-11-16) ---
   profileTitle: 'About you',
   profileSubtitle: 'A few details for your account. Only your first name is needed.',
@@ -298,7 +298,7 @@ const zhTW: Record<StringKey, string> = {
   consentPrivacyLink: '隱私權政策',
   consentSuffix: '，並確認您已年滿 18 歲或已取得法定代理人同意使用本服務。',
   trainingSettingTitle: '協助改善 PicVision',
-  trainingSettingBody: '開啟時，你所在場次的錄影可保留 30 天（臉部與場外模糊、不記錄時間或場次），用於改善服務與訓練 AI。關閉後，之後的場次不會再製作副本。',
+  trainingSettingBody: '開啟時，你所在場次的錄影可保留至多 12 個月（臉部與場外模糊、不記錄時間或場次），用於改善服務與訓練 AI。關閉後，之後的場次不會再製作副本。',
   profileTitle: '關於你',
   profileSubtitle: '填寫基本資料，只有名字是必填。',
   firstNameLabel: '名字',
