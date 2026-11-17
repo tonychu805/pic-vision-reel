@@ -5,7 +5,9 @@
 // above it; every signup button stays clickable, and clicking one without the
 // box ticked doesn't proceed but shakes the box red (handleBlocked). Training
 // is opt-out, explained in the privacy policy and switched off in Account
-// settings, so there is no training box here.
+// settings, so there is no training box here. Below the required box sits a
+// separate optional one (2026-11-17), unticked, that lets the venue use the
+// player's highlights in promotion; no button waits on it.
 import { useState } from 'react'
 import { t, type Lang } from '@/lib/i18n'
 import SignInButtons from './sign-in-buttons'
@@ -13,6 +15,8 @@ import EmailAuthForm from './email-auth-form'
 
 export default function SignupConsentGate({ lang, next }: { lang: Lang; next: string }) {
   const [essentialBox, setEssentialBox] = useState(false)
+  // Optional and off by default: never gates a signup button.
+  const [promoBox, setPromoBox] = useState(false)
   // Bumped on every blocked attempt; used as a React `key` so the box
   // remounts and the shake restarts even mid-animation.
   const [shakeToken, setShakeToken] = useState(0)
@@ -39,13 +43,17 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
           {t(lang, 'consentSuffix')}
         </span>
       </label>
+      <label className="consent-choice-label consent-choice-label--optional">
+        <input type="checkbox" checked={promoBox} onChange={(e) => setPromoBox(e.target.checked)} />
+        <span>{t(lang, 'promoSignupLabel')}</span>
+      </label>
     </div>
   )
   return (
     <>
-      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={essentialBox} onBlocked={handleBlocked} />
+      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={essentialBox} promoGiven={promoBox} onBlocked={handleBlocked} />
       <p className="or-divider">{t(lang, 'orDivider')}</p>
-      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={essentialBox} onBlocked={handleBlocked} notice={notice} />
+      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={essentialBox} promoGiven={promoBox} onBlocked={handleBlocked} notice={notice} />
     </>
   )
 }

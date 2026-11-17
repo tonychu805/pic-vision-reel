@@ -14,6 +14,7 @@
 // record_player_consent()'s SQL already uses for this table.
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { CONSENT_VERSION } from '@/lib/consent'
+import { promoTickedInMetadata } from '@/lib/promoPrompt'
 
 export async function ensurePlayer(supabase: SupabaseClient, user: User): Promise<void> {
   const metadata = user.user_metadata as { name?: string; full_name?: string } | null
@@ -47,4 +48,23 @@ export async function recordSignupConsent(
   await supabase.rpc('record_player_consent', {
     p_filming_consent: true, p_retention_policy_accepted: true, p_ip_address: ip, p_user_agent: userAgent,
   })
+}
+
+/**
+ * Records the optional signup box "let the venue share my highlights", once.
+ *
+ * Carried exactly like the required box: `ticked` covers the LINE/Google
+ * round trip (promo=1), user_metadata.promo_consent_version covers email
+ * signup, whose first session may open on another device. A player who has any
+ * player_promo_consents row is left alone, so a later "off" in Account
+ * settings is never undone by the metadata still sitting on the account.
+ */
+export async function recordSignupPromoConsent(
+  supabase: SupabaseClient, user: User | null, { ticked }: { ticked: boolean },
+): Promise<void> {
+  const fromSignup = promoTickedInMetadata(user?.user_metadata, CONSENT_VERSION)
+  if (!ticked && !fromSignup) return
+  const { data: existing } = await supabase.from('player_promo_consents').select('consented').limit(1)
+  if (existing?.length) return
+  await supabase.rpc('set_promo_consent', { p_consented: true, p_source: 'signup' })
 }

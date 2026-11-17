@@ -9,7 +9,7 @@ import { BRAND_ICONS } from '@/app/r/[shareId]/brandIcons'
 import { t, type Lang } from '@/lib/i18n'
 
 export default function SignInButtons({
-  lang, next, mode = 'login', consentGiven = true, onBlocked,
+  lang, next, mode = 'login', consentGiven = true, promoGiven = false, onBlocked,
 }: {
   lang: Lang
   next: string
@@ -23,6 +23,8 @@ export default function SignInButtons({
   // shake its checkboxes red rather than the button silently doing
   // nothing.
   consentGiven?: boolean
+  // The optional promotion box (signup only); carried across the redirect like consent.
+  promoGiven?: boolean
   onBlocked?: () => void
 }) {
   // Guards against a second tap starting a second signInWithOAuth() call
@@ -55,6 +57,7 @@ export default function SignInButtons({
     const stateJson = JSON.stringify({
       next,
       ...(mode === 'signup' ? { consent: '1' } : {}),
+      ...(mode === 'signup' && promoGiven ? { promo: '1' } : {}),
     })
     const state = btoa(stateJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
     const params = new URLSearchParams({
@@ -88,7 +91,7 @@ export default function SignInButtons({
         // record consent against (auth.uid() doesn't exist until the
         // callback exchanges the code), so app/auth/callback/route.ts is
         // where it actually gets written, once one does.
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${mode === 'signup' ? '&consent=1' : ''}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${mode === 'signup' ? '&consent=1' : ''}${mode === 'signup' && promoGiven ? '&promo=1' : ''}`,
       },
     })
   }
