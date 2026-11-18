@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       await ensurePlayer(supabase, data.user)
       const h = await headers()
       await recordSignupConsent(supabase, data.user, { ticked: consentGiven, ip: clientIp(h), userAgent: h.get('user-agent'), next })
-      await recordSignupPromoConsent(supabase, data.user, { ticked: promoGiven, next })
+      await recordSignupPromoConsent(supabase, data.user, { ticked: promoGiven })
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

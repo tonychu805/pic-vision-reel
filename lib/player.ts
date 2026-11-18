@@ -14,7 +14,7 @@
 // record_player_consent()'s SQL already uses for this table.
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { CONSENT_VERSION } from '@/lib/consent'
-import { promoTickedInMetadata, venueHasChoice, type PromoVenue } from '@/lib/promoPrompt'
+import { promoTickedInMetadata } from '@/lib/promoPrompt'
 import { venueSlugFromNext } from '@/lib/venueSlug'
 
 export async function ensurePlayer(supabase: SupabaseClient, user: User): Promise<void> {
@@ -72,27 +72,22 @@ export async function applyVenueTrainingDefault(supabase: SupabaseClient, slug: 
 }
 
 /**
- * Records the optional signup box "let {venue} share my highlights", once,
- * for the venue the signup started from.
+ * Records the optional signup box "let partner venues share my highlights",
+ * once. It is the account-wide promotion setting, so it shows on every signup.
  *
  * Carried exactly like the required box: `ticked` covers the LINE/Google
- * round trip (promo=1, with that request's `next`), user_metadata.
- * promo_consent_version + venue_next cover email signup, whose first session
- * may open on another device. No venue in `next` means no box was shown, so
- * nothing is recorded. A venue the player already has a yes/no for is left
- * alone (get_my_promo_venues), so a later "off" in Account settings is never
- * undone by the metadata still sitting on the account.
+ * round trip (promo=1), user_metadata.promo_consent_version covers email
+ * signup, whose first session may open on another device. A player who has any
+ * player_promo_consents row is left alone, so a later "off" in Account
+ * settings is never undone by the metadata still sitting on the account.
  */
 export async function recordSignupPromoConsent(
-  supabase: SupabaseClient, user: User | null, { ticked, next }: { ticked: boolean; next?: string | null },
+  supabase: SupabaseClient, user: User | null, { ticked }: { ticked: boolean },
 ): Promise<void> {
   const fromSignup = promoTickedInMetadata(user?.user_metadata, CONSENT_VERSION)
   if (!ticked && !fromSignup) return
-  const metadata = user?.user_metadata as { venue_next?: string } | null
-  const slug = venueSlugFromNext(metadata?.venue_next) ?? (ticked ? venueSlugFromNext(next) : null)
-  if (!slug) return
-  const { data: venues } = await supabase.rpc('get_my_promo_venues')
-  if (venueHasChoice((venues ?? []) as PromoVenue[], slug)) return
-  const { error } = await supabase.rpc('set_promo_consent', { p_slug: slug, p_consented: true, p_source: 'signup' })
+  const { data: existing } = await supabase.from('player_promo_consents').select('consented').limit(1)
+  if (existing?.length) return
+  const { error } = await supabase.rpc('set_promo_consent', { p_consented: true, p_source: 'signup' })
   if (error) console.error('set_promo_consent (signup) failed', error.code, error.message)
 }

@@ -8,16 +8,15 @@ import { setTrainingConsent, setPromoConsent } from '@/app/[slug]/[code]/actions
 import { updateEmail, updatePassword } from './actions'
 import SignupProfileForm from '@/components/signup-profile-form'
 import type { ProfileFields } from '@/lib/accountData'
-import type { PromoVenue } from '@/lib/promoPrompt'
 
 
 export default function AccountForm({
-  lang, initialName, initialTraining, initialPromoVenues, isLineAccount, initialEmail, hasPassword, profile,
+  lang, initialName, initialTraining, initialPromo, isLineAccount, initialEmail, hasPassword, profile,
 }: {
   lang: Lang
   initialName: string
   initialTraining: boolean
-  initialPromoVenues: PromoVenue[]
+  initialPromo: boolean
   isLineAccount: boolean
   initialEmail: string | null
   hasPassword: boolean
@@ -31,9 +30,8 @@ export default function AccountForm({
   const [editingProfile, setEditingProfile] = useState(false)
   const [savedName, setSavedName] = useState(initialName)
   const [training, setTraining] = useState(initialTraining)
-  // slug -> on/off; a venue never set (null) shows off.
-  const [promo, setPromo] = useState<Record<string, boolean>>(() => Object.fromEntries(initialPromoVenues.map((v) => [v.slug, v.consented === true])))
-  const [promoBusySlug, setPromoBusySlug] = useState<string | null>(null)
+  const [promo, setPromo] = useState(initialPromo)
+  const [promoBusy, setPromoBusy] = useState(false)
   const [promoMessage, setPromoMessage] = useState<{ text: string; failed: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
   const [signOutMessage, setSignOutMessage] = useState<string | null>(null)
@@ -62,18 +60,18 @@ export default function AccountForm({
     } finally { setBusy(false) }
   }
 
-  async function changePromo(slug: string, value: boolean) {
-    setPromo((p) => ({ ...p, [slug]: value }))
-    setPromoBusySlug(slug)
+  async function changePromo(value: boolean) {
+    setPromo(value)
+    setPromoBusy(true)
     setPromoMessage(null)
     try {
-      const { error } = await setPromoConsent(slug, value, 'account')
+      const { error } = await setPromoConsent(value, 'account')
       if (error) throw new Error(error)
       setPromoMessage({ text: t(lang, 'savedMessage'), failed: false })
     } catch {
-      setPromo((p) => ({ ...p, [slug]: !value }))
+      setPromo(!value)
       setPromoMessage({ text: t(lang, 'promoSaveFailed'), failed: true })
-    } finally { setPromoBusySlug(null) }
+    } finally { setPromoBusy(false) }
   }
 
   async function changeEmail() {
@@ -165,18 +163,13 @@ export default function AccountForm({
           </span>
         </label>
         {trainingMessage && <p role={trainingMessage.failed ? 'alert' : 'status'} className={trainingMessage.failed ? 'form-note form-note--error' : 'form-note'}>{trainingMessage.text}</p>}
-        <div className="setting-text">{t(lang, 'promoSettingTitle')}<span className="setting-hint">{t(lang, 'promoSettingBody')}</span></div>
-        {initialPromoVenues.length === 0 ? (
-          <p className="setting-hint">{t(lang, 'promoVenuesEmpty')}</p>
-        ) : initialPromoVenues.map((v) => (
-          <label key={v.slug} className="setting-row">
-            <span className="setting-text">{v.brand_name}</span>
-            <span className="switch">
-              <input type="checkbox" checked={promo[v.slug] === true} disabled={promoBusySlug === v.slug} onChange={(e) => void changePromo(v.slug, e.target.checked)} />
-              <span className="switch-track" />
-            </span>
-          </label>
-        ))}
+        <label className="setting-row">
+          <span className="setting-text">{t(lang, 'promoSettingTitle')}<span className="setting-hint">{t(lang, 'promoSettingBody')}</span></span>
+          <span className="switch">
+            <input type="checkbox" checked={promo} disabled={promoBusy} onChange={(e) => void changePromo(e.target.checked)} />
+            <span className="switch-track" />
+          </span>
+        </label>
         {promoMessage && <p role={promoMessage.failed ? 'alert' : 'status'} className={promoMessage.failed ? 'form-note form-note--error' : 'form-note'}>{promoMessage.text}</p>}
       </section>
 

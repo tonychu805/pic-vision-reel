@@ -102,7 +102,7 @@ export async function GET(request: Request) {
   // GoTrue user, so there is no user_metadata fallback: the tick is only
   // honoured on this very round trip.
   if (state.promo === '1') {
-    await recordSignupPromoConsent(supabase, null, { ticked: true, next })
+    await recordSignupPromoConsent(supabase, null, { ticked: true })
   }
 
   const response = NextResponse.redirect(`${origin}${next}`)
