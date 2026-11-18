@@ -387,6 +387,8 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .checkin-claim-when { margin:0; font-size:13px; color:var(--ink-2); }
 .checkin-claim-done { margin:0; font-size:13.5px; color:var(--ink); }
 .promo-toggle { margin-top:6px; }
+.promo-covered { margin:6px 0 0; display:flex; flex-wrap:wrap; align-items:center; column-gap:8px; font-size:13px; line-height:1.45; color:var(--muted); text-wrap:pretty; }
+.promo-covered-link { font-size:13px; }
 .promo-toggle .setting-row { gap:12px; }
 .promo-toggle-label { font-size:13px; line-height:1.45; color:var(--ink-2); text-wrap:pretty; }
 .consent-choice-hint { display:block; margin-top:4px; font-size:13px; line-height:1.45; color:var(--muted); }

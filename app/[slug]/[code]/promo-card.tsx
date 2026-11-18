@@ -17,7 +17,18 @@ export default function PromoCard({
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  if (initial.kind === 'covered-by-account') return null
+  // Account consent covers this game: say which venue, so the player never
+  // reads the account setting as something vague (operator 2026-11-18).
+  if (initial.kind === 'covered-by-account') {
+    return (
+      <p className="promo-covered">
+        <span>✓ {t(lang, 'promoCoveredLine', { venue: venueName })}</span>
+        <a href="?tab=account" className="link-button promo-covered-link" onClick={(e) => { e.preventDefault(); const url = new URL(window.location.href); url.searchParams.set('tab', 'account'); window.location.assign(url) }}>
+          {t(lang, 'promoCoveredSettings')}
+        </a>
+      </p>
+    )
+  }
 
   async function change(next: boolean) {
     setAllowed(next)
