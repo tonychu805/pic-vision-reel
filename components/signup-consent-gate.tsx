@@ -47,7 +47,10 @@ export default function SignupConsentGate({ lang, next, venueName }: { lang: Lan
       {venueName && (
         <label className="consent-choice-label consent-choice-label--optional">
           <input type="checkbox" checked={promoBox} onChange={(e) => setPromoBox(e.target.checked)} />
-          <span>{t(lang, 'promoSignupLabel', { venue: venueName })}</span>
+          <span>
+            {t(lang, 'promoSignupLabel', { venue: venueName })}
+            <span className="consent-choice-hint">{t(lang, 'promoSignupHint')}</span>
+          </span>
         </label>
       )}
     </div>

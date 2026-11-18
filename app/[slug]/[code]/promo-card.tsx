@@ -58,13 +58,13 @@ export default function PromoCard({
           </div>
           <label className="promo-card-future">
             <input type="checkbox" checked={future} disabled={busy} onChange={(e) => setFuture(e.target.checked)} />
-            <span>{t(lang, 'promoCardFuture', { venue: venueName })}</span>
+            <span>{t(lang, 'promoCardFuture')}</span>
           </label>
         </>
       ) : (
         <p className="promo-card-answer">
-          {t(lang, prompt.allowed ? 'promoAnsweredYes' : 'promoAnsweredNo', { venue: venueName })}{' '}
-          <button type="button" className="link-button" disabled={busy} onClick={() => void answer(!prompt.allowed, false)}>
+          {t(lang, prompt.allowed ? 'promoAnsweredYes' : 'promoAnsweredNo', { venue: venueName })}
+          <button type="button" className="link-button promo-card-change" disabled={busy} onClick={() => void answer(!prompt.allowed, false)}>
             {t(lang, prompt.allowed ? 'promoChangeToNo' : 'promoChangeToYes')}
           </button>
         </p>
