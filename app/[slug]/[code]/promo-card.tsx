@@ -1,74 +1,47 @@
 'use client'
 
-// Under a claimed game: asks once whether the venue may use that game's
-// highlights in promotion (operator 2026-11-17), then shows the answer with a
-// text control to change it. Nothing here when the account setting already
-// agrees for this venue. The prompt state comes from lib/promoPrompt.ts; the server's value is
-// the starting point and a successful answer replaces it locally.
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { t, type Lang } from '@/lib/i18n'
 import type { PromoPrompt } from '@/lib/promoPrompt'
-import { answerSessionPromo, setPromoConsent } from './actions'
+import { answerSessionPromo } from './actions'
 
+// One quiet switch under a claimed game (operator 2026-11-18: the question card
+// with two big buttons felt pushy). Off until the player turns it on; turning it
+// on is the consent for this game only. Venue-wide consent lives in Account.
 export default function PromoCard({
-  lang, slug, venueName, sessionId, initial,
+  lang, venueName, sessionId, initial,
 }: { lang: Lang; slug: string; venueName: string; sessionId: string; initial: PromoPrompt }) {
   const router = useRouter()
-  const [local, setLocal] = useState<PromoPrompt | null>(null)
-  const [future, setFuture] = useState(false)
+  const [allowed, setAllowed] = useState(initial.kind === 'answered' && initial.allowed)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
-  const prompt = local ?? initial
 
-  async function answer(allowed: boolean, alsoFuture: boolean) {
+  if (initial.kind === 'covered-by-venue') return null
+
+  async function change(next: boolean) {
+    setAllowed(next)
     setBusy(true)
     setFailed(false)
     try {
-      const first = await answerSessionPromo(sessionId, allowed)
-      if (first.error) throw new Error(first.error)
-      if (allowed && alsoFuture) {
-        const second = await setPromoConsent(slug, true, 'claim')
-        if (second.error) throw new Error(second.error)
-        setLocal({ kind: 'covered-by-venue' })
-      } else {
-        setLocal({ kind: 'answered', allowed })
-      }
+      const { error } = await answerSessionPromo(sessionId, next)
+      if (error) throw new Error(error)
       router.refresh()
     } catch {
+      setAllowed(!next)
       setFailed(true)
     } finally { setBusy(false) }
   }
 
-  if (prompt.kind === 'covered-by-venue') return null
-
   return (
-    <div className="promo-card">
-      {prompt.kind === 'ask' ? (
-        <>
-          <div className="promo-card-head">
-            <p className="promo-card-title">{t(lang, 'promoCardTitle', { venue: venueName })}</p>
-            <button type="button" className="icon-btn" disabled={busy} aria-label={t(lang, 'promoCardDismiss')} onClick={() => void answer(false, false)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-            </button>
-          </div>
-          <div className="button-row">
-            <button type="button" className="btn btn--secondary" disabled={busy} onClick={() => void answer(true, future)}>{t(lang, 'promoCardYes')}</button>
-            <button type="button" className="btn btn--secondary" disabled={busy} onClick={() => void answer(false, false)}>{t(lang, 'promoCardNo')}</button>
-          </div>
-          <label className="promo-card-future">
-            <input type="checkbox" checked={future} disabled={busy} onChange={(e) => setFuture(e.target.checked)} />
-            <span>{t(lang, 'promoCardFuture')}</span>
-          </label>
-        </>
-      ) : (
-        <p className="promo-card-answer">
-          {t(lang, prompt.allowed ? 'promoAnsweredYes' : 'promoAnsweredNo', { venue: venueName })}
-          <button type="button" className="link-button promo-card-change" disabled={busy} onClick={() => void answer(!prompt.allowed, false)}>
-            {t(lang, prompt.allowed ? 'promoChangeToNo' : 'promoChangeToYes')}
-          </button>
-        </p>
-      )}
+    <div className="promo-toggle">
+      <label className="setting-row">
+        <span className="promo-toggle-label">{t(lang, 'promoGameToggle', { venue: venueName })}</span>
+        <span className="switch">
+          <input type="checkbox" checked={allowed} disabled={busy} onChange={(e) => void change(e.target.checked)} />
+          <span className="switch-track" />
+        </span>
+      </label>
       {failed && <p role="alert" className="form-note form-note--error">{t(lang, 'promoSaveFailed')}</p>}
     </div>
   )
