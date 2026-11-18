@@ -113,7 +113,7 @@ export default function CheckinPanel({
   options: CheckInOption[]
   recentGames: RecentGame[]
   venueName: string
-  // player_promo_consents (no row = false), and this player's session_promo_answers keyed by session id.
+  // player_promo_consents for THIS venue (no row = false), and this player's session_promo_answers keyed by session id.
   promoConsented: boolean
   promoAnswers: Record<string, boolean>
 }) {
@@ -366,7 +366,7 @@ export default function CheckinPanel({
               {t(lang, 'checkInClaimed')}{' '}
               <a href="?tab=highlights" className="link-button" onClick={(e) => { e.preventDefault(); const url = new URL(window.location.href); url.searchParams.set('tab', 'highlights'); window.location.assign(url) }}>{t(lang, 'goToHighlights')}</a>
             </p>
-            <PromoCard lang={lang} venueName={venueName} sessionId={g.session_id} initial={promoPrompt(promoConsented, promoAnswers[g.session_id])} />
+            <PromoCard lang={lang} venueName={venueName} sessionId={g.session_id} slug={slug} initial={promoPrompt(promoConsented, promoAnswers[g.session_id])} />
             {leaveRow(g.session_id, o.camera_label)}
           </>
         ) : confirmBar(confirmKey) ?? (

@@ -44,7 +44,7 @@ export default async function AccountPage() {
             lang={lang}
             initialName={account.displayName}
             initialTraining={account.trainingConsented}
-            initialPromo={account.promoConsented}
+            initialPromoVenues={account.promoVenues}
             isLineAccount={account.isLineAccount}
             initialEmail={account.email}
             hasPassword={account.hasPassword}

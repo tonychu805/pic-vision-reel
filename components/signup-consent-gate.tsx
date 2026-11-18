@@ -6,14 +6,15 @@
 // box ticked doesn't proceed but shakes the box red (handleBlocked). Training
 // is opt-out, explained in the privacy policy and switched off in Account
 // settings, so there is no training box here. Below the required box sits a
-// separate optional one (2026-11-17), unticked, that lets the venue use the
-// player's highlights in promotion; no button waits on it.
+// separate optional one (2026-11-17), unticked, that lets the venue the signup
+// came from use the player's highlights in promotion; no button waits on it.
+// It names the venue and only exists when there is one (2026-11-18).
 import { useState } from 'react'
 import { t, type Lang } from '@/lib/i18n'
 import SignInButtons from './sign-in-buttons'
 import EmailAuthForm from './email-auth-form'
 
-export default function SignupConsentGate({ lang, next }: { lang: Lang; next: string }) {
+export default function SignupConsentGate({ lang, next, venueName }: { lang: Lang; next: string; venueName: string | null }) {
   const [essentialBox, setEssentialBox] = useState(false)
   // Optional and off by default: never gates a signup button.
   const [promoBox, setPromoBox] = useState(false)
@@ -43,17 +44,19 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
           {t(lang, 'consentSuffix')}{t(lang, 'emailNotice')}
         </span>
       </label>
-      <label className="consent-choice-label consent-choice-label--optional">
-        <input type="checkbox" checked={promoBox} onChange={(e) => setPromoBox(e.target.checked)} />
-        <span>{t(lang, 'promoSignupLabel')}</span>
-      </label>
+      {venueName && (
+        <label className="consent-choice-label consent-choice-label--optional">
+          <input type="checkbox" checked={promoBox} onChange={(e) => setPromoBox(e.target.checked)} />
+          <span>{t(lang, 'promoSignupLabel', { venue: venueName })}</span>
+        </label>
+      )}
     </div>
   )
   return (
     <>
-      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={essentialBox} promoGiven={promoBox} onBlocked={handleBlocked} />
+      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={essentialBox} promoGiven={promoBox && !!venueName} onBlocked={handleBlocked} />
       <p className="or-divider">{t(lang, 'orDivider')}</p>
-      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={essentialBox} promoGiven={promoBox} onBlocked={handleBlocked} notice={notice} />
+      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={essentialBox} promoGiven={promoBox && !!venueName} onBlocked={handleBlocked} notice={notice} />
     </>
   )
 }
