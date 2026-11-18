@@ -3,7 +3,7 @@
 // Under a claimed game: asks once whether the venue may use that game's
 // highlights in promotion (operator 2026-11-17), then shows the answer with a
 // text control to change it. Nothing here when the account setting already
-// agrees. The prompt state comes from lib/promoPrompt.ts; the server's value is
+// agrees for this venue. The prompt state comes from lib/promoPrompt.ts; the server's value is
 // the starting point and a successful answer replaces it locally.
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -12,8 +12,8 @@ import type { PromoPrompt } from '@/lib/promoPrompt'
 import { answerSessionPromo, setPromoConsent } from './actions'
 
 export default function PromoCard({
-  lang, venueName, sessionId, initial,
-}: { lang: Lang; venueName: string; sessionId: string; initial: PromoPrompt }) {
+  lang, slug, venueName, sessionId, initial,
+}: { lang: Lang; slug: string; venueName: string; sessionId: string; initial: PromoPrompt }) {
   const router = useRouter()
   const [local, setLocal] = useState<PromoPrompt | null>(null)
   const [future, setFuture] = useState(false)
@@ -28,9 +28,9 @@ export default function PromoCard({
       const first = await answerSessionPromo(sessionId, allowed)
       if (first.error) throw new Error(first.error)
       if (allowed && alsoFuture) {
-        const second = await setPromoConsent(true, 'claim')
+        const second = await setPromoConsent(slug, true, 'claim')
         if (second.error) throw new Error(second.error)
-        setLocal({ kind: 'covered-by-account' })
+        setLocal({ kind: 'covered-by-venue' })
       } else {
         setLocal({ kind: 'answered', allowed })
       }
@@ -40,7 +40,7 @@ export default function PromoCard({
     } finally { setBusy(false) }
   }
 
-  if (prompt.kind === 'covered-by-account') return null
+  if (prompt.kind === 'covered-by-venue') return null
 
   return (
     <div className="promo-card">
@@ -58,7 +58,7 @@ export default function PromoCard({
           </div>
           <label className="promo-card-future">
             <input type="checkbox" checked={future} disabled={busy} onChange={(e) => setFuture(e.target.checked)} />
-            <span>{t(lang, 'promoCardFuture')}</span>
+            <span>{t(lang, 'promoCardFuture', { venue: venueName })}</span>
           </label>
         </>
       ) : (

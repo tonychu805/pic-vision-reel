@@ -18,12 +18,15 @@ export async function setTrainingConsent(consented: boolean) {
   return { error: error?.message ?? null }
 }
 
-// Promotion consent is opt-in: no row means off. The source says where the tick
-// came from ('account' here, 'claim' from the claim card; 'signup' is written
-// by lib/player.ts recordSignupPromoConsent).
-export async function setPromoConsent(consented: boolean, source: 'account' | 'claim') {
+// Promotion consent is opt-in and per venue: no row means off. The slug is the
+// venue's public calendar slug. The source says where the tick came from
+// ('account' from the Account list, 'claim' from the claim card; 'signup' is
+// written by lib/player.ts recordSignupPromoConsent). The database raises
+// 'unknown_venue' for a slug it doesn't know.
+export async function setPromoConsent(slug: string, consented: boolean, source: 'account' | 'claim') {
+  if (!isVenueSlug(slug)) return { error: 'unknown_venue' }
   const supabase = await createClient()
-  const { error } = await supabase.rpc('set_promo_consent', { p_consented: consented, p_source: source })
+  const { error } = await supabase.rpc('set_promo_consent', { p_slug: slug, p_consented: consented, p_source: source })
   return { error: error?.message ?? null }
 }
 

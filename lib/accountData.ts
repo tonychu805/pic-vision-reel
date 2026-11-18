@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import type { PromoVenue } from '@/lib/promoPrompt'
 import type { createClient } from '@/lib/supabaseServer'
 import { AUTH0_ID_TOKEN_COOKIE } from '@/lib/auth0'
 
@@ -17,8 +18,8 @@ export type ProfileFields = {
 export type AccountData = {
   displayName: string
   trainingConsented: boolean
-  // Opt-in (2026-11-17): never answered means off.
-  promoConsented: boolean
+  // Opt-in and per venue (2026-11-18): venues the player has played at or answered for; null = never set.
+  promoVenues: PromoVenue[]
   isLineAccount: boolean
   email: string | null
   hasPassword: boolean
@@ -33,10 +34,10 @@ export type AccountData = {
 // calendar page's 帳號 tab (app/[slug]/[code]) -- same account, same
 // fetch either way, written once rather than drifting into two copies.
 export async function getAccountData(supabase: Awaited<ReturnType<typeof createClient>>, playerId: string): Promise<AccountData> {
-  const [{ data: player }, { data: training }, { data: promo }] = await Promise.all([
+  const [{ data: player }, { data: training }, { data: promoVenues }] = await Promise.all([
     supabase.from('players').select('display_name, created_at, profile_completed_at, first_name, last_name, birth_date, phone_country, phone, gender, location, marketing_opt_in').eq('id', playerId).maybeSingle(),
     supabase.from('player_training_consents').select('consented').eq('player_id', playerId).maybeSingle(),
-    supabase.from('player_promo_consents').select('consented').eq('player_id', playerId).maybeSingle(),
+    supabase.rpc('get_my_promo_venues'),
   ])
 
   // Email/password only make sense for a GoTrue (Google/email) session --
@@ -74,7 +75,7 @@ export async function getAccountData(supabase: Awaited<ReturnType<typeof createC
     },
     // Opt-out (operator 2026-11-16): never answered means on, as the archive rule reads it.
     trainingConsented: training?.consented ?? true,
-    promoConsented: promo?.consented === true,
+    promoVenues: (promoVenues ?? []) as PromoVenue[],
     isLineAccount,
     email,
     hasPassword,

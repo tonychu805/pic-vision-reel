@@ -187,7 +187,8 @@ test('vertical Send shares the page link, Share still attaches the clip', async 
 })
 
 const accountProps = {
-  lang: 'en', initialName: 'Old name', initialTraining: false, initialPromo: false,
+  lang: 'en', initialName: 'Old name', initialTraining: false,
+  initialPromoVenues: [{ brand_name: 'Pickle Club', slug: 'pickle-club', consented: null }, { brand_name: 'Dink House', slug: 'dink-house', consented: true }],
   isLineAccount: true, initialEmail: null, hasPassword: false, memberSince: null,
   profile: { firstName: 'Old', lastName: '', birthDate: null, phoneCountry: '+886', phone: '955809317', gender: null, location: null, marketingOptIn: false },
 }
@@ -196,8 +197,8 @@ async function accountPage(overrides = {}) {
   await page.evaluate((input) => {
     window.accountCalls = []
     window.accountResults = {}
-    window.runAccountAction = async (action, value) => {
-      window.accountCalls.push({ action, value })
+    window.runAccountAction = async (action, value, extra) => {
+      window.accountCalls.push({ action, value, ...extra })
       const result = window.accountResults[action]
       if (result === 'throw') throw new Error('Network disconnected')
       return { error: result ?? null }
@@ -226,17 +227,27 @@ test('a failed privacy save flips the switch back with an alert, and a retry sav
   assert.equal(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'training').at(-1).value), true)
 })
 
-test('the promotion switch starts off, saves when turned on, and flips back on a failed save', async () => {
+test('each venue has its own promotion switch that saves with its slug, and flips back on a failed save', async () => {
   const page = await accountPage()
-  const promo = page.getByRole('checkbox', { name: /Let the venue share my highlights/ })
-  assert.equal(await promo.isChecked(), false)
-  await promo.check()
+  const pickle = page.getByRole('checkbox', { name: 'Pickle Club' })
+  const dink = page.getByRole('checkbox', { name: 'Dink House' })
+  assert.equal(await pickle.isChecked(), false) // never set shows off
+  assert.equal(await dink.isChecked(), true)
+  await pickle.check()
   await page.getByText('Saved.', { exact: true }).waitFor()
-  assert.equal(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'promo').at(-1).value), true)
+  assert.deepEqual(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'promo').at(-1)),
+    { action: 'promo', value: true, slug: 'pickle-club', source: 'account' })
+  assert.equal(await dink.isChecked(), true) // the other venue is untouched
   await page.evaluate(() => { window.accountResults.promo = 'promo update rejected' })
-  await promo.click()
+  await dink.click()
   await page.getByRole('alert').waitFor()
-  assert.equal(await promo.isChecked(), true)
+  assert.equal(await dink.isChecked(), true)
+  assert.equal(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'promo').at(-1).slug), 'dink-house')
+})
+
+test('with no venues the promotion list says so instead of showing a switch', async () => {
+  const page = await accountPage({ initialPromoVenues: [] })
+  await page.getByText("You haven't played at any venue yet.").waitFor()
 })
 
 test('basic information shows what signup collected, and Edit saves it in place', async () => {

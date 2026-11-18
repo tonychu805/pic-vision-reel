@@ -8,6 +8,7 @@ import { t } from '@/lib/i18n'
 import { currentLang } from '@/lib/lang-server'
 import LangSwitch from '@/components/lang-switch'
 import { getAccountData } from '@/lib/accountData'
+import { venueConsented } from '@/lib/promoPrompt'
 import AccountForm from '@/app/account/account-form'
 import CheckinPanel, { type CheckInOption, type RecentGame } from './checkin-panel'
 import DemoAdminPanel from './demo-admin-panel'
@@ -141,7 +142,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
         <CalendarTabs
           lang={lang}
           initialTab={initialTab}
-          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={shownOptions} recentGames={recentGames} venueName={cal.brand_name} promoConsented={account.promoConsented} promoAnswers={promoAnswers} />}
+          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={shownOptions} recentGames={recentGames} venueName={cal.brand_name} promoConsented={venueConsented(account.promoVenues, slug)} promoAnswers={promoAnswers} />}
           sessions={
             <div className="sessions-view">
               <div className="sessions-heading">
@@ -172,7 +173,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
               lang={lang}
               initialName={account.displayName}
               initialTraining={account.trainingConsented}
-              initialPromo={account.promoConsented}
+              initialPromoVenues={account.promoVenues}
               isLineAccount={account.isLineAccount}
               initialEmail={account.email}
               hasPassword={account.hasPassword}
