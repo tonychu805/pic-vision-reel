@@ -210,7 +210,7 @@ export default function CheckinPanel({
   async function doJoin(sessionId: string) {
     setBusy(sessionId)
     setError(null)
-    const { error } = await joinCheckIn(sessionId)
+    const { error } = await joinCheckIn(slug, sessionId)
     setBusy(null)
     if (error) { showError(error); return }
     router.refresh()

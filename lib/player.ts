@@ -67,7 +67,8 @@ export async function recordSignupConsent(
  */
 export async function applyVenueTrainingDefault(supabase: SupabaseClient, slug: string | null): Promise<void> {
   if (!slug) return
-  await supabase.rpc('apply_venue_training_default', { p_slug: slug })
+  const { error } = await supabase.rpc('apply_venue_training_default', { p_slug: slug })
+  if (error) console.error('apply_venue_training_default failed', error.code, error.message)
 }
 
 /**
