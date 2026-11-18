@@ -334,7 +334,7 @@ export default function CheckinPanel({
     )
   }
 
-  function cardHead(label: string, badge: { text: string; tone: 'free' | 'recording' | 'joinable' }) {
+  function cardHead(label: string, badge: { text: string; tone: 'free' | 'recording' }) {
     return (
       <div className="checkin-head">
         <span className="checkin-name">{label}</span>
@@ -458,7 +458,8 @@ export default function CheckinPanel({
       const confirmKey = `join-${o.busy_session_id}`
       return (
         <div key={o.camera_row_id} className="checkin-card checkin-card--joinable">
-          {cardHead(o.camera_label, { text: `${o.participant_count}/10`, tone: 'joinable' })}
+          {/* Someone else's game is already recording: say so before the player joins (operator 2026-11-18). */}
+          {cardHead(o.camera_label, { text: `${t(lang, 'checkInStatusRecording')} · ${o.participant_count}/10`, tone: 'recording' })}
           {bookedUntil && <p className="checkin-line">{bookedUntil}</p>}
           {confirmBar(confirmKey) ?? (
             <div className="checkin-actions">

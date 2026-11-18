@@ -235,9 +235,8 @@ a.bottom-nav-item { text-decoration:none; }
 .checkin-name { font-size:22px; line-height:1.1; font-weight:800; font-stretch:80%; }
 .checkin-badge { flex:none; display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:800; white-space:nowrap; }
 .checkin-badge--free { background:var(--court-tint); color:var(--court-deep); }
-.checkin-badge--recording { background:var(--signal-tint); color:var(--signal); }
+.checkin-badge--recording { background:var(--signal-tint); color:var(--signal); font-variant-numeric:tabular-nums; }
 .checkin-badge--recording::before { content:''; width:7px; height:7px; border-radius:50%; background:currentColor; }
-.checkin-badge--joinable { background:#f3e9cf; color:var(--amber); font-variant-numeric:tabular-nums; }
 .checkin-line { margin:0; color:var(--ink-2); font-size:14px; line-height:1.45; }
 .checkin-line--error { color:var(--signal); }
 .checkin-owner-time { margin:0; font-size:14px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
