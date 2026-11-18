@@ -20,7 +20,7 @@ exports.bundleClients = function bundleClients() {
       exports.updateDisplayName=(value)=>window.runAccountAction('name',value);
       exports.updateEmail=(value)=>window.runAccountAction('email',value);
       exports.updatePassword=(value)=>window.runAccountAction('password',value);`
-    else if (file === 'trainingAction') code = "exports.setTrainingConsent=(value)=>window.runAccountAction('training',value);exports.setPromoConsent=(slug,value,source)=>window.runAccountAction('promo',value,{slug,source})"
+    else if (file === 'trainingAction') code = "exports.setTrainingConsent=(value)=>window.runAccountAction('training',value);exports.setPromoConsent=(value,source)=>window.runAccountAction('promo',value,{source})"
     else if (file === 'profileAction') code = "exports.saveSignupProfile=(value)=>window.runAccountAction('profile',value)"
     else if (file === 'signOutAction') code = "exports.signOutEverywhere=()=>window.runAccountAction('signout')"
     else if (file.endsWith('.css')) {

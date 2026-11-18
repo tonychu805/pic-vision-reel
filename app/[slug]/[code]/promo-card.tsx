@@ -8,16 +8,16 @@ import { answerSessionPromo } from './actions'
 
 // One quiet switch under a claimed game (operator 2026-11-18: the question card
 // with two big buttons felt pushy). Off until the player turns it on; turning it
-// on is the consent for this game only. Venue-wide consent lives in Account.
+// on is the consent for this game only. The all-venue setting lives in Account.
 export default function PromoCard({
   lang, venueName, sessionId, initial,
-}: { lang: Lang; slug: string; venueName: string; sessionId: string; initial: PromoPrompt }) {
+}: { lang: Lang; venueName: string; sessionId: string; initial: PromoPrompt }) {
   const router = useRouter()
   const [allowed, setAllowed] = useState(initial.kind === 'answered' && initial.allowed)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  if (initial.kind === 'covered-by-venue') return null
+  if (initial.kind === 'covered-by-account') return null
 
   async function change(next: boolean) {
     setAllowed(next)

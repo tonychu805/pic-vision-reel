@@ -26,7 +26,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
   // comment on this same default.
   const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/account'
 
-  // Looked up once for both the header and the promotion box, which names the venue.
+  // Looked up here so the header can name the venue in its subtitle.
   const venue = await venueFromNext(safeNext)
 
   return (
@@ -37,7 +37,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
         </div>
         <div className="auth-main">
           <AuthHeader lang={lang} next={safeNext} titleKey="signUpTitle" subtitleKey="signUpSubtitle" venueSubtitleKey="signUpSubtitleVenue" venue={venue} />
-          <SignupConsentGate lang={lang} next={safeNext} venueName={venue?.brand_name ?? null} />
+          <SignupConsentGate lang={lang} next={safeNext} />
           <p className="auth-switch">
             {t(lang, 'haveAccountAlready')}{' '}
             <Link href={`/login?next=${encodeURIComponent(safeNext)}`}>{t(lang, 'goToSignIn')}</Link>
