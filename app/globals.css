@@ -297,7 +297,7 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .auth-main { flex:1; display:flex; flex-direction:column; justify-content:center; gap:20px; padding:24px 0; }
 .auth-head { display:flex; flex-direction:column; align-items:flex-start; gap:16px; }
 .auth-head h1 { font-size:34px; }
-.auth-sub { margin:0; color:var(--ink-2); font-size:16px; }
+.auth-sub { margin:10px 0 0; color:var(--ink-2); font-size:16px; text-wrap:pretty; }
 .auth-error { margin:0; padding:12px 14px; border-radius:8px; background:var(--signal-tint); color:var(--signal); font-size:14px; font-weight:600; }
 .auth-switch { margin:0; font-size:14px; color:var(--ink-2); }
 .auth-switch a { color:var(--court); font-weight:800; text-underline-offset:3px; }
@@ -391,5 +391,7 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .promo-card-title { margin:0; font-size:14px; font-weight:700; line-height:1.4; color:var(--ink); }
 .promo-card-future { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-2); cursor:pointer; }
 .promo-card-future input { width:18px; height:18px; accent-color:var(--court); }
-.promo-card-answer { margin:0; font-size:13px; line-height:1.45; color:var(--ink-2); }
+.promo-card-answer { margin:0; font-size:13px; line-height:1.45; color:var(--ink-2); display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-wrap:pretty; }
+.promo-card-change { font-size:13px; }
+.consent-choice-hint { display:block; margin-top:4px; font-size:13px; line-height:1.45; color:var(--muted); }
 .checkin-claim-action { align-self:flex-start; font-size:14px; font-weight:700; color:var(--court); }
