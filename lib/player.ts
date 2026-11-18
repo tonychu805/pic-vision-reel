@@ -15,6 +15,7 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { CONSENT_VERSION } from '@/lib/consent'
 import { promoTickedInMetadata } from '@/lib/promoPrompt'
+import { venueSlugFromNext } from '@/lib/venueSlug'
 
 export async function ensurePlayer(supabase: SupabaseClient, user: User): Promise<void> {
   const metadata = user.user_metadata as { name?: string; full_name?: string } | null
@@ -36,11 +37,18 @@ export async function ensurePlayer(supabase: SupabaseClient, user: User): Promis
  * covers the LINE/Google round trip (consent=1). record_player_consent()
  * inserts a row per call, so this skips a player already holding consent for
  * the current version.
+ *
+ * When it records the consent it also applies the venue's training default
+ * for the venue the player signed up from: `next` is the signup's own
+ * /[slug]/[code] path (Google round trip), user_metadata.venue_next the same
+ * path kept on the account for email signup.
  */
 export async function recordSignupConsent(
-  supabase: SupabaseClient, user: User, { ticked, ip, userAgent }: { ticked: boolean; ip: string | null; userAgent: string | null },
+  supabase: SupabaseClient, user: User,
+  { ticked, ip, userAgent, next }: { ticked: boolean; ip: string | null; userAgent: string | null; next?: string },
 ): Promise<void> {
-  const fromSignup = (user.user_metadata as { consent_version?: string } | null)?.consent_version === CONSENT_VERSION
+  const metadata = user.user_metadata as { consent_version?: string; venue_next?: string } | null
+  const fromSignup = metadata?.consent_version === CONSENT_VERSION
   if (!ticked && !fromSignup) return
   const { data: existing } = await supabase
     .from('player_consents').select('consent_version').eq('player_id', user.id).eq('consent_version', CONSENT_VERSION).limit(1)
@@ -48,6 +56,18 @@ export async function recordSignupConsent(
   await supabase.rpc('record_player_consent', {
     p_filming_consent: true, p_retention_policy_accepted: true, p_ip_address: ip, p_user_agent: userAgent,
   })
+  await applyVenueTrainingDefault(supabase, venueSlugFromNext(metadata?.venue_next) ?? (ticked ? venueSlugFromNext(next) : null))
+}
+
+/**
+ * Lets the venue the player signed up from start "help improve PicVision"
+ * off. The database keeps it safe to call twice: it never overwrites a
+ * training choice and ignores an unknown slug. Must run before anything that
+ * could write a training-consent row; nothing in signup does.
+ */
+export async function applyVenueTrainingDefault(supabase: SupabaseClient, slug: string | null): Promise<void> {
+  if (!slug) return
+  await supabase.rpc('apply_venue_training_default', { p_slug: slug })
 }
 
 /**

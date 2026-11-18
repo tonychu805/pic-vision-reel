@@ -85,8 +85,9 @@ export default function EmailAuthForm({
           options: {
             // The ticked box is kept on the account (consent_version) and recorded the first time it has a
             // session on any device (lib/player.ts recordSignupConsent), since the confirmation link may be
-            // opened elsewhere.
-            data: { name: name.trim() || undefined, consent_version: CONSENT_VERSION, consent_ticked_at: new Date().toISOString(), ...(promoGiven ? { promo_consent_version: CONSENT_VERSION } : {}) },
+            // opened elsewhere. venue_next (the venue page the signup started from) rides along the same way, for the
+            // venue's training default.
+            data: { name: name.trim() || undefined, consent_version: CONSENT_VERSION, consent_ticked_at: new Date().toISOString(), venue_next: next, ...(promoGiven ? { promo_consent_version: CONSENT_VERSION } : {}) },
             emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
           },
         })
