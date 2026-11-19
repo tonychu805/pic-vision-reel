@@ -28,7 +28,7 @@ import { CONSENT_VERSION } from '@/lib/consent'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function EmailAuthForm({
-  lang, mode, next, consentGiven = true, onBlocked, notice,
+  lang, mode, next, consentGiven = true, promoGiven = false, onBlocked, notice,
 }: {
   lang: Lang
   mode: 'login' | 'signup'
@@ -41,6 +41,8 @@ export default function EmailAuthForm({
   // onBlocked() instead of signing up, so the parent
   // (components/signup-consent-gate.tsx) can shake its checkboxes red.
   consentGiven?: boolean
+  // The optional promotion box; kept on the account like the required one (promo_consent_version).
+  promoGiven?: boolean
   onBlocked?: () => void
   // Shown between the fields and the submit button (signup's legal line, operator 2026-11-16).
   notice?: ReactNode
@@ -84,7 +86,7 @@ export default function EmailAuthForm({
             // The ticked box is kept on the account (consent_version) and recorded the first time it has a
             // session on any device (lib/player.ts recordSignupConsent), since the confirmation link may be
             // opened elsewhere.
-            data: { name: name.trim() || undefined, consent_version: CONSENT_VERSION, consent_ticked_at: new Date().toISOString(), venue_next: next },
+            data: { name: name.trim() || undefined, consent_version: CONSENT_VERSION, consent_ticked_at: new Date().toISOString(), venue_next: next, ...(promoGiven ? { promo_consent_version: CONSENT_VERSION } : {}) },
             emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
           },
         })

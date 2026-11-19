@@ -5,7 +5,10 @@
 // above it; every signup button stays clickable, and clicking one without the
 // box ticked doesn't proceed but shakes the box red (handleBlocked). Training
 // is opt-out, explained in the privacy policy and switched off in Account
-// settings, so there is no training box here.
+// settings, so there is no training box here. Below the required box sits a
+// separate optional one (2026-11-17), unticked, that sets the account-wide
+// promotion consent (every partner venue may use the player's highlights); it
+// shows on every signup and no button waits on it (2026-11-18).
 import { useState } from 'react'
 import { t, type Lang } from '@/lib/i18n'
 import SignInButtons from './sign-in-buttons'
@@ -13,6 +16,8 @@ import EmailAuthForm from './email-auth-form'
 
 export default function SignupConsentGate({ lang, next }: { lang: Lang; next: string }) {
   const [essentialBox, setEssentialBox] = useState(false)
+  // Optional and off by default: never gates a signup button.
+  const [promoBox, setPromoBox] = useState(false)
   // Bumped on every blocked attempt; used as a React `key` so the box
   // remounts and the shake restarts even mid-animation.
   const [shakeToken, setShakeToken] = useState(0)
@@ -31,19 +36,28 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
         />
         <span>
           {t(lang, 'consentPrefix')}{' '}
-          {link('https://picvisionai.com/privacy', t(lang, 'consentNoticeLink'))}
-          {' '}{t(lang, 'consentMiddle')}{' '}
+          {link('https://picvisionai.com/venue-player-notice-template', t(lang, 'consentNoticeLink'))}
+          {t(lang, 'consentListSep')}
           {link('https://picvisionai.com/privacy', t(lang, 'consentPrivacyLink'))}
+          {' '}{t(lang, 'consentMiddle')}{' '}
+          {link('https://picvisionai.com/player-terms', t(lang, 'consentTermsLink'))}
           {t(lang, 'consentSuffix')}{t(lang, 'emailNotice')}
+        </span>
+      </label>
+      <label className="consent-choice-label consent-choice-label--optional">
+        <input type="checkbox" checked={promoBox} onChange={(e) => setPromoBox(e.target.checked)} />
+        <span>
+          {t(lang, 'promoSignupLabel')}
+          <span className="consent-choice-hint">{t(lang, 'promoSignupHint')}</span>
         </span>
       </label>
     </div>
   )
   return (
     <>
-      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={essentialBox} onBlocked={handleBlocked} />
+      <SignInButtons lang={lang} next={next} mode="signup" consentGiven={essentialBox} promoGiven={promoBox} onBlocked={handleBlocked} />
       <p className="or-divider">{t(lang, 'orDivider')}</p>
-      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={essentialBox} onBlocked={handleBlocked} notice={notice} />
+      <EmailAuthForm lang={lang} mode="signup" next={next} consentGiven={essentialBox} promoGiven={promoBox} onBlocked={handleBlocked} notice={notice} />
     </>
   )
 }

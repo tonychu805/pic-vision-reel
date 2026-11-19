@@ -9,7 +9,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { AUTH0_ID_TOKEN_COOKIE, AUTH0_REFRESH_TOKEN_COOKIE, exchangeAuth0Token, decodeAuth0IdToken } from '@/lib/auth0'
 import { clientIp } from '@/lib/clientIp'
 import { venueSlugFromNext } from '@/lib/venueSlug'
-import { applyVenueTrainingDefault } from '@/lib/player'
+import { applyVenueTrainingDefault, recordSignupPromoConsent } from '@/lib/player'
 
 
 // Same reverse-proxy caveat as app/auth/callback/route.ts: request.url's
@@ -21,7 +21,7 @@ function trustedOrigin(request: Request, fallback: string): string {
   return proto && host ? `${proto}://${host}` : fallback
 }
 
-type LineState = { next?: string; consent?: string }
+type LineState = { next?: string; consent?: string; promo?: string }
 
 function decodeState(raw: string | null): LineState {
   if (!raw) return {}
@@ -96,6 +96,13 @@ export async function GET(request: Request) {
     // The venue the signup started from may start training off; the player
     // has no training row yet, so this must stay before anything that writes one.
     await applyVenueTrainingDefault(supabase, venueSlugFromNext(next))
+  }
+
+  // The optional promotion box rides in the same state. This client has no
+  // GoTrue user, so there is no user_metadata fallback: the tick is only
+  // honoured on this very round trip.
+  if (state.promo === '1') {
+    await recordSignupPromoConsent(supabase, null, { ticked: true })
   }
 
   const response = NextResponse.redirect(`${origin}${next}`)

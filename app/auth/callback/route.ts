@@ -4,7 +4,7 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabaseServer'
-import { ensurePlayer, recordSignupConsent } from '@/lib/player'
+import { ensurePlayer, recordSignupConsent, recordSignupPromoConsent } from '@/lib/player'
 import { clientIp } from '@/lib/clientIp'
 
 // request.url's origin cannot be trusted behind a reverse proxy (found via
@@ -30,6 +30,8 @@ export async function GET(request: Request) {
   // the LINE/Google round trip and on the email confirmation link -- there's
   // no session to record consent against until this exact point.
   const consentGiven = url.searchParams.get('consent') === '1'
+  // The optional promotion box travels the same way (promo=1).
+  const promoGiven = url.searchParams.get('promo') === '1'
 
   if (code) {
     const supabase = await createClient()
@@ -38,6 +40,7 @@ export async function GET(request: Request) {
       await ensurePlayer(supabase, data.user)
       const h = await headers()
       await recordSignupConsent(supabase, data.user, { ticked: consentGiven, ip: clientIp(h), userAgent: h.get('user-agent'), next })
+      await recordSignupPromoConsent(supabase, data.user, { ticked: promoGiven })
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

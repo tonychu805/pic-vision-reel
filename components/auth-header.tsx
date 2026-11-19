@@ -1,5 +1,5 @@
 import { brandLogoUrl } from '@/lib/brandLogo'
-import { venueFromNext } from '@/lib/venueFromNext'
+import { venueFromNext, type NextVenue } from '@/lib/venueFromNext'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import Wordmark from '@/components/wordmark'
 
@@ -9,8 +9,15 @@ import Wordmark from '@/components/wordmark'
 // generic PicVision AI mark otherwise. Async server component: the venue
 // lookup is a plain public RPC (get_public_calendar via venueFromNext),
 // same anonymous read app/[slug]/[code]/page.tsx already does.
-export default async function AuthHeader({ lang, next, titleKey, subtitleKey }: { lang: Lang; next: string; titleKey: StringKey; subtitleKey: StringKey }) {
-  const venue = await venueFromNext(next)
+//
+// `venue` is passed by a page that already looked it up (the signup page also
+// needs the name for its promotion box); undefined means look it up here.
+// `venueSubtitleKey` is the subtitle that names the venue ({venue}); it is
+// used instead of `subtitleKey` when a venue is known.
+export default async function AuthHeader({ lang, next, titleKey, subtitleKey, venueSubtitleKey, venue: knownVenue }: {
+  lang: Lang; next: string; titleKey: StringKey; subtitleKey: StringKey; venueSubtitleKey?: StringKey; venue?: NextVenue | null
+}) {
+  const venue = knownVenue === undefined ? await venueFromNext(next) : knownVenue
 
   return (
     <div className="auth-head">
@@ -27,7 +34,7 @@ export default async function AuthHeader({ lang, next, titleKey, subtitleKey }: 
       )}
       <div>
         <h1>{t(lang, titleKey)}</h1>
-        <p className="auth-sub">{t(lang, subtitleKey)}</p>
+        <p className="auth-sub">{venue && venueSubtitleKey ? t(lang, venueSubtitleKey, { venue: venue.brand_name }) : t(lang, subtitleKey)}</p>
       </div>
     </div>
   )

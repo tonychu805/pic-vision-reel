@@ -73,11 +73,18 @@ export default async function CalendarPage({ params, searchParams }: { params: P
 
   let checkInOptions: CheckInOption[] = []
   let recentGames: RecentGame[] = []
+  const promoAnswers: Record<string, boolean> = {}
   if (validSlugCode) {
     const { data: options } = await authedSupabase.rpc('get_check_in_options', { p_slug: slug, p_code: code })
     checkInOptions = (options ?? []) as CheckInOption[]
     const { data: recent } = await authedSupabase.rpc('get_recent_games', { p_slug: slug, p_code: code })
     recentGames = (recent ?? []) as RecentGame[]
+    // This player's answers to "may the venue use this game in promotion" (RLS: own rows only).
+    const claimedIds = recentGames.filter((g) => g.already_joined).map((g) => g.session_id)
+    if (claimedIds.length > 0) {
+      const { data: answers } = await authedSupabase.from('session_promo_answers').select('session_id, allowed').in('session_id', claimedIds)
+      for (const a of (answers ?? []) as { session_id: string; allowed: boolean }[]) promoAnswers[a.session_id] = a.allowed
+    }
   }
   // An unknown court (camera since removed from the calendar) falls back to every court rather than an empty page.
   const courtOptions = checkInOptions.filter((o) => o.camera_row_id === court)
@@ -134,7 +141,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
         <CalendarTabs
           lang={lang}
           initialTab={initialTab}
-          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={shownOptions} recentGames={recentGames} />}
+          checkin={<CheckinPanel lang={lang} slug={slug} code={code} timeZone={cal.timezone} options={shownOptions} recentGames={recentGames} venueName={cal.brand_name} promoConsented={account.promoConsented} promoAnswers={promoAnswers} />}
           sessions={
             <div className="sessions-view">
               <div className="sessions-heading">
@@ -165,6 +172,7 @@ export default async function CalendarPage({ params, searchParams }: { params: P
               lang={lang}
               initialName={account.displayName}
               initialTraining={account.trainingConsented}
+              initialPromo={account.promoConsented}
               isLineAccount={account.isLineAccount}
               initialEmail={account.email}
               hasPassword={account.hasPassword}

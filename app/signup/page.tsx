@@ -6,6 +6,7 @@ import LangSwitch from '@/components/lang-switch'
 import AuthHeader from '@/components/auth-header'
 import SignupConsentGate from '@/components/signup-consent-gate'
 import PoweredByFooter from '@/components/powered-by-footer'
+import { venueFromNext } from '@/lib/venueFromNext'
 
 // Mirrors app/login/page.tsx (same SignInButtons -- LINE/Google don't
 // need a separate "sign up" step, first use already creates the players
@@ -25,6 +26,9 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
   // comment on this same default.
   const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/account'
 
+  // Looked up here so the header can name the venue in its subtitle.
+  const venue = await venueFromNext(safeNext)
+
   return (
     <main className="share-page">
       <div className="share-shell">
@@ -32,7 +36,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
           <LangSwitch lang={lang} />
         </div>
         <div className="auth-main">
-          <AuthHeader lang={lang} next={safeNext} titleKey="signUpTitle" subtitleKey="signUpSubtitle" />
+          <AuthHeader lang={lang} next={safeNext} titleKey="signUpTitle" subtitleKey="signUpSubtitle" venueSubtitleKey="signUpSubtitleVenue" venue={venue} />
           <SignupConsentGate lang={lang} next={safeNext} />
           <p className="auth-switch">
             {t(lang, 'haveAccountAlready')}{' '}

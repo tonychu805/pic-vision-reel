@@ -18,6 +18,24 @@ export async function setTrainingConsent(consented: boolean) {
   return { error: error?.message ?? null }
 }
 
+// Promotion consent is opt-in and one setting on the PicVision account, for
+// every venue: no row means off. The source says where the tick came from
+// ('account' from the Account switch, 'claim' from the claim screen; 'signup'
+// is written by lib/player.ts recordSignupPromoConsent). Turning it off also
+// withdraws every per-game yes (done by the database).
+export async function setPromoConsent(consented: boolean, source: 'account' | 'claim') {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('set_promo_consent', { p_consented: consented, p_source: source })
+  return { error: error?.message ?? null }
+}
+
+// One game's answer; the database refuses a player who isn't in that game.
+export async function answerSessionPromo(scheduleSessionId: string, allowed: boolean) {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('answer_session_promo', { p_session_id: scheduleSessionId, p_allowed: allowed })
+  return { error: error?.message ?? null }
+}
+
 export async function checkIn(slug: string, code: string, cameraRowId: string, endsAtISO: string) {
   const supabase = await createClient()
   // Backstop for a signup that never reached the venue default; before the rpc

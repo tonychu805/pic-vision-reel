@@ -188,6 +188,7 @@ test('vertical Send shares the page link, Share still attaches the clip', async 
 
 const accountProps = {
   lang: 'en', initialName: 'Old name', initialTraining: false,
+  initialPromo: false,
   isLineAccount: true, initialEmail: null, hasPassword: false, memberSince: null,
   profile: { firstName: 'Old', lastName: '', birthDate: null, phoneCountry: '+886', phone: '955809317', gender: null, location: null, marketingOptIn: false },
 }
@@ -196,8 +197,8 @@ async function accountPage(overrides = {}) {
   await page.evaluate((input) => {
     window.accountCalls = []
     window.accountResults = {}
-    window.runAccountAction = async (action, value) => {
-      window.accountCalls.push({ action, value })
+    window.runAccountAction = async (action, value, extra) => {
+      window.accountCalls.push({ action, value, ...extra })
       const result = window.accountResults[action]
       if (result === 'throw') throw new Error('Network disconnected')
       return { error: result ?? null }
@@ -211,18 +212,34 @@ async function accountPage(overrides = {}) {
 // moment it moves.
 test('a failed privacy save flips the switch back with an alert, and a retry saves', async () => {
   const page = await accountPage()
+  const training = page.getByRole('checkbox', { name: /Help improve PicVision/ })
   await page.evaluate(() => { window.accountResults.training = 'consent update rejected' })
   // click, not check(): check() insists the box stays ticked, and here it must not.
-  await page.getByRole('checkbox').click()
+  await training.click()
   await page.getByRole('alert').filter({ hasText: "Couldn't save your privacy preference" }).waitFor()
-  assert.equal(await page.getByRole('checkbox').isChecked(), false)
+  assert.equal(await training.isChecked(), false)
   assert.equal(await page.getByText('Saved.', { exact: true }).count(), 0)
   await page.evaluate(() => { window.accountResults = {} })
-  await page.getByRole('checkbox').check()
+  await training.check()
   await page.getByText('Saved.', { exact: true }).waitFor()
   assert.equal(await page.getByRole('alert').count(), 0)
-  assert.equal(await page.getByRole('checkbox').isChecked(), true)
+  assert.equal(await training.isChecked(), true)
   assert.equal(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'training').at(-1).value), true)
+})
+
+test('the promotion switch is one account setting that saves as account, and flips back on a failed save', async () => {
+  const page = await accountPage()
+  const promo = page.getByRole('checkbox', { name: /Let the venue where I play share my highlights/ })
+  assert.equal(await promo.isChecked(), false) // never set shows off
+  await promo.check()
+  await page.getByText('Saved.', { exact: true }).waitFor()
+  assert.deepEqual(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'promo').at(-1)),
+    { action: 'promo', value: true, source: 'account' })
+  await page.evaluate(() => { window.accountResults.promo = 'promo update rejected' })
+  await promo.click()
+  await page.getByRole('alert').waitFor()
+  assert.equal(await promo.isChecked(), true)
+  assert.equal(await page.evaluate(() => window.accountCalls.filter((c) => c.action === 'promo').at(-1).value), false)
 })
 
 test('basic information shows what signup collected, and Edit saves it in place', async () => {
