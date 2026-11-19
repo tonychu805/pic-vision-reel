@@ -39,12 +39,16 @@ export async function loadShare(shareId: string): Promise<{ reels: ShareReel[]; 
   if (!UUID_RE.test(shareId)) notFound()
 
   const supabase = supabasePublic()
-  const [{ data }, { data: badgeRows }] = await Promise.all([
+  // The console's video addresses don't depend on the reels, so all three go out at once.
+  const [{ data }, { data: badgeRows }, addresses] = await Promise.all([
     supabase.rpc('get_reels_by_share_id', { p_share_id: shareId }),
     // A session's badges, decided once its last part is in (console
     // lib/badges.ts). An error -- a database without the function yet --
     // just means no badges, never a broken page.
     supabase.rpc('get_badges_by_share_id', { p_share_id: shareId }),
+    // Signed, 1-hour video addresses from the console (lib/videoAddresses.ts).
+    // null = the share is unknown, removed or past its 30 days.
+    fetchVideoAddresses(shareId),
   ])
   const badges = new Map(((badgeRows ?? []) as { id: string; badge: string }[]).map((b) => [b.id, b.badge]))
   // A session sent in parts shows as one familiar set of reels (lib/mergeParts.ts),
@@ -53,9 +57,6 @@ export async function loadShare(shareId: string): Promise<{ reels: ShareReel[]; 
 
   if (reels.length === 0) notFound()
 
-  // Signed, 1-hour video addresses from the console (lib/videoAddresses.ts).
-  // null = the share is unknown, removed or past its 30 days.
-  const addresses = await fetchVideoAddresses(shareId)
   if (!addresses) notFound()
   return { reels, addresses }
 }
