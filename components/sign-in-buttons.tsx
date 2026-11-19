@@ -84,6 +84,10 @@ export default function SignInButtons({
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
+        // Sign-up always shows Google's account chooser (operator 2026-11-20), so a
+        // player sees which Google account the new PicVision account is tied to;
+        // sign-in keeps Google's silent pick of the account already in use.
+        ...(mode === 'signup' ? { queryParams: { prompt: 'select_account' } } : {}),
         // &consent=1 carries the just-ticked checkboxes across the OAuth
         // redirect round-trip: there's no session yet at this point to
         // record consent against (auth.uid() doesn't exist until the
