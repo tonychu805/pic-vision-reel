@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { signOutEverywhere } from '@/lib/auth-actions'
 import { t, type Lang } from '@/lib/i18n'
 import { setTrainingConsent } from '@/app/[slug]/[code]/actions'
-import { updateDisplayName, updateEmail, updatePassword } from './actions'
+import { updateEmail, updatePassword } from './actions'
 import SignupProfileForm from '@/components/signup-profile-form'
 import type { ProfileFields } from '@/lib/accountData'
 
@@ -27,12 +27,10 @@ export default function AccountForm({
 }) {
   const router = useRouter()
   const [editingProfile, setEditingProfile] = useState(false)
-  const [name, setName] = useState(initialName)
   const [savedName, setSavedName] = useState(initialName)
-  const [editingName, setEditingName] = useState(false)
   const [training, setTraining] = useState(initialTraining)
   const [busy, setBusy] = useState(false)
-  const [nameMessage, setNameMessage] = useState<string | null>(null)
+  const [signOutMessage, setSignOutMessage] = useState<string | null>(null)
   const [trainingMessage, setTrainingMessage] = useState<{ text: string; failed: boolean } | null>(null)
 
   const [newEmail, setNewEmail] = useState('')
@@ -43,20 +41,7 @@ export default function AccountForm({
   const [passwordBusy, setPasswordBusy] = useState(false)
   const [passwordResult, setPasswordResult] = useState<string | null>(null)
 
-  // Name and the training toggle save separately (Court Club, 2026-10-28):
-  // the toggle saves the moment it moves and flips back if that fails.
-  async function saveName() {
-    setBusy(true)
-    setNameMessage(null)
-    try {
-      const { error } = await updateDisplayName(name)
-      if (error) { setNameMessage(t(lang, 'nameSaveFailed')); return }
-      setSavedName(name.trim())
-      setEditingName(false)
-    } catch { setNameMessage(t(lang, 'nameSaveFailed')) }
-    finally { setBusy(false) }
-  }
-
+  // The training toggle saves the moment it moves and flips back if that fails.
   async function changeTraining(value: boolean) {
     setTraining(value)
     setBusy(true)
@@ -106,7 +91,7 @@ export default function AccountForm({
       await signOutEverywhere()
       window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`
     } catch {
-      setNameMessage(t(lang, 'genericError'))
+      setSignOutMessage(t(lang, 'genericError'))
     }
   }
 
@@ -117,39 +102,17 @@ export default function AccountForm({
     <div className="account-layout">
       <div className="account-header">
         <div className="account-avatar" aria-hidden="true">{initial}</div>
-        {/* Edited in place (operator, 2026-10-29): the name becomes the field
-            at the same size and position, with ✓ / ✕ beside it, so nothing
-            in the header moves when editing starts or ends. */}
+        {/* Shown only; edited in 基本資料 (operator, 2026-11-19: one place for the name). */}
         <div className="account-identity">
-          {editingName ? (
-            <div className="account-name-row">
-              <label className="sr-only" htmlFor="account-name">{t(lang, 'nameLabel')}</label>
-              <input id="account-name" autoFocus className="account-name-input" value={name} disabled={busy} placeholder={t(lang, 'nameLabel')}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') void saveName(); if (e.key === 'Escape') { setName(savedName); setEditingName(false); setNameMessage(null) } }} />
-              <button type="button" className="icon-btn icon-btn--primary" disabled={busy} onClick={saveName} aria-label={t(lang, 'saveButton')}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-              </button>
-              <button type="button" className="icon-btn" disabled={busy} onClick={() => { setName(savedName); setEditingName(false); setNameMessage(null) }} aria-label={t(lang, 'cancel')}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="account-name-row account-name-button" onClick={() => setEditingName(true)} aria-label={t(lang, 'editName')}>
-              <span className={`account-header-name${savedName ? '' : ' account-header-name--empty'}`}>{savedName || t(lang, 'nameNotSet')}</span>
-              <svg className="account-edit-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z" /><path d="m14 6 4 4" /></svg>
-            </button>
-          )}
+          <span className={`account-header-name${savedName ? '' : ' account-header-name--empty'}`}>{savedName || t(lang, 'nameNotSet')}</span>
         </div>
       </div>
-
-      {nameMessage && <p role="alert" className="form-note form-note--error">{nameMessage}</p>}
 
       <section className="panel">
         <h2 className="panel-title">{t(lang, 'sectionBasicInfo')}</h2>
         {editingProfile ? (
           <SignupProfileForm lang={lang} next="/account" initialName={initialName} initial={profile}
-            onSaved={() => setEditingProfile(false)} onCancel={() => setEditingProfile(false)} />
+            onSaved={(displayName) => { setEditingProfile(false); setSavedName(displayName) }} onCancel={() => setEditingProfile(false)} />
         ) : (
           <>
             <dl className="profile-summary">
@@ -191,6 +154,14 @@ export default function AccountForm({
           <span className="tag">{signInMethod}</span>
         </div>
 
+        {isLineAccount && (
+          <div className="field-group">
+            <span className="field-label">{t(lang, 'emailLabel')}</span>
+            <p className={initialEmail ? 'field-current' : 'field-current profile-summary-empty'}>{initialEmail || t(lang, 'notProvided')}</p>
+            <p className="form-note">{t(lang, 'lineEmailNote')}</p>
+          </div>
+        )}
+
         {!isLineAccount && (
           <>
             <div className="field-group">
@@ -228,6 +199,7 @@ export default function AccountForm({
           {t(lang, 'signOut')}
         </button>
       </div>
+      {signOutMessage && <p role="alert" className="form-note form-note--error">{signOutMessage}</p>}
     </div>
   )
 }

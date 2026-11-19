@@ -18,7 +18,7 @@ export default function SignupProfileForm({ lang, next, initialName, initial, on
   initialName: string
   initial?: ProfileFields
   // Account page: called after a successful save instead of leaving the page.
-  onSaved?: () => void
+  onSaved?: (displayName: string) => void
   onCancel?: () => void
 }) {
   const router = useRouter()
@@ -43,7 +43,7 @@ export default function SignupProfileForm({ lang, next, initialName, initial, on
       gender, location: location || null, marketingOptIn,
     })
     if (saveError) { setBusy(false); setError(t(lang, saveError as StringKey)); return }
-    if (onSaved) { setBusy(false); onSaved(); router.refresh(); return }
+    if (onSaved) { setBusy(false); onSaved([firstName.trim().slice(0, 60), lastName.trim().slice(0, 60)].filter(Boolean).join(' ')); router.refresh(); return }
     router.push(next)
     router.refresh()
   }

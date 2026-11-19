@@ -45,6 +45,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <AuthHeader lang={lang} next={safeNext} titleKey="signInTitle" subtitleKey="signInSubtitle" />
           {auth_error && <p className="auth-error" role="alert">{t(lang, 'authErrorMessage')}</p>}
           <SignInButtons lang={lang} next={safeNext} />
+          <p className="form-note">{t(lang, 'emailNotice')}</p>
           <p className="or-divider">{t(lang, 'orDivider')}</p>
           <EmailAuthForm lang={lang} mode="login" next={safeNext} />
           <p className="auth-switch">

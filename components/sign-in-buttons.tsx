@@ -64,7 +64,8 @@ export default function SignInButtons({
       // without it Auth0 only returns an id_token, and a LINE session
       // would die the moment that token's own short expiry hit, same
       // dead end this whole migration exists to fix.
-      scope: 'openid profile offline_access',
+      // email: for "highlights ready" emails (LINE's Email address permission, 2026-11-19)
+      scope: 'openid profile email offline_access',
       connection: 'line',
       redirect_uri: `${window.location.origin}/auth/line-callback`,
       state,

@@ -92,6 +92,7 @@ const en = {
   consentMiddle: 'and',
   consentPrivacyLink: 'Privacy policy',
   consentSuffix: ', and that you are 18 or older, or that a parent or legal guardian has agreed to your use of this service.',
+  emailNotice: ' We email you when your highlights are ready; if you sign in with LINE, we get your email address from LINE.',
   // Filming consent and the retention policy were two separate checkboxes
   // until 2026-09-30 -- merged into one since they were always required
   // together (never independently optional), so splitting them added a
@@ -200,6 +201,7 @@ const en = {
   sectionProfile: 'Profile',
   sectionBasicInfo: 'Basic information',
   notProvided: 'Not provided',
+  lineEmailNote: 'From your LINE account, used to email you when your highlights are ready. To change it, change it in LINE, then sign in again.',
   editLabel: 'Edit',
   marketingLabel: 'News and offers',
   marketingOn: 'Yes',
@@ -297,6 +299,7 @@ const zhTW: Record<StringKey, string> = {
   consentMiddle: '與',
   consentPrivacyLink: '隱私權政策',
   consentSuffix: '，並確認您已年滿 18 歲或已取得法定代理人同意使用本服務。',
+  emailNotice: '我們會以您的電子郵件地址寄送精華影片完成通知；使用 LINE 登入時，會向 LINE 取得您的電子郵件地址。',
   trainingSettingTitle: '協助改善 PicVision',
   trainingSettingBody: '開啟時，你所在場次的錄影可保留至多 12 個月（臉部與場外模糊、不記錄時間或場次），用於改善服務與訓練 AI。關閉後，之後的場次不會再製作副本。',
   profileTitle: '關於你',
@@ -397,6 +400,7 @@ const zhTW: Record<StringKey, string> = {
   sectionProfile: '個人資料',
   sectionBasicInfo: '基本資料',
   notProvided: '未填寫',
+  lineEmailNote: '由 LINE 帳號提供，用於寄送精華影片完成通知。如需更改，請在 LINE 中修改後重新登入。',
   editLabel: '編輯',
   marketingLabel: '產品與活動消息',
   marketingOn: '接收',

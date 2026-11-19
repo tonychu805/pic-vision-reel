@@ -32,7 +32,7 @@ export type AccountData = {
 // fetch either way, written once rather than drifting into two copies.
 export async function getAccountData(supabase: Awaited<ReturnType<typeof createClient>>, playerId: string): Promise<AccountData> {
   const [{ data: player }, { data: training }] = await Promise.all([
-    supabase.from('players').select('display_name, created_at, profile_completed_at, first_name, last_name, birth_date, phone_country, phone, gender, location, marketing_opt_in').eq('id', playerId).maybeSingle(),
+    supabase.from('players').select('display_name, contact_email, created_at, profile_completed_at, first_name, last_name, birth_date, phone_country, phone, gender, location, marketing_opt_in').eq('id', playerId).maybeSingle(),
     supabase.from('player_training_consents').select('consented').eq('player_id', playerId).maybeSingle(),
   ])
 
@@ -43,7 +43,9 @@ export async function getAccountData(supabase: Awaited<ReturnType<typeof createC
   // kind of client to build, rather than re-deriving it a different way.
   const cookieStore = await cookies()
   const isLineAccount = cookieStore.has(AUTH0_ID_TOKEN_COOKIE)
-  let email: string | null = null
+  // A LINE account's email is the one LINE shared at sign-in (players.contact_email,
+  // console migration 20261119170000); read-only, since it comes from LINE.
+  let email: string | null = isLineAccount ? player?.contact_email ?? null : null
   let hasPassword = false
   if (!isLineAccount) {
     const { data: userData } = await supabase.auth.getUser()
