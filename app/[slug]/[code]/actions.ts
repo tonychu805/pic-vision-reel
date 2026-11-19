@@ -6,6 +6,8 @@
 // anything the client claims. Filming consent is recorded at signup
 // (lib/player.ts recordSignupConsent), not here.
 import { createClient } from '@/lib/supabaseServer'
+import { applyVenueTrainingDefault } from '@/lib/player'
+import { isVenueSlug } from '@/lib/venueSlug'
 
 // Training consent is opt-out and never gates check-in. Always called with the
 // checkbox's actual state (true or false), not skipped when unchecked --
@@ -18,14 +20,19 @@ export async function setTrainingConsent(consented: boolean) {
 
 export async function checkIn(slug: string, code: string, cameraRowId: string, endsAtISO: string) {
   const supabase = await createClient()
+  // Backstop for a signup that never reached the venue default; before the rpc
+  // so the default is in place before a session that could be archived.
+  if (isVenueSlug(slug)) await applyVenueTrainingDefault(supabase, slug)
   const { data, error } = await supabase
     .rpc('player_check_in', { p_slug: slug, p_code: code, p_camera_row_id: cameraRowId, p_ends_at: endsAtISO })
     .single()
   return { data: data as { schedule_session_id: string; ends_at: string } | null, error: error?.message ?? null }
 }
 
-export async function joinCheckIn(scheduleSessionId: string) {
+// Also the claim path for a game that just ended.
+export async function joinCheckIn(slug: string, scheduleSessionId: string) {
   const supabase = await createClient()
+  if (isVenueSlug(slug)) await applyVenueTrainingDefault(supabase, slug)
   const { error } = await supabase.rpc('player_join_check_in', { p_schedule_session_id: scheduleSessionId })
   return { error: error?.message ?? null }
 }
