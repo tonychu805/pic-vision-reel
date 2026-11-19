@@ -75,6 +75,11 @@ export async function GET(request: Request) {
     return failure
   }
 
+  // The email LINE shared (if any), read by the database from this same
+  // signed token -- never passed from here. A failure never blocks sign-in.
+  const { error: emailError } = await supabase.rpc('record_line_player_email')
+  if (emailError) console.error('line-callback: record_email_failed', { code: emailError.code })
+
   // Mirrors app/auth/callback/route.ts: consent is only ever set by
   // components/sign-in-buttons.tsx's signup path, carrying the ticked box
   // across the round trip since there's no player row before this point.
