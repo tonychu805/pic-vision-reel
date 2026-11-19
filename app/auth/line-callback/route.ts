@@ -8,6 +8,8 @@ import { headers } from 'next/headers'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { AUTH0_ID_TOKEN_COOKIE, AUTH0_REFRESH_TOKEN_COOKIE, exchangeAuth0Token, decodeAuth0IdToken } from '@/lib/auth0'
 import { clientIp } from '@/lib/clientIp'
+import { venueSlugFromNext } from '@/lib/venueSlug'
+import { applyVenueTrainingDefault } from '@/lib/player'
 
 
 // Same reverse-proxy caveat as app/auth/callback/route.ts: request.url's
@@ -86,6 +88,9 @@ export async function GET(request: Request) {
       p_ip_address: clientIp(h),
       p_user_agent: h.get('user-agent'),
     })
+    // The venue the signup started from may start training off; the player
+    // has no training row yet, so this must stay before anything that writes one.
+    await applyVenueTrainingDefault(supabase, venueSlugFromNext(next))
   }
 
   const response = NextResponse.redirect(`${origin}${next}`)

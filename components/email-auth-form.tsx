@@ -84,7 +84,7 @@ export default function EmailAuthForm({
             // The ticked box is kept on the account (consent_version) and recorded the first time it has a
             // session on any device (lib/player.ts recordSignupConsent), since the confirmation link may be
             // opened elsewhere.
-            data: { name: name.trim() || undefined, consent_version: CONSENT_VERSION, consent_ticked_at: new Date().toISOString() },
+            data: { name: name.trim() || undefined, consent_version: CONSENT_VERSION, consent_ticked_at: new Date().toISOString(), venue_next: next },
             emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
           },
         })
