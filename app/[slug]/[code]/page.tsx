@@ -62,23 +62,23 @@ export default async function CalendarPage({ params, searchParams }: { params: P
     redirect(`/login?next=${encodeURIComponent(venuePath)}`)
   }
 
-  // Same fetch the standalone /account page makes -- the 帳號 tab below
-  // is that page's content embedded here, not a separate feature.
-  const account = await getAccountData(authedSupabase, playerId)
-
-  const { data } = validSlugCode
-    ? await authedSupabase.rpc('get_public_calendar', { p_slug: slug, p_code: code })
-    : { data: null }
+  // Every read below is independent of the others, so they go out together:
+  // each one is a round trip to the database, and the page used to wait for
+  // them one after another. The 帳號 tab is the standalone /account page's
+  // content, so it uses the same fetch.
+  const none = { data: null }
+  const [account, { data }, { data: options }, { data: recent }] = await Promise.all([
+    getAccountData(authedSupabase, playerId),
+    validSlugCode ? authedSupabase.rpc('get_public_calendar', { p_slug: slug, p_code: code }) : none,
+    validSlugCode ? authedSupabase.rpc('get_check_in_options', { p_slug: slug, p_code: code }) : none,
+    validSlugCode ? authedSupabase.rpc('get_recent_games', { p_slug: slug, p_code: code }) : none,
+  ])
   const cal = data as Calendar | null
 
-  let checkInOptions: CheckInOption[] = []
-  let recentGames: RecentGame[] = []
+  const checkInOptions = (options ?? []) as CheckInOption[]
+  const recentGames = (recent ?? []) as RecentGame[]
   const promoAnswers: Record<string, boolean> = {}
   if (validSlugCode) {
-    const { data: options } = await authedSupabase.rpc('get_check_in_options', { p_slug: slug, p_code: code })
-    checkInOptions = (options ?? []) as CheckInOption[]
-    const { data: recent } = await authedSupabase.rpc('get_recent_games', { p_slug: slug, p_code: code })
-    recentGames = (recent ?? []) as RecentGame[]
     // This player's answers to "may the venue use this game in promotion" (RLS: own rows only).
     const claimedIds = recentGames.filter((g) => g.already_joined).map((g) => g.session_id)
     if (claimedIds.length > 0) {
