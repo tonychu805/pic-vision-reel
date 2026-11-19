@@ -286,6 +286,8 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 /* ---------- Consent (/consent) ---------- */
 .consent-topbar { display:flex; justify-content:flex-end; }
 .consent-choice { padding:0; }
+.consent-choice .consent-choice-label { gap:10px; color:var(--ink-2); font-size:13px; line-height:1.55; }
+.consent-choice .consent-choice-label input { width:18px; height:18px; }
 .consent-choice-label { display:flex; align-items:flex-start; gap:12px; color:var(--ink); font-size:15px; line-height:1.48; cursor:pointer; }
 .consent-choice-label input { flex:none; width:22px; height:22px; margin:1px 0 0; accent-color:var(--court); cursor:pointer; }
 .consent-choice-label input[aria-invalid="true"] { outline:2px solid var(--signal); outline-offset:2px; }
