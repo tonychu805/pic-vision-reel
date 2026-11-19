@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { t, type Lang } from '@/lib/i18n'
 import type { PromoPrompt } from '@/lib/promoPrompt'
@@ -13,7 +13,11 @@ export default function PromoCard({
   lang, venueName, sessionId, initial,
 }: { lang: Lang; venueName: string; sessionId: string; initial: PromoPrompt }) {
   const router = useRouter()
-  const [allowed, setAllowed] = useState(initial.kind === 'answered' && initial.allowed)
+  const serverAllowed = initial.kind === 'answered' && initial.allowed
+  const [allowed, setAllowed] = useState(serverAllowed)
+  // Turning the account setting off withdraws this game's yes in the database;
+  // the check-in and account tabs share one page, so follow the refreshed props.
+  useEffect(() => { setAllowed(serverAllowed) }, [serverAllowed])
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 

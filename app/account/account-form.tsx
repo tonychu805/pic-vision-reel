@@ -68,6 +68,7 @@ export default function AccountForm({
       const { error } = await setPromoConsent(value, 'account')
       if (error) throw new Error(error)
       setPromoMessage({ text: t(lang, 'savedMessage'), failed: false })
+      router.refresh()
     } catch {
       setPromo(!value)
       setPromoMessage({ text: t(lang, 'promoSaveFailed'), failed: true })
