@@ -208,7 +208,7 @@ async function accountPage(overrides = {}) {
 }
 
 // Since the Court Club account form (2026-10-28) the privacy switch saves the
-// moment it moves, and the name is edited inline with its own Save.
+// moment it moves.
 test('a failed privacy save flips the switch back with an alert, and a retry saves', async () => {
   const page = await accountPage()
   await page.evaluate(() => { window.accountResults.training = 'consent update rejected' })
@@ -240,29 +240,26 @@ test('basic information shows what signup collected, and Edit saves it in place'
   assert.equal(saved.firstName, 'Old')
 })
 
-test('failed name edits stay open with the reason, and exceptions never strand Save', async () => {
+// One place for the name (operator, 2026-11-19): the header only shows it.
+test('the name is edited in basic information only, and the header follows a save', async () => {
   const page = await accountPage()
-  await page.getByRole('button', { name: 'Edit name' }).click()
-  await page.getByLabel('Name').fill('New name')
-  for (const failure of ['database rejected update', 'throw']) {
-    await page.evaluate((failure) => { window.accountResults.name = failure }, failure)
-    await page.getByRole('button', { name: 'Save', exact: true }).click()
-    await page.getByRole('alert').filter({ hasText: "Couldn't save your name" }).waitFor()
-    assert.equal(await page.getByRole('button', { name: 'Save', exact: true }).isEnabled(), true)
-    assert.equal(await page.getByLabel('Name').inputValue(), 'New name')
-    assert.equal(await page.locator('.account-avatar').innerText(), 'O')
-  }
-  await page.evaluate(() => { window.accountResults = {} })
+  assert.equal(await page.getByRole('button', { name: 'Edit name' }).count(), 0)
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  await page.locator('input[autocomplete=given-name]').fill('Reddick')
+  await page.locator('input[autocomplete=family-name]').fill('Chu')
   await page.getByRole('button', { name: 'Save', exact: true }).click()
-  await page.locator('.account-header-name').filter({ hasText: 'New name' }).waitFor()
-  assert.equal(await page.locator('.account-avatar').innerText(), 'N')
-  assert.equal(await page.getByRole('alert').count(), 0)
-  // Removing a name is a valid saved state too.
-  await page.getByRole('button', { name: 'Edit name' }).click()
-  await page.getByLabel('Name').fill('')
-  await page.getByRole('button', { name: 'Save', exact: true }).click()
-  await page.getByRole('button', { name: 'Edit name' }).waitFor()
-  assert.equal(await page.locator('.account-avatar').innerText(), '?')
+  await page.locator('.account-header-name').filter({ hasText: 'Reddick Chu' }).waitFor()
+  assert.equal(await page.locator('.account-avatar').innerText(), 'R')
+})
+
+test('a LINE account shows the email LINE shared, read-only, or Not provided', async () => {
+  const withEmail = await accountPage({ isLineAccount: true, initialEmail: 'player@example.com' })
+  const body = await withEmail.locator('body').innerText()
+  assert.ok(body.includes('player@example.com'))
+  assert.ok(body.includes('From your LINE account'))
+  assert.equal(await withEmail.locator('input[type=email]').count(), 0)
+  const without = await accountPage({ isLineAccount: true, initialEmail: null })
+  assert.ok((await without.locator('body').innerText()).includes('Not provided'))
 })
 
 test('email and password action exceptions allow a retry with visible feedback', async () => {
