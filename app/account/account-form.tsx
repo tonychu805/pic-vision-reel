@@ -154,6 +154,14 @@ export default function AccountForm({
           <span className="tag">{signInMethod}</span>
         </div>
 
+        {isLineAccount && (
+          <div className="field-group">
+            <span className="field-label">{t(lang, 'emailLabel')}</span>
+            <p className={initialEmail ? 'field-current' : 'field-current profile-summary-empty'}>{initialEmail || t(lang, 'notProvided')}</p>
+            <p className="form-note">{t(lang, 'lineEmailNote')}</p>
+          </div>
+        )}
+
         {!isLineAccount && (
           <>
             <div className="field-group">
