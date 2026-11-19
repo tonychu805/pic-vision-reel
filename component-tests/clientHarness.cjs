@@ -17,7 +17,6 @@ exports.bundleClients = function bundleClients() {
     if (file === 'router') code = 'exports.useRouter=()=>({refresh:()=>{}})'
     else if (file === 'script') code = 'module.exports=()=>null'
     else if (file === 'accountActions') code = `
-      exports.updateDisplayName=(value)=>window.runAccountAction('name',value);
       exports.updateEmail=(value)=>window.runAccountAction('email',value);
       exports.updatePassword=(value)=>window.runAccountAction('password',value);`
     else if (file === 'trainingAction') code = "exports.setTrainingConsent=(value)=>window.runAccountAction('training',value)"
