@@ -149,7 +149,7 @@ export default function AccountForm({
         <h2 className="panel-title">{t(lang, 'sectionBasicInfo')}</h2>
         {editingProfile ? (
           <SignupProfileForm lang={lang} next="/account" initialName={initialName} initial={profile}
-            onSaved={() => setEditingProfile(false)} onCancel={() => setEditingProfile(false)} />
+            onSaved={(displayName) => { setEditingProfile(false); setSavedName(displayName); setName(displayName) }} onCancel={() => setEditingProfile(false)} />
         ) : (
           <>
             <dl className="profile-summary">
