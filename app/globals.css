@@ -285,7 +285,10 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 
 /* ---------- Consent (/consent) ---------- */
 .consent-topbar { display:flex; justify-content:flex-end; }
-.consent-choice { padding:16px; border-radius:10px; background:var(--card); box-shadow:inset 0 0 0 1px var(--rule); }
+.consent-choice { padding:0; }
+.consent-choice .consent-choice-label { gap:10px; color:var(--ink-2); font-size:13px; line-height:1.6; }
+.field-group .consent-choice { margin:4px 0 8px; }
+.consent-choice .consent-choice-label input { width:18px; height:18px; }
 .consent-choice-label { display:flex; align-items:flex-start; gap:12px; color:var(--ink); font-size:15px; line-height:1.48; cursor:pointer; }
 .consent-choice-label input { flex:none; width:22px; height:22px; margin:1px 0 0; accent-color:var(--court); cursor:pointer; }
 .consent-choice-label input[aria-invalid="true"] { outline:2px solid var(--signal); outline-offset:2px; }
@@ -293,10 +296,10 @@ a.calendar-slot:hover .play-tile { background:var(--court-deep); }
 .consent-legal a, .consent-choice-label a { color:var(--court); font-weight:700; text-underline-offset:3px; }
 
 /* ---------- Sign in / sign up ---------- */
-.auth-main { flex:1; display:flex; flex-direction:column; justify-content:center; gap:20px; padding:24px 0; }
-.auth-head { display:flex; flex-direction:column; align-items:flex-start; gap:16px; }
+.auth-main { flex:1; display:flex; flex-direction:column; justify-content:flex-start; gap:20px; padding:12px 0 24px; }
+.auth-head { display:flex; flex-direction:column; align-items:flex-start; gap:16px; margin-bottom:8px; }
 .auth-head h1 { font-size:34px; }
-.auth-sub { margin:0; color:var(--ink-2); font-size:16px; }
+.auth-sub { margin:8px 0 0; color:var(--ink-2); font-size:16px; line-height:1.5; }
 .auth-error { margin:0; padding:12px 14px; border-radius:8px; background:var(--signal-tint); color:var(--signal); font-size:14px; font-weight:600; }
 .auth-switch { margin:0; font-size:14px; color:var(--ink-2); }
 .auth-switch a { color:var(--court); font-weight:800; text-underline-offset:3px; }
