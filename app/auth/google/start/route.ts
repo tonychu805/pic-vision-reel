@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { GOOGLE_STATE_COOKIE, encodeState, googleAuthUrl, randomToken, safeNext, sha256Hex } from '@/lib/googleSignIn'
+import { cookies } from 'next/headers'
+import { GOOGLE_STATE_COOKIE, encodeState, googleAuthUrl, parseState, randomToken, reusableState, safeNext, sha256Hex } from '@/lib/googleSignIn'
 
 // Starts Google sign-in on our own address (lib/googleSignIn.ts). The
 // sign-up boxes travel in an httpOnly cookie with the state, not in the URL.
@@ -13,12 +14,16 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?next=${encodeURIComponent(next)}&auth_error=1`)
   }
 
-  const signIn = {
+  const now = Date.now()
+  const cookieStore = await cookies()
+  const signIn = reusableState(parseState(cookieStore.get(GOOGLE_STATE_COOKIE)?.value), next, now) ?? {
     state: randomToken(),
     nonce: randomToken(),
     next,
     consent: url.searchParams.get('consent') === '1',
     promo: url.searchParams.get('promo') === '1',
+    at: now,
+    done: false,
   }
   const response = NextResponse.redirect(googleAuthUrl({
     clientId,

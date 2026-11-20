@@ -11,6 +11,8 @@ export async function finishPlayerSignIn(
 ): Promise<void> {
   await ensurePlayer(supabase, user)
   const h = await headers()
-  await recordSignupConsent(supabase, user, { ticked: consent, ip: clientIp(h), userAgent: h.get('user-agent'), next })
-  await recordSignupPromoConsent(supabase, user, { ticked: promo })
+  await Promise.all([
+    recordSignupConsent(supabase, user, { ticked: consent, ip: clientIp(h), userAgent: h.get('user-agent'), next }),
+    recordSignupPromoConsent(supabase, user, { ticked: promo }),
+  ])
 }

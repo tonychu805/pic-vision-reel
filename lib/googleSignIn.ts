@@ -11,6 +11,19 @@ export type GoogleSignInState = {
   next: string
   consent: boolean
   promo: boolean
+  // When this sign-in started (ms), so a second start right after can reuse it.
+  at: number
+  // Set once the player is signed in, so a duplicate return just continues.
+  done: boolean
+}
+
+// A browser sometimes sends one tap to /auth/google/start twice; both then
+// come back from Google. Reusing a sign-in this fresh gives them the same
+// state, so the second return is recognised instead of failing.
+export const REUSE_WITHIN_MS = 30_000
+
+export function reusableState(existing: GoogleSignInState | null, next: string, now: number): GoogleSignInState | null {
+  return existing && !existing.done && existing.next === next && now - existing.at < REUSE_WITHIN_MS ? existing : null
 }
 
 export function safeNext(next: string | null | undefined): string {
@@ -37,16 +50,25 @@ export function encodeState(s: GoogleSignInState): string {
   return JSON.stringify(s)
 }
 
-/** The cookie's contents, or null when missing, malformed, or for a different sign-in than `returnedState`. */
-export function readState(cookieValue: string | undefined, returnedState: string | null): GoogleSignInState | null {
-  if (!cookieValue || !returnedState) return null
+/** The cookie's contents, or null when missing or malformed. */
+export function parseState(cookieValue: string | undefined): GoogleSignInState | null {
+  if (!cookieValue) return null
   try {
     const s = JSON.parse(cookieValue) as Partial<GoogleSignInState>
-    if (typeof s.state !== 'string' || typeof s.nonce !== 'string' || s.state !== returnedState) return null
-    return { state: s.state, nonce: s.nonce, next: safeNext(s.next), consent: s.consent === true, promo: s.promo === true }
+    if (typeof s.state !== 'string' || typeof s.nonce !== 'string') return null
+    return {
+      state: s.state, nonce: s.nonce, next: safeNext(s.next), consent: s.consent === true, promo: s.promo === true,
+      at: typeof s.at === 'number' ? s.at : 0, done: s.done === true,
+    }
   } catch {
     return null
   }
+}
+
+/** The cookie's contents, or null when missing, malformed, or for a different sign-in than `returnedState`. */
+export function readState(cookieValue: string | undefined, returnedState: string | null): GoogleSignInState | null {
+  const s = parseState(cookieValue)
+  return s && returnedState && s.state === returnedState ? s : null
 }
 
 export async function sha256Hex(text: string): Promise<string> {

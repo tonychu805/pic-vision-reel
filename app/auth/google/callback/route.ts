@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { createGoTrueClient } from '@/lib/supabaseServer'
 import { AUTH0_ID_TOKEN_COOKIE, AUTH0_REFRESH_TOKEN_COOKIE } from '@/lib/auth0'
 import { finishPlayerSignIn } from '@/lib/finishSignIn'
-import { GOOGLE_STATE_COOKIE, readState } from '@/lib/googleSignIn'
+import { GOOGLE_STATE_COOKIE, encodeState, readState } from '@/lib/googleSignIn'
 
 // Google sends the player back here (lib/googleSignIn.ts). The code is
 // exchanged server-side (it needs the client secret) and the ID token goes to
@@ -26,7 +26,13 @@ export async function GET(request: Request) {
 
   const code = url.searchParams.get('code')
   if (!signIn) return fail('state_mismatch')
+  // The duplicate of a return that already signed the player in.
+  if (signIn.done) {
+    const { data: { user } } = await (await createGoTrueClient()).auth.getUser()
+    if (user) return NextResponse.redirect(`${origin}${next}`)
+  }
   if (!code) return fail('missing_code', { googleError: url.searchParams.get('error') })
+  const started = Date.now()
 
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -42,14 +48,19 @@ export async function GET(request: Request) {
   if (!tokenResponse.ok) return fail('token_exchange_failed', { status: tokenResponse.status })
   const { id_token: idToken } = (await tokenResponse.json()) as { id_token?: string }
   if (!idToken) return fail('no_id_token')
+  const tokenMs = Date.now() - started
 
   const supabase = await createGoTrueClient()
   const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken, nonce: signIn.nonce })
   if (error || !data.user) return fail('supabase_sign_in_failed', { code: error?.code, status: error?.status })
+  const signInMs = Date.now() - started - tokenMs
 
   await finishPlayerSignIn(supabase, data.user, signIn)
+  console.log('google-callback: timing', { tokenMs, signInMs, finishMs: Date.now() - started - tokenMs - signInMs })
   const response = NextResponse.redirect(`${origin}${next}`)
-  response.cookies.set(GOOGLE_STATE_COOKIE, '', { path: '/auth/google', maxAge: 0 })
+  response.cookies.set(GOOGLE_STATE_COOKIE, encodeState({ ...signIn, done: true }), {
+    httpOnly: true, secure: true, sameSite: 'lax', path: '/auth/google', maxAge: 60,
+  })
   // A LINE session left in this browser would otherwise win over the new
   // Google one (lib/supabaseServer.ts reads the LINE cookie first).
   response.cookies.delete(AUTH0_ID_TOKEN_COOKIE)
