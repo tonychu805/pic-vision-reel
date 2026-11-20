@@ -30,6 +30,14 @@ export async function createClient() {
     )
   }
 
+  return createGoTrueClient()
+}
+
+// The Google/email (GoTrue) client regardless of a LINE cookie: what a
+// Google or email sign-in uses to create its session. The Auth0 client above
+// can't (supabase-js refuses supabase.auth when given accessToken).
+export async function createGoTrueClient() {
+  const cookieStore = await cookies()
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

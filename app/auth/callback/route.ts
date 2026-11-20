@@ -1,7 +1,7 @@
 // Code-exchange landing spot for Supabase's own links: the email
 // confirmation link (Google now uses app/auth/google/callback).
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabaseServer'
+import { createGoTrueClient } from '@/lib/supabaseServer'
 import { finishPlayerSignIn } from '@/lib/finishSignIn'
 
 // request.url's origin cannot be trusted behind a reverse proxy (found via
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   const promoGiven = url.searchParams.get('promo') === '1'
 
   if (code) {
-    const supabase = await createClient()
+    const supabase = await createGoTrueClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.user) {
       await finishPlayerSignIn(supabase, data.user, { consent: consentGiven, promo: promoGiven, next })

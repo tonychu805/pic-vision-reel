@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { createClient } from '@/lib/supabaseServer'
+import { createGoTrueClient } from '@/lib/supabaseServer'
+import { AUTH0_ID_TOKEN_COOKIE, AUTH0_REFRESH_TOKEN_COOKIE } from '@/lib/auth0'
 import { finishPlayerSignIn } from '@/lib/finishSignIn'
 import { GOOGLE_STATE_COOKIE, readState } from '@/lib/googleSignIn'
 
@@ -42,12 +43,16 @@ export async function GET(request: Request) {
   const { id_token: idToken } = (await tokenResponse.json()) as { id_token?: string }
   if (!idToken) return fail('no_id_token')
 
-  const supabase = await createClient()
+  const supabase = await createGoTrueClient()
   const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken, nonce: signIn.nonce })
   if (error || !data.user) return fail('supabase_sign_in_failed', { code: error?.code, status: error?.status })
 
   await finishPlayerSignIn(supabase, data.user, signIn)
   const response = NextResponse.redirect(`${origin}${next}`)
   response.cookies.set(GOOGLE_STATE_COOKIE, '', { path: '/auth/google', maxAge: 0 })
+  // A LINE session left in this browser would otherwise win over the new
+  // Google one (lib/supabaseServer.ts reads the LINE cookie first).
+  response.cookies.delete(AUTH0_ID_TOKEN_COOKIE)
+  response.cookies.delete(AUTH0_REFRESH_TOKEN_COOKIE)
   return response
 }
