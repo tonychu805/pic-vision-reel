@@ -3,8 +3,10 @@
 ## Staging (since 2026-11-20: Cloudflare Workers + Tokyo database)
 
 Operator decision 2026-11-20: the database moves to Tokyo and the sites from
-Netlify to Cloudflare. Staging already runs there; production stays on Netlify
-and the us-west-1 database until the production cutover.
+Netlify to Cloudflare. Staging runs there, and production moved the same day:
+worker `picvision-reel` at share.picvisionai.com, Supabase `livengwqudbxlflrzfte` (Tokyo). Deploy
+production with `scripts/deploy-production-cloudflare.sh --yes`, only after the
+change was reviewed on staging and merged. The Netlify site is retired.
 
 | site | staging address | repo |
 |---|---|---|
