@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { t, type Lang } from '@/lib/i18n'
 import SignInButtons from './sign-in-buttons'
 import EmailAuthForm from './email-auth-form'
+import ConsentSentence from './consent-sentence'
 
 export default function SignupConsentGate({ lang, next }: { lang: Lang; next: string }) {
   const [essentialBox, setEssentialBox] = useState(false)
@@ -22,10 +23,6 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
   // remounts and the shake restarts even mid-animation.
   const [shakeToken, setShakeToken] = useState(0)
   const handleBlocked = () => setShakeToken((k) => k + 1)
-  // Opening a policy link must not tick the box on the way.
-  const link = (href: string, text: string) => (
-    <a href={href} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{text}</a>
-  )
   const notice = (
     <div className="consent-choice">
       <label className="consent-choice-label">
@@ -34,15 +31,7 @@ export default function SignupConsentGate({ lang, next }: { lang: Lang; next: st
           type="checkbox" checked={essentialBox} onChange={(e) => setEssentialBox(e.target.checked)}
           className={!essentialBox && shakeToken > 0 ? 'consent-box--needed' : ''}
         />
-        <span>
-          {t(lang, 'consentPrefix')}{' '}
-          {link('https://picvisionai.com/venue-player-notice-template', t(lang, 'consentNoticeLink'))}
-          {t(lang, 'consentListSep')}
-          {link('https://picvisionai.com/privacy', t(lang, 'consentPrivacyLink'))}
-          {' '}{t(lang, 'consentMiddle')}{' '}
-          {link('https://picvisionai.com/player-terms', t(lang, 'consentTermsLink'))}
-          {t(lang, 'consentSuffix')}{t(lang, 'emailNotice')}
-        </span>
+        <ConsentSentence lang={lang} />
       </label>
       <label className="consent-choice-label consent-choice-label--optional">
         <input type="checkbox" checked={promoBox} onChange={(e) => setPromoBox(e.target.checked)} />

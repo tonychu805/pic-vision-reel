@@ -98,9 +98,9 @@ export default async function CalendarPage({ params, searchParams }: { params: P
   // calendar has nothing to check in on anyway.
   if (checkInOptions.length > 0 && !checkInOptions[0].has_current_consent) {
     // Every signup records consent (the box on /signup); only an account that
-    // predates the current consent version lands here. Signing in again
-    // through /signup ticks the box and records it on the same account.
-    redirect(`/signup?next=${encodeURIComponent(venuePath)}`)
+    // predates the current consent version lands here, and agrees again on
+    // /signup/terms without signing in again.
+    redirect(`/signup/terms?next=${encodeURIComponent(venuePath)}`)
   }
   // Basic information, asked once after signup (operator 2026-11-16).
   if (!account.profileComplete) redirect(`/signup/profile?next=${encodeURIComponent(venuePath)}`)
