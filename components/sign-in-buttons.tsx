@@ -4,7 +4,6 @@
 // else that needs it. Moved out of app/[slug]/[code]/checkin-panel.tsx so
 // there is exactly one place that knows how to start a player OAuth flow.
 import { useRef } from 'react'
-import { createClient } from '@/lib/supabaseClient'
 import { BRAND_ICONS } from '@/app/r/[shareId]/brandIcons'
 import { t, type Lang } from '@/lib/i18n'
 
@@ -27,7 +26,7 @@ export default function SignInButtons({
   promoGiven?: boolean
   onBlocked?: () => void
 }) {
-  // Guards against a second tap starting a second signInWithOAuth() call
+  // Guards against a second tap starting a second sign-in redirect
   // before the browser navigates away from the first -- found 2026-09-30:
   // a real device's LINE attempts consistently showed two "Redirecting to
   // external provider" log entries seconds apart on every failed login,
@@ -43,7 +42,7 @@ export default function SignInButtons({
   // ADR pending) -- GoTrue's custom OIDC provider only ever worked for a
   // LINE identity's first-ever link, then failed every repeat login
   // (matches a known Supabase Auth upstream bug class, never root-caused
-  // on our side). Google keeps using signInWithOAuth() below, unaffected.
+  // on our side).
   function signInWithLine() {
     if (mode === 'signup' && !consentGiven) {
       onBlocked?.()
@@ -76,29 +75,21 @@ export default function SignInButtons({
     window.location.href = `https://${process.env.NEXT_PUBLIC_AUTH0_DOMAIN}/authorize?${params}`
   }
 
-  async function signInWithGoogle() {
+  // Google sign-in runs on our own address (app/auth/google/start), so
+  // Google's screen names this site rather than the Supabase project.
+  function signInWithGoogle() {
     if (mode === 'signup' && !consentGiven) {
       onBlocked?.()
       return
     }
     if (submitting.current) return
     submitting.current = true
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        // Sign-up always shows Google's account chooser (operator 2026-11-20), so a
-        // player sees which Google account the new PicVision account is tied to;
-        // sign-in keeps Google's silent pick of the account already in use.
-        ...(mode === 'signup' ? { queryParams: { prompt: 'select_account' } } : {}),
-        // &consent=1 carries the just-ticked checkboxes across the OAuth
-        // redirect round-trip: there's no session yet at this point to
-        // record consent against (auth.uid() doesn't exist until the
-        // callback exchanges the code), so app/auth/callback/route.ts is
-        // where it actually gets written, once one does.
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${mode === 'signup' ? '&consent=1' : ''}${mode === 'signup' && promoGiven ? '&promo=1' : ''}`,
-      },
+    const params = new URLSearchParams({
+      next,
+      ...(mode === 'signup' ? { mode: 'signup', consent: '1' } : {}),
+      ...(mode === 'signup' && promoGiven ? { promo: '1' } : {}),
     })
+    window.location.href = `/auth/google/start?${params}`
   }
 
   return (

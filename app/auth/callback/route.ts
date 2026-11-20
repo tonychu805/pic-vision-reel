@@ -1,11 +1,8 @@
-// OAuth code-exchange landing spot for signInWithOAuth({ provider: 'line' | 'google' }),
-// called with redirectTo pointing here. The only genuinely new ROUTE this
-// feature adds -- everything else is UI on the existing /[slug]/[code] page.
+// Code-exchange landing spot for Supabase's own links: the email
+// confirmation link (Google now uses app/auth/google/callback).
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import { createClient } from '@/lib/supabaseServer'
-import { ensurePlayer, recordSignupConsent, recordSignupPromoConsent } from '@/lib/player'
-import { clientIp } from '@/lib/clientIp'
+import { createGoTrueClient } from '@/lib/supabaseServer'
+import { finishPlayerSignIn } from '@/lib/finishSignIn'
 
 // request.url's origin cannot be trusted behind a reverse proxy (found via
 // a real tailscale-serve test 2026-09-29: the browser hit
@@ -34,13 +31,10 @@ export async function GET(request: Request) {
   const promoGiven = url.searchParams.get('promo') === '1'
 
   if (code) {
-    const supabase = await createClient()
+    const supabase = await createGoTrueClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.user) {
-      await ensurePlayer(supabase, data.user)
-      const h = await headers()
-      await recordSignupConsent(supabase, data.user, { ticked: consentGiven, ip: clientIp(h), userAgent: h.get('user-agent'), next })
-      await recordSignupPromoConsent(supabase, data.user, { ticked: promoGiven })
+      await finishPlayerSignIn(supabase, data.user, { consent: consentGiven, promo: promoGiven, next })
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
