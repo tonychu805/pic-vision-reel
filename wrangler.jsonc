@@ -19,7 +19,13 @@
   },
   "env": {
     "production": {
-      "name": "picvision-reel"
+      "name": "picvision-reel",
+      "routes": [
+        {
+          "pattern": "share.picvisionai.com",
+          "custom_domain": true
+        }
+      ]
     }
   }
 }
