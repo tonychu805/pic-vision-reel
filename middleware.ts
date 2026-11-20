@@ -25,7 +25,7 @@ const AUTH0_REFRESH_MARGIN_MS = 5 * 60 * 1000
 
 function auth0TokenExpiresAt(idToken: string): number | null {
   try {
-    const payload = JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString('utf8'))
+    const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
     return typeof payload.exp === 'number' ? payload.exp * 1000 : null
   } catch {
     return null
@@ -54,7 +54,7 @@ async function refreshAuth0Session(request: NextRequest, response: NextResponse)
   return response
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(

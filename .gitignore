@@ -22,3 +22,7 @@ node_modules
 
 # Demo footage for the vertical-share prototype (real players; never commit)
 public/demo-vertical/
+
+# Cloudflare Workers build output (OpenNext, wrangler)
+.open-next
+.wrangler
