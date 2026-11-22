@@ -47,7 +47,6 @@ export type VerticalProps = {
   videosEndpoint: string | null
   venueName: string
   gameDate: string
-  court: string
   when: string
   lang: Lang
   // The wide page for this share, when there is one.
@@ -81,7 +80,7 @@ function fmt(sec: number) {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`
 }
 
-export default function VerticalShareClient({ reels, addresses: initialAddresses, addressesExpireAt, videosEndpoint, venueName, gameDate, court, when, lang, wideHref, soundButton = false }: VerticalProps) {
+export default function VerticalShareClient({ reels, addresses: initialAddresses, addressesExpireAt, videosEndpoint, venueName, gameDate, when, lang, wideHref, soundButton = false }: VerticalProps) {
   const [addresses, setAddresses] = useState<Addresses>(initialAddresses)
   const slides: FeedClip[] = useMemo(
     () => reels.filter((r) => addresses.vertical?.[r.id] || addresses.videos[r.id]).map((r) => clip(r, addresses)),
@@ -405,7 +404,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
               <div className={s.caption}>
                 {badge && <span className={s.badge}>{t(lang, 'vBadge')}</span>}
                 <h2 className={badge ? `${s.title} ${s.titleBadge}` : s.title}>{badge ?? rallyName(sl)}</h2>
-                <p className={s.meta}>{[badge ? rallyName(sl) : null, sl.playTime ? t(lang, 'startedAt', { t: sl.playTime }) : null, fmt(sl.durationSec), court].filter(Boolean).join('  ·  ')}</p>
+                <p className={s.meta}>{[badge ? rallyName(sl) : null, sl.playTime ? t(lang, 'startedAt', { t: sl.playTime }) : null, fmt(sl.durationSec)].filter(Boolean).join('  ·  ')}</p>
                 <p className={s.metaWhen}>{when}</p>
               </div>
             </div>

@@ -22,7 +22,6 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
   const gameDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).format(played)
   const lang = await currentLang()
   const when = new Intl.DateTimeFormat(lang, { timeZone: 'Asia/Taipei', weekday: 'short', month: 'short', day: 'numeric' }).format(played)
-  const court = (first.camera_label ?? '').replace(/^.*?-\s*/, '') || 'Court'
   const cdnOrigin = new URL(feed[0].videoUrl).origin
   // Show the sound control on vertical reels. Playback stays muted until
   // the viewer taps it, as required for autoplay on mobile browsers.
@@ -39,7 +38,6 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
         videosEndpoint={videosEndpoint(shareId)}
         venueName={first.brand_name ?? 'Your venue'}
         gameDate={gameDate}
-        court={court}
         when={when}
         lang={lang}
         wideHref={`/r/${shareId}/wide`}

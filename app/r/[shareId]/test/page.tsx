@@ -52,7 +52,6 @@ export default async function VerticalTestPage({ params }: { params: Promise<{ s
   // Venue time zone (Taiwan), not UTC: a 7 AM game there is the previous day in UTC.
   const gameDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).format(played)
   const when = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', weekday: 'short', month: 'short', day: 'numeric' }).format(played)
-  const court = (first.camera_label ?? '').replace(/^.*?-\s*/, '') || 'Court'
 
   const addresses = await fetchVideoAddresses(shareId)
   if (addresses && Object.keys(addresses.vertical ?? {}).length > 0) redirect(`/r/${shareId}`)
@@ -68,7 +67,6 @@ export default async function VerticalTestPage({ params }: { params: Promise<{ s
       videosEndpoint={null}
       venueName={venueName}
       gameDate={gameDate}
-      court={court}
       when={when}
       lang={await currentLang()}
       wideHref={null}
