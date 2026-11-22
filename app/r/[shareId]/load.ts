@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { supabasePublic } from '@/lib/supabase'
 import { fetchVideoAddresses, type VideoAddresses } from '@/lib/videoAddresses'
 import { mergeParts } from '@/lib/mergeParts'
+import { playTime } from '@/lib/playTime'
 
 // What both views of a share page read (./page.tsx, ./wide/page.tsx).
 //
@@ -33,6 +34,8 @@ export type ShareReel = {
   part_index: number | null
   score: number | string | null
   badge?: string | null
+  // When the rally's play began ("20:14"); null when unknown.
+  play_time?: string | null
 }
 
 export async function loadShare(shareId: string): Promise<{ reels: ShareReel[]; addresses: VideoAddresses }> {
@@ -40,20 +43,23 @@ export async function loadShare(shareId: string): Promise<{ reels: ShareReel[]; 
 
   const supabase = supabasePublic()
   // The console's video addresses don't depend on the reels, so all three go out at once.
-  const [{ data }, { data: badgeRows }, addresses] = await Promise.all([
+  const [{ data }, { data: badgeRows }, { data: playRows }, addresses] = await Promise.all([
     supabase.rpc('get_reels_by_share_id', { p_share_id: shareId }),
     // A session's badges, decided once its last part is in (console
     // lib/badges.ts). An error -- a database without the function yet --
     // just means no badges, never a broken page.
     supabase.rpc('get_badges_by_share_id', { p_share_id: shareId }),
+    // When each rally's play began. Same rule: an error means no times.
+    supabase.rpc('get_play_times_by_share_id', { p_share_id: shareId }),
     // Signed, 1-hour video addresses from the console (lib/videoAddresses.ts).
     // null = the share is unknown, removed or past its 30 days.
     fetchVideoAddresses(shareId),
   ])
   const badges = new Map(((badgeRows ?? []) as { id: string; badge: string }[]).map((b) => [b.id, b.badge]))
+  const playTimes = new Map(((playRows ?? []) as { id: string; play_started_at: string }[]).map((p) => [p.id, playTime(p.play_started_at)]))
   // A session sent in parts shows as one familiar set of reels (lib/mergeParts.ts),
   // badged clips first.
-  const reels = mergeParts(((data ?? []) as ShareReel[]).map((r) => ({ ...r, badge: badges.get(r.id) ?? null })))
+  const reels = mergeParts(((data ?? []) as ShareReel[]).map((r) => ({ ...r, badge: badges.get(r.id) ?? null, play_time: playTimes.get(r.id) ?? null })))
 
   if (reels.length === 0) notFound()
 

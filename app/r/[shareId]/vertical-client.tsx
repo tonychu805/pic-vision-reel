@@ -405,7 +405,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
               <div className={s.caption}>
                 {badge && <span className={s.badge}>{t(lang, 'vBadge')}</span>}
                 <h2 className={badge ? `${s.title} ${s.titleBadge}` : s.title}>{badge ?? rallyName(sl)}</h2>
-                <p className={s.meta}>{[badge ? rallyName(sl) : null, fmt(sl.durationSec), court].filter(Boolean).join('  ·  ')}</p>
+                <p className={s.meta}>{[badge ? rallyName(sl) : null, sl.playTime ? t(lang, 'startedAt', { t: sl.playTime }) : null, fmt(sl.durationSec), court].filter(Boolean).join('  ·  ')}</p>
                 <p className={s.metaWhen}>{when}</p>
               </div>
             </div>

@@ -67,6 +67,7 @@ type Slide = {
   kind: 'full' | 'burst' | 'rally'
   rallyRank: number | null
   badge: string | null
+  playTime: string | null
   videoUrl: string
   durationSec: number | null
   rallyCount: number | null
@@ -419,7 +420,7 @@ export default function ReelShareClient({
                   slideRefs.current[i] = el
                 }}
               >
-                {slides.length > 1 && <span className="slide-badge">{kindLabel(slide, lang)}</span>}
+                {slides.length > 1 && <span className="slide-badge">{[kindLabel(slide, lang), slide.playTime].filter(Boolean).join(' · ')}</span>}
                 {/* preload="metadata" on every slide but the first, and
                     "metadata" (not the default) even on the first -- this
                     element streaming the full file in the background
