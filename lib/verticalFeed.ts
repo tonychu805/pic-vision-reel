@@ -9,7 +9,7 @@
 // game some clips are still wide. A share with no crop at all (an older
 // desktop, a session from before 10-28) keeps the wide page.
 
-export type FeedReel = { id: string; kind: string; rally_rank: number | null; badge?: string | null; duration_sec: number | null }
+export type FeedReel = { id: string; kind: string; rally_rank: number | null; badge?: string | null; duration_sec: number | null; play_time?: string | null }
 export type Addresses = { videos: Record<string, string>; vertical?: Record<string, string> }
 
 export type FeedClip = {
@@ -17,6 +17,8 @@ export type FeedClip = {
   rallyRank: number | null
   badge: string | null
   durationSec: number
+  // When the rally's play began ("20:14"), or null.
+  playTime: string | null
   // What plays: the 9:16 crop, else the 16:9 clip.
   videoUrl: string
   // True while only the 16:9 clip exists (shown fitted, not cropped).
@@ -42,6 +44,7 @@ export function clip(r: FeedReel, addresses: Addresses): FeedClip {
     rallyRank: r.rally_rank,
     badge: r.badge ?? null,
     durationSec: r.duration_sec ?? 0,
+    playTime: r.play_time ?? null,
     videoUrl: (crop ?? wide) as string,
     wide: !crop,
     wideUrl: crop ? wide : null,

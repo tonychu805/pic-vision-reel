@@ -15,6 +15,7 @@ export default async function WideView({ shareId, reels, addresses }: { shareId:
       kind: r.kind as 'full' | 'burst' | 'rally',
       rallyRank: r.rally_rank,
       badge: r.badge ?? null,
+      playTime: r.play_time ?? null,
       videoUrl: addresses.videos[r.id],
       durationSec: r.duration_sec,
       rallyCount: r.rally_count,
