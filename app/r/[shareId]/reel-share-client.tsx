@@ -11,6 +11,7 @@ import { slidesToLoad } from '@/lib/loadWindow'
 import { fetchVideoBlob } from '@/lib/videoDownload'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import LangSwitch from '@/components/lang-switch'
+import { openedFromShare, recordActivity, sharedLink, viewThreshold, type ActivityKind } from '@/lib/activity'
 
 // Feedback form (Tally, form ODRRQR) for the player actually watching
 // their highlight -- not the venue operator's console. Tally's own script
@@ -111,6 +112,7 @@ function kindLabel(slide: Slide, lang: Lang): string {
 
 export default function ReelShareClient({
   shareId,
+  countOpen = false,
   slides,
   addressesExpireAt,
   videosEndpoint,
@@ -122,6 +124,7 @@ export default function ReelShareClient({
   lang,
 }: {
   shareId: string
+  countOpen?: boolean
   slides: Slide[]
   addressesExpireAt: string
   videosEndpoint: string
@@ -133,6 +136,14 @@ export default function ReelShareClient({
   lang: Lang
 }) {
   const canGoBack = useCanGoBack()
+  const viewed = useRef<Set<string>>(new Set())
+  const record = (kind: ActivityKind, reelId?: string) => recordActivity(shareId, kind, reelId)
+  const opened = useRef(false)
+  useEffect(() => {
+    if (!countOpen || opened.current) return
+    opened.current = true
+    recordActivity(shareId, 'page_open', null, openedFromShare(window.location.search))
+  }, [shareId, countOpen])
   const [copied, setCopied] = useState(false)
   const [copyFailed, setCopyFailed] = useState(false)
   const [appShareState, setAppShareState] = useState<Record<string, 'idle' | 'working'>>({})
@@ -290,13 +301,14 @@ export default function ReelShareClient({
     })
   }, [activeIndex])
 
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL}/r/${shareId}`
+  const shareUrl = sharedLink(`${process.env.NEXT_PUBLIC_APP_URL}/r/${shareId}`)
 
   async function copyLink() {
     setCopied(false)
     setCopyFailed(false)
     try {
       await navigator.clipboard.writeText(shareUrl)
+      record('link_share')
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1800)
     } catch {
@@ -323,16 +335,21 @@ export default function ReelShareClient({
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean }
       if (nav.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: t(lang, 'shareTitleOne', { venue: venueName }) })
+        // The Download button opens the same panel (to get "Save Video"); it counts as a save.
+        record(label === 'Download' ? 'download' : 'clip_share', slide.id)
       } else if (linkFallback) {
         // Opened straight off the tap (nothing awaited first when the video
         // was prefetched), so it isn't treated as a pop-up.
         window.open(linkFallback, '_blank', 'noopener,noreferrer')
+        record('link_share')
       } else if (navigator.share) {
         // This browser's Web Share API doesn't support file attachments
         // (older/desktop browsers) -- fall back to sharing the link only.
         await navigator.share({ url: shareUrl, title: t(lang, 'shareTitleOne', { venue: venueName }) })
+        record('link_share')
       } else {
         // No Web Share API at all -- just download, no share sheet exists here.
+        record('download', slide.id)
         window.location.href = addressesRef.current.byId[slide.id] ?? slide.videoUrl
       }
     } catch {
@@ -381,6 +398,7 @@ export default function ReelShareClient({
           URL.revokeObjectURL(url)
         }
       }
+      slides.forEach((slide) => record('download', slide.id))
     } catch {
       // The share sheet was cancelled or sharing was declined.
     }
@@ -438,6 +456,12 @@ export default function ReelShareClient({
                   playsInline
                   muted
                   preload="metadata"
+                  onTimeUpdate={(e) => {
+                    const v = e.currentTarget
+                    if (viewed.current.has(slide.id) || !(v.duration > 0) || v.currentTime < viewThreshold(v.duration)) return
+                    viewed.current.add(slide.id)
+                    record('clip_view', slide.id)
+                  }}
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
               </div>

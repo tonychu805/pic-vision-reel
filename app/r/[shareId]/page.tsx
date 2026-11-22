@@ -14,7 +14,7 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
   const { reels, addresses } = await loadShare(shareId)
 
   const feed = verticalFeed(reels, addresses)
-  if (!feed) return <WideView shareId={shareId} reels={reels} addresses={addresses} />
+  if (!feed) return <WideView shareId={shareId} reels={reels} addresses={addresses} countOpen />
 
   const first = reels[0]
   const played = new Date(first.created_at)
@@ -32,6 +32,7 @@ export default async function ReelSharePage({ params }: { params: Promise<{ shar
       <link rel="preconnect" href={cdnOrigin} crossOrigin="anonymous" />
       <link rel="preload" as="fetch" href={feed[0].videoUrl} crossOrigin="anonymous" />
       <VerticalShareClient
+        shareId={shareId}
         reels={reels.filter((r) => r.kind === 'rally')}
         addresses={addresses}
         addressesExpireAt={addresses.expiresAt}
