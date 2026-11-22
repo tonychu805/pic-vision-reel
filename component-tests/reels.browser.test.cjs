@@ -98,7 +98,8 @@ test('clipboard rejection or missing API never announces success; retry succeeds
   }))
   await page.getByRole('button', { name: /Copy link/ }).click()
   await page.getByRole('button', { name: /Link copied/ }).waitFor()
-  assert.equal(await page.evaluate(() => window.copiedText), `${origin}/r/${shareId}`)
+  // A shared link is marked so an open through it counts as reach (lib/activity.ts).
+  assert.equal(await page.evaluate(() => window.copiedText), `${origin}/r/${shareId}?from=share`)
   assert.equal(await page.getByRole('alert').count(), 0)
 })
 
@@ -177,7 +178,8 @@ test('vertical Send shares the page link, Share still attaches the clip', async 
   await page.waitForFunction(() => window.sends.length === 1)
   const sent = await page.evaluate(() => window.sends[0])
   assert.equal(sent.files, 0)
-  assert.equal(sent.url, await page.evaluate(() => window.location.href))
+  // The page link, marked so an open through it counts as reach (lib/activity.ts).
+  assert.equal(sent.url, await page.evaluate(() => { const u = new URL(window.location.href); u.searchParams.set('from', 'share'); return u.toString() }))
   // Share waits for the clip to be prefetched, then attaches it.
   await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => e.name.endsWith('/clip0.mp4')))
   await page.waitForTimeout(300)

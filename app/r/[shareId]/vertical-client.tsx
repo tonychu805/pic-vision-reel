@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { slidesToLoad } from '@/lib/loadWindow'
+import { nextToPrefetch, slidesToLoad } from '@/lib/loadWindow'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
 import { clip, type Addresses, type FeedClip, type FeedReel } from '@/lib/verticalFeed'
 import { fetchVideoBlob } from '@/lib/videoDownload'
+import { openedFromShare, recordActivity, sharedLink, viewThreshold, type ActivityKind } from '@/lib/activity'
 import Wordmark from '@/components/wordmark'
 import { useCanGoBack } from '@/lib/useCanGoBack'
 import s from './vertical.module.css'
@@ -19,8 +20,8 @@ import { BRAND_ICONS, type BrandIcon } from './brandIcons'
 // Same sharing mechanics as the wide page (./reel-share-client.tsx):
 // every app option attaches the clip itself to the phone's share panel
 // (navigator.share with files), which Safari only allows straight off a tap
-// with nothing awaited -- so clips are prefetched as Blobs, the one on screen
-// and the next (lib/loadWindow.ts). A browser that can't attach files falls
+// with nothing awaited -- so clips are prefetched as Blobs: the one on screen
+// and the next, then the rest one at a time (lib/loadWindow.ts). A browser that can't attach files falls
 // back to the app's own link-sharing address, where it has one.
 //
 // Video addresses last an hour (ADR-142); like the wide page, they're
@@ -40,6 +41,9 @@ const BADGE_KEYS: Record<string, StringKey> = {
 }
 
 export type VerticalProps = {
+  // The session's share id; activity is counted only when it's given
+  // (lib/activity.ts), so the test page counts nothing.
+  shareId?: string
   reels: FeedReel[]
   addresses: Addresses
   // null: fixed addresses (the 09-28 pilot's CDN clips), never refreshed.
@@ -80,7 +84,7 @@ function fmt(sec: number) {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`
 }
 
-export default function VerticalShareClient({ reels, addresses: initialAddresses, addressesExpireAt, videosEndpoint, venueName, gameDate, when, lang, wideHref, soundButton = false }: VerticalProps) {
+export default function VerticalShareClient({ shareId, reels, addresses: initialAddresses, addressesExpireAt, videosEndpoint, venueName, gameDate, when, lang, wideHref, soundButton = false }: VerticalProps) {
   const [addresses, setAddresses] = useState<Addresses>(initialAddresses)
   const slides: FeedClip[] = useMemo(
     () => reels.filter((r) => addresses.vertical?.[r.id] || addresses.videos[r.id]).map((r) => clip(r, addresses)),
@@ -107,7 +111,18 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
   const fillRef = useRef<HTMLDivElement>(null)
   const seekRef = useRef<HTMLInputElement>(null)
   const toastTimer = useRef<number | undefined>(undefined)
-  const pageUrl = typeof window !== 'undefined' ? window.location.href : ''
+  // What a player shares: this page, marked so an open through it counts as
+  // reaching someone else (lib/activity.ts).
+  const pageUrl = typeof window !== 'undefined' ? sharedLink(window.location.href) : ''
+  const viewed = useRef<Set<string>>(new Set())
+  const record = (kind: ActivityKind, reelId?: string) => recordActivity(shareId, kind, reelId)
+
+  const opened = useRef(false)
+  useEffect(() => {
+    if (opened.current) return
+    opened.current = true
+    recordActivity(shareId, 'page_open', null, openedFromShare(window.location.search))
+  }, [shareId])
 
   function load(url: string) {
     if (requested.current.has(url)) return
@@ -133,6 +148,16 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     if (sheet === 'download' && slides[active]?.wideUrl) load(slides[active].wideUrl!)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, slides, sheet])
+
+  // Then every other clip, one at a time, so Share never waits after a
+  // swipe (lib/loadWindow.ts). Runs again each time a download finishes.
+  useEffect(() => {
+    const inFlight = [...requested.current].filter((url) => !blobs[url]).length
+    const skip = (i: number) => requested.current.has(slides[i].videoUrl) || !!blobs[slides[i].videoUrl] || failedDownloads.includes(slides[i].videoUrl)
+    const next = nextToPrefetch(active, slides.length, inFlight, skip)
+    if (next !== null) load(slides[next].videoUrl)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, slides, blobs, failedDownloads])
 
   // Which clip is on screen.
   useEffect(() => {
@@ -199,6 +224,11 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
       const v = videoRefs.current[active]
       const d = v && Number.isFinite(v.duration) && v.duration > 0 ? v.duration : 0
       const p = d ? v!.currentTime / d : 0
+      const id = slides[active]?.id
+      if (id && d && v!.currentTime >= viewThreshold(d) && !viewed.current.has(id)) {
+        viewed.current.add(id)
+        record('clip_view', id)
+      }
       if (fillRef.current) fillRef.current.style.transform = `scaleX(${p})`
       if (seekRef.current && !scrub) {
         seekRef.current.max = String(d || 1)
@@ -208,7 +238,8 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [active, scrub])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, scrub, slides])
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
@@ -261,7 +292,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
   // Everything up to navigator.share runs synchronously off the tap when the
   // clip is already loaded (the usual case), which keeps it inside Safari's
   // tap window.
-  async function shareFile(url: string, name: string, linkFallback?: string) {
+  async function shareFile(url: string, name: string, reelId: string, kind: 'clip_share' | 'download', linkFallback?: string) {
     const blob = blobs[url]
     if (!blob) return
     const file = new File([blob], name, { type: blob.type || 'video/mp4' })
@@ -269,10 +300,13 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     try {
       if (nav.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: `${venueName} — ${label(cur)}` })
+        record(kind, reelId)
       } else if (linkFallback) {
         window.open(linkFallback, '_blank', 'noopener,noreferrer')
+        record('link_share')
       } else if (navigator.share) {
         await navigator.share({ url: pageUrl, title: `${venueName} — ${label(cur)}` })
+        record('link_share')
       } else {
         const a = document.createElement('a')
         a.href = URL.createObjectURL(file)
@@ -281,6 +315,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
         a.click()
         a.remove()
         URL.revokeObjectURL(a.href)
+        record('download', reelId)
       }
     } catch {
       // Share panel cancelled.
@@ -300,7 +335,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
   // both attached the clip, and a phone had no way to send the link at all.
   function sendLink() {
     if (typeof navigator.share === 'function') {
-      navigator.share({ url: pageUrl, title: `${venueName} — ${label(cur)}` }).catch(() => {})
+      navigator.share({ url: pageUrl, title: `${venueName} — ${label(cur)}` }).then(() => record('link_share'), () => {})
       return
     }
     setSheet('send')
@@ -311,7 +346,8 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean }
     const file = blob ? new File([blob], fileName(cur), { type: blob.type || 'video/mp4' }) : null
     if (file && nav.canShare?.({ files: [file] })) {
-      navigator.share({ files: [file], title: `${venueName} — ${label(cur)}` }).catch(() => {})
+      const reelId = cur.id
+      navigator.share({ files: [file], title: `${venueName} — ${label(cur)}` }).then(() => record('clip_share', reelId), () => {})
       return
     }
     if (!blob && typeof nav.canShare === 'function') {
@@ -329,15 +365,17 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
     // The Send panel (no Web Share here) hands each app the page link.
     if (kind === 'send' && app.hrefFor) {
       window.open(app.hrefFor(pageUrl), '_blank', 'noopener,noreferrer')
+      record('link_share')
       return
     }
-    shareFile(cur.videoUrl, fileName(cur), app.hrefFor?.(pageUrl))
+    shareFile(cur.videoUrl, fileName(cur), cur.id, 'clip_share', app.hrefFor?.(pageUrl))
   }
 
   async function copyLink() {
     setSheet(null)
     try {
       await navigator.clipboard.writeText(pageUrl)
+      record('link_share')
       showToast(t(lang, 'linkCopied'))
     } catch {
       showToast(t(lang, 'vCopyFailed'))
@@ -371,6 +409,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
           a.remove()
           URL.revokeObjectURL(a.href)
         }
+      slides.forEach((sl) => record('download', sl.id))
     } catch {
       // cancelled
     }
@@ -516,7 +555,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
               </div>
             ) : (
               <div className={s.list}>
-                <button type="button" className={s.listBtn} disabled={!curReady} onClick={() => { setSheet(null); shareFile(cur.videoUrl, fileName(cur)) }}>
+                <button type="button" className={s.listBtn} disabled={!curReady} onClick={() => { setSheet(null); shareFile(cur.videoUrl, fileName(cur), cur.id, 'download') }}>
                   <span className={s.listIcon}>{curReady ? <DownloadIcon /> : <span className={s.spinner} />}</span>
                   <span className={s.listText}><span className={s.listName}>{t(lang, 'vThisClip')}</span><span className={s.listDetail}>{label(cur)} · {fmt(cur.durationSec)}{cur.wide ? '' : ` · ${t(lang, 'vVertical')}`}</span></span>
                 </button>
@@ -528,7 +567,7 @@ export default function VerticalShareClient({ reels, addresses: initialAddresses
                   </span>
                 </button>
                 {cur.wideUrl && (
-                  <button type="button" className={s.listBtn} disabled={!wideReady} onClick={() => { setSheet(null); shareFile(cur.wideUrl!, fileName(cur, true)) }}>
+                  <button type="button" className={s.listBtn} disabled={!wideReady} onClick={() => { setSheet(null); shareFile(cur.wideUrl!, fileName(cur, true), cur.id, 'download') }}>
                     <span className={s.listIcon}>{wideReady ? <DownloadIcon /> : <span className={s.spinner} />}</span>
                     <span className={s.listText}><span className={s.listName}>{t(lang, 'vWideVersion')}</span><span className={s.listDetail}>{label(cur)} · {t(lang, 'vWideDetail')}</span></span>
                   </button>
