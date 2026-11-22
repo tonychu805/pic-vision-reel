@@ -7,7 +7,7 @@ import Script from 'next/script'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
 import { brandLogoUrl } from '@/lib/brandLogo'
-import { slidesToLoad } from '@/lib/loadWindow'
+import { nextToPrefetch, slidesToLoad } from '@/lib/loadWindow'
 import { fetchVideoBlob } from '@/lib/videoDownload'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import LangSwitch from '@/components/lang-switch'
@@ -47,11 +47,10 @@ const TALLY_FORM_ID = 'ODRRQR'
 // second, full last -- this component just renders whatever order the
 // slides prop already arrives in. Videos are prefetched as Blobs because
 // Safari requires navigator.share() to run inside the same user-gesture
-// window as the tap, with nothing awaited first. Only the slide on screen
-// and the next one are fetched (lib/loadWindow.ts, 2026-09-28): fetching
-// all ~12 on open cost about 56 MB on the 9/25 field test. Fetching one
-// slide ahead means the slide someone swipes to is usually already loaded;
-// if not, its tiles show a spinner until it is.
+// window as the tap, with nothing awaited first. The slide on screen and
+// the next one are fetched first, then the other rally clips one at a time
+// (lib/loadWindow.ts, 2026-11-22), so Share rarely waits after a swipe. A
+// slide still loading shows a spinner on its tiles until it is ready.
 //
 // Every share tile and Download act on whichever slide is currently
 // centered in the carousel (an IntersectionObserver drives activeIndex);
@@ -245,6 +244,16 @@ export default function ReelShareClient({
     // load() only reads refs and the stable slides prop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex])
+
+  // Then every other rally clip, one at a time (lib/loadWindow.ts). The full
+  // reel and quick hits are long and rarely shared, so they wait for a tap.
+  useEffect(() => {
+    const inFlight = [...requestedRef.current].filter((i) => !blobs[i]).length
+    const skip = (i: number) => slides[i].kind !== 'rally' || requestedRef.current.has(i) || !!blobs[i] || failedDownloads.includes(i)
+    const next = nextToPrefetch(activeIndex, slides.length, inFlight, skip)
+    if (next !== null) load(next)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, blobs, failedDownloads])
 
   // Tracks which slide is most visible inside the scroll container --
   // accumulates ratios across observer callbacks (a batch only reports

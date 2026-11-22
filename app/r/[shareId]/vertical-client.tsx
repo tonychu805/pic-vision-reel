@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { slidesToLoad } from '@/lib/loadWindow'
+import { nextToPrefetch, slidesToLoad } from '@/lib/loadWindow'
 import { t, type Lang, type StringKey } from '@/lib/i18n'
 import { needsRefresh, REFRESH_BEFORE_MS } from '@/lib/videoAddresses'
 import { clip, type Addresses, type FeedClip, type FeedReel } from '@/lib/verticalFeed'
@@ -20,8 +20,8 @@ import { BRAND_ICONS, type BrandIcon } from './brandIcons'
 // Same sharing mechanics as the wide page (./reel-share-client.tsx):
 // every app option attaches the clip itself to the phone's share panel
 // (navigator.share with files), which Safari only allows straight off a tap
-// with nothing awaited -- so clips are prefetched as Blobs, the one on screen
-// and the next (lib/loadWindow.ts). A browser that can't attach files falls
+// with nothing awaited -- so clips are prefetched as Blobs: the one on screen
+// and the next, then the rest one at a time (lib/loadWindow.ts). A browser that can't attach files falls
 // back to the app's own link-sharing address, where it has one.
 //
 // Video addresses last an hour (ADR-142); like the wide page, they're
@@ -148,6 +148,16 @@ export default function VerticalShareClient({ shareId, reels, addresses: initial
     if (sheet === 'download' && slides[active]?.wideUrl) load(slides[active].wideUrl!)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, slides, sheet])
+
+  // Then every other clip, one at a time, so Share never waits after a
+  // swipe (lib/loadWindow.ts). Runs again each time a download finishes.
+  useEffect(() => {
+    const inFlight = [...requested.current].filter((url) => !blobs[url]).length
+    const skip = (i: number) => requested.current.has(slides[i].videoUrl) || !!blobs[slides[i].videoUrl] || failedDownloads.includes(slides[i].videoUrl)
+    const next = nextToPrefetch(active, slides.length, inFlight, skip)
+    if (next !== null) load(slides[next].videoUrl)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, slides, blobs, failedDownloads])
 
   // Which clip is on screen.
   useEffect(() => {

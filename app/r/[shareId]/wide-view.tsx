@@ -30,8 +30,8 @@ export default async function WideView({ shareId, reels, addresses, countOpen = 
   // component so this hint hits <head> before any client JS has even
   // downloaded, not just before the client's useEffect runs -- covers the
   // first (most likely to be watched/shared first) slide specifically.
-  // The client component then fetches the on-screen slide and the next one
-  // as Blobs (lib/loadWindow.ts), so share tiles can call navigator.share()
+  // The client component then fetches the on-screen slide, the next one and
+  // then the other rally clips as Blobs (lib/loadWindow.ts), so share tiles can call navigator.share()
   // synchronously off the tap -- an awaited fetch mid-gesture silently
   // misses Safari's activation window.
   const cdnOrigin = new URL(slides[0].videoUrl).origin
