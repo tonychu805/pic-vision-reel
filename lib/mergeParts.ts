@@ -1,14 +1,18 @@
 // A playing session sent in parts (pic-vision ADR-127/128) arrives here as
 // several sets of reels on one share link. Players see the same page as
-// ever, so this turns them back into one familiar set:
-//   - rally clips: the session's best MAX_RALLIES, renumbered 1..n. When
-//     every rally clip carries its 0-100 score (pic-vision ADR-133, clips
-//     made from 2026-09-28), that means the highest scores across all
-//     parts. Older sessions have none, so they keep the earlier order: each
-//     part's #1, then each part's #2, ...;
-//   - then the newest part's quick hits and full reel.
-// That keeps the carousel at today's size (~12 short clips), which keeps
-// "Download all" to a sensible size (see reel-share-client.tsx).
+// ever, so this turns them back into one set: the session's best MAX_RALLIES
+// rally clips, renumbered 1..n. When every rally clip carries its 0-100 score
+// (pic-vision ADR-133, clips made from 2026-09-28), that means the highest
+// scores across all parts. Older sessions have none, so they keep the earlier
+// order: each part's #1, then each part's #2, and so on.
+//
+// Only rally clips are shown (operator, 2026-11-25). Each part also makes a
+// quick hits and a full reel, but of its own 5 minutes: shown under the names
+// 精華快剪 / 完整精華 they read as the whole game, which they never were. They
+// stay only when a game has no rally clip at all, so its page is never empty.
+// That keeps the carousel at ten short clips, which keeps "Download all" to a
+// sensible size (see reel-share-client.tsx). The console's game card counts
+// the same clips (console lib/deliveredClips.ts): change both together.
 //
 // Badged clips come first, always shown, then the best of the rest fill the
 // page to MAX_RALLIES (operator, 2026-10-27: badged highlights first, then
@@ -34,7 +38,9 @@ export const MAX_RALLIES = 10
 export function mergeParts<T extends PartReel>(reels: T[]): T[] {
   const parts = [...new Set(reels.map((r) => r.part_index).filter((p): p is number => p !== null))].sort((a, b) => a - b)
   const allRallies = reels.filter((r) => r.kind === 'rally')
-  if (parts.length <= 1 && !allRallies.some((r) => r.badge) && allRallies.length <= MAX_RALLIES) return reels
+  if (parts.length <= 1 && !allRallies.some((r) => r.badge) && allRallies.length <= MAX_RALLIES) {
+    return allRallies.length ? allRallies : reels
+  }
 
   // Before parts (part_index null) the share is one set; after, only
   // part clips count, as always.
@@ -54,5 +60,5 @@ export function mergeParts<T extends PartReel>(reels: T[]): T[] {
     .map((kind) => reels.find((r) => r.kind === kind && r.part_index === newest))
     .filter((r): r is T => r !== undefined)
 
-  return [...rallies, ...extras]
+  return rallies.length ? rallies : extras
 }

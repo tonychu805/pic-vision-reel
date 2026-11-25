@@ -6,21 +6,27 @@ type R = { id: string; kind: string; rally_rank: number | null; part_index: numb
 const rally = (part: number, rank: number): R => ({ id: `p${part}r${rank}`, kind: 'rally', rally_rank: rank, part_index: part })
 const other = (part: number | null, kind: string): R => ({ id: `p${part}${kind}`, kind, rally_rank: null, part_index: part })
 
-test('a share from before parts, or a single part, is shown exactly as today', () => {
+test('a share from before parts, or a single part, shows its rally clips only', () => {
   const old = [rally(0, 1), other(null, 'burst'), other(null, 'full')].map((r) => ({ ...r, part_index: null }))
-  assert.deepEqual(mergeParts(old), old)
+  assert.deepEqual(mergeParts(old), [old[0]])
   const one = [rally(1, 1), rally(1, 2), other(1, 'burst'), other(1, 'full')]
-  assert.deepEqual(mergeParts(one), one)
+  assert.deepEqual(mergeParts(one).map((r) => r.id), ['p1r1', 'p1r2'])
 })
 
-test('several parts: best of each part first, renumbered, then the newest part\'s quick hits and full reel', () => {
+test('a game with no rally clip keeps its quick hits and full reel, so its page is not empty', () => {
+  const one = [other(1, 'burst'), other(1, 'full')]
+  assert.deepEqual(mergeParts(one), one)
+  assert.deepEqual(mergeParts([other(1, 'burst'), other(1, 'full'), other(2, 'burst'), other(2, 'full')]).map((r) => r.id), ['p2burst', 'p2full'])
+})
+
+test('several parts: best of each part first, renumbered; no part\'s quick hits or full reel', () => {
   const reels = [
     rally(1, 1), rally(1, 2), other(1, 'burst'), other(1, 'full'),
     rally(2, 1), rally(2, 2), other(2, 'burst'), other(2, 'full'),
     rally(3, 1), other(3, 'burst'), other(3, 'full'),
   ]
   const out = mergeParts(reels)
-  assert.deepEqual(out.map((r) => r.id), ['p1r1', 'p2r1', 'p3r1', 'p1r2', 'p2r2', 'p3burst', 'p3full'])
+  assert.deepEqual(out.map((r) => r.id), ['p1r1', 'p2r1', 'p3r1', 'p1r2', 'p2r2'])
   assert.deepEqual(out.filter((r) => r.kind === 'rally').map((r) => r.rally_rank), [1, 2, 3, 4, 5])
 })
 
@@ -28,7 +34,7 @@ test('never more rally clips than a normal page has, however many parts', () => 
   const reels = [1, 2, 3, 4, 5, 6].flatMap((p) => [...Array.from({ length: 10 }, (_, i) => rally(p, i + 1)), other(p, 'burst'), other(p, 'full')])
   const out = mergeParts(reels)
   assert.equal(out.filter((r) => r.kind === 'rally').length, MAX_RALLIES)
-  assert.equal(out.length, MAX_RALLIES + 2)
+  assert.equal(out.length, MAX_RALLIES)
   assert.deepEqual(out.slice(0, 6).map((r) => r.id), ['p1r1', 'p2r1', 'p3r1', 'p4r1', 'p5r1', 'p6r1'])
 })
 
@@ -46,7 +52,7 @@ test('with scores on every rally clip, the top 10 is by score across parts, not 
   ]
   const out = mergeParts(reels)
   // part 2's #2 (78) beats part 1's #1 (55): the old interleave would have put p1r1 second.
-  assert.deepEqual(out.map((r) => r.id), ['p2r1', 'p2r2', 'p2r3', 'p1r1', 'p1r2', 'p2burst', 'p2full'])
+  assert.deepEqual(out.map((r) => r.id), ['p2r1', 'p2r2', 'p2r3', 'p1r1', 'p1r2'])
   assert.deepEqual(out.filter((r) => r.kind === 'rally').map((r) => r.rally_rank), [1, 2, 3, 4, 5])
 })
 
@@ -72,7 +78,7 @@ test('badged clips come first, then the best of the rest, up to a normal page', 
   assert.deepEqual(out.slice(0, 2).map((r) => r.badge), ['Killer Shot', 'Kitchen War'], 'badged first, by score')
   assert.equal(out.filter((r) => r.kind === 'rally').length, MAX_RALLIES)
   assert.deepEqual(out.slice(2, 10).map((r) => r.id), ['p1r1', 'p1r2', 'p1r3', 'p1r4', 'p1r6', 'p1r7', 'p1r8', 'p1r9'])
-  assert.deepEqual(out.slice(-2).map((r) => r.kind), ['burst', 'full'])
+  assert.ok(out.every((r) => r.kind === 'rally'), 'no quick hits or full reel')
   assert.deepEqual(out.filter((r) => r.kind === 'rally').map((r) => r.rally_rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 })
 
@@ -88,5 +94,5 @@ test('badges across parts are all shown, the rest by score across parts', () => 
     badgedRally(1, 1, 40, 'First Strike'), badgedRally(1, 2, 80, null), other(1, 'burst'), other(1, 'full'),
     badgedRally(2, 1, 30, 'Quick Hands'), badgedRally(2, 2, 70, null), other(2, 'burst'), other(2, 'full'),
   ]
-  assert.deepEqual(mergeParts(reels).map((r) => r.id), ['p1r1', 'p2r1', 'p1r2', 'p2r2', 'p2burst', 'p2full'])
+  assert.deepEqual(mergeParts(reels).map((r) => r.id), ['p1r1', 'p2r1', 'p1r2', 'p2r2'])
 })
